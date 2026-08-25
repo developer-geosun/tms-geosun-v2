@@ -121,6 +121,11 @@ export class ToolbarComponent {
       route: '/admin/toll-tariff-sets',
       labelKey: 'navigation.adminTollTariffSets',
       roles: ['admin', 'manager'] as const
+    },
+    {
+      route: '/admin/users',
+      labelKey: 'navigation.adminUsers',
+      roles: ['admin'] as const
     }
   ];
   

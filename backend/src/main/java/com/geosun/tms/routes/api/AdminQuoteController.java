@@ -45,12 +45,9 @@ public class AdminQuoteController {
           @NonNull
           String idempotencyKey,
       @Valid @RequestBody @NonNull CreateQuoteRequest request) {
-    String adminUserId = principal.getUserId();
-    if (adminUserId == null) {
-      throw new IllegalArgumentException("adminUserId must not be null");
-    }
     QuoteDto quote =
-        freightQuoteService.createDraftQuote(requestId, adminUserId, idempotencyKey, request);
+        freightQuoteService.createDraftQuote(
+            requestId, principal.getUserId(), idempotencyKey, request);
     return ResponseEntity.status(HttpStatus.CREATED).body(quote);
   }
 
@@ -65,12 +62,9 @@ public class AdminQuoteController {
           @NonNull
           String idempotencyKey,
       @RequestBody(required = false) SendQuoteRequest request) {
-    String adminUserId = principal.getUserId();
-    if (adminUserId == null) {
-      throw new IllegalArgumentException("adminUserId must not be null");
-    }
     String messageBody = request == null ? null : request.messageBody();
-    return freightQuoteService.sendQuote(quoteId, adminUserId, idempotencyKey, messageBody);
+    return freightQuoteService.sendQuote(
+        quoteId, principal.getUserId(), idempotencyKey, messageBody);
   }
 
   @Operation(summary = "List quote history for route request")

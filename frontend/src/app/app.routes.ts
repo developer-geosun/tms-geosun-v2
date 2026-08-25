@@ -107,6 +107,13 @@ export const routes: Routes = [
       )
   },
   {
+    path: 'admin/users',
+    canActivate: [authAvailabilityGuard, serviceStopGuard, authGuard],
+    data: { roles: ['admin'] },
+    loadComponent: () =>
+      import('./pages/admin-users/admin-users.component').then((m) => m.AdminUsersComponent)
+  },
+  {
     path: '404',
     loadComponent: () => import('./pages/not-found/not-found.component').then((m) => m.NotFoundComponent)
   },

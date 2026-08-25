@@ -3,6 +3,7 @@ package com.geosun.tms.auth.security;
 import com.geosun.tms.auth.domain.user.Role;
 import java.util.Collection;
 import java.util.List;
+import org.springframework.lang.NonNull;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,19 +15,20 @@ public class UserPrincipal implements UserDetails {
 
   public static final String CLAIM_SESSION_ID = "sessionId";
 
-  private final String userId;
+  private final @NonNull String userId;
   private final String email;
   private final Role role;
   private final String refreshSessionId;
 
-  public UserPrincipal(String userId, String email, Role role, String refreshSessionId) {
+  public UserPrincipal(
+      @NonNull String userId, String email, Role role, String refreshSessionId) {
     this.userId = userId;
     this.email = email;
     this.role = role;
     this.refreshSessionId = refreshSessionId;
   }
 
-  public String getUserId() {
+  public @NonNull String getUserId() {
     return userId;
   }
 

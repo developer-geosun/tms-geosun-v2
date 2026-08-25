@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 import org.springframework.http.HttpHeaders;
 import org.springframework.lang.NonNull;
@@ -119,7 +120,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     UserPrincipal principal =
-        new UserPrincipal(user.getId(), user.getEmail(), user.getRole(), claims.sessionId());
+        new UserPrincipal(
+            Objects.requireNonNull(user.getId()),
+            user.getEmail(),
+            user.getRole(),
+            claims.sessionId());
     UsernamePasswordAuthenticationToken authentication =
         new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

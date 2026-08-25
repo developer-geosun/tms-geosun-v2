@@ -14,4 +14,6 @@ export * from './freight-numeric-scenarios-contracts.model';
 export * from './toll-tariff-sets-api.service';
 export * from './toll-tariff-sets-contracts.model';
 export * from './freight-cost-calculations-contracts.model';
+export * from './users-admin-api.service';
+export * from './users-admin-contracts.model';
 

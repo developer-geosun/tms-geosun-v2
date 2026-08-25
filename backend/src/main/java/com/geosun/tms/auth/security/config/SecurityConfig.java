@@ -30,7 +30,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
- * Stateless JWT, публічні auth-маршрути, DELETE /users/** лише для ADMIN.
+ * Stateless JWT, публічні auth-маршрути, DELETE /users/** та /admin/users/** лише для ADMIN.
  */
 @Configuration
 @EnableWebSecurity
@@ -75,6 +75,8 @@ public class SecurityConfig {
                     "/api/v1/auth/reset-password",
                     "/api/v1/auth/refresh")
                 .permitAll()
+                .requestMatchers("/api/v1/admin/users", "/api/v1/admin/users/**")
+                .hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/users/**")
                 .hasRole("ADMIN")
                 .anyRequest()

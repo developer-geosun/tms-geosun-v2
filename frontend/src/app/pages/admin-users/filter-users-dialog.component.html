@@ -1,0 +1,52 @@
+<h2 mat-dialog-title>{{ 'pages.adminUsers.filterTitle' | translate }}</h2>
+
+<form class="filter-users-dialog" [formGroup]="filterForm" (ngSubmit)="apply()">
+  <mat-dialog-content class="filter-users-dialog__content">
+    <mat-form-field appearance="outline" class="filter-users-dialog__field">
+      <mat-label>{{ 'pages.adminUsers.email' | translate }}</mat-label>
+      <input matInput formControlName="email" type="email" autocomplete="off" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-users-dialog__field">
+      <mat-label>{{ 'pages.adminUsers.role' | translate }}</mat-label>
+      <mat-select formControlName="role">
+        <mat-option value="">{{ 'pages.adminUsers.any' | translate }}</mat-option>
+        @for (role of data.roleOptions; track role) {
+          <mat-option [value]="role">{{ ('pages.adminUsers.roles.' + role) | translate }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <div class="filter-users-dialog__row">
+      <mat-form-field appearance="outline" class="filter-users-dialog__field">
+        <mat-label>{{ 'pages.adminUsers.active' | translate }}</mat-label>
+        <mat-select formControlName="active">
+          <mat-option value="">{{ 'pages.adminUsers.any' | translate }}</mat-option>
+          <mat-option value="true">{{ 'pages.adminUsers.yes' | translate }}</mat-option>
+          <mat-option value="false">{{ 'pages.adminUsers.no' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-users-dialog__field">
+        <mat-label>{{ 'pages.adminUsers.deleted' | translate }}</mat-label>
+        <mat-select formControlName="deleted">
+          <mat-option value="">{{ 'pages.adminUsers.any' | translate }}</mat-option>
+          <mat-option value="false">{{ 'pages.adminUsers.no' | translate }}</mat-option>
+          <mat-option value="true">{{ 'pages.adminUsers.yes' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="filter-users-dialog__actions" align="end">
+    <button mat-stroked-button type="button" (click)="cancel()">
+      {{ 'pages.adminUsers.filterCancel' | translate }}
+    </button>
+    <button mat-stroked-button type="button" (click)="reset()">
+      {{ 'pages.adminUsers.resetFilters' | translate }}
+    </button>
+    <button mat-flat-button color="primary" type="submit">
+      {{ 'pages.adminUsers.applyFilters' | translate }}
+    </button>
+  </mat-dialog-actions>
+</form>
