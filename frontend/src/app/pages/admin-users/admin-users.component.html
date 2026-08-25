@@ -77,14 +77,16 @@
               <div class="user-card__field">
                 <span class="user-card__label">{{ 'pages.adminUsers.role' | translate }}</span>
                 <mat-form-field appearance="outline" class="user-card__role-field" subscriptSizing="dynamic">
-                  <mat-select
-                    [value]="row.role"
-                    [disabled]="isCurrentUser(row) || row.deleted || isUpdating(row.id)"
-                    (selectionChange)="onRoleChange(row, $event.value)">
-                    @for (role of roleOptions; track role) {
-                      <mat-option [value]="role">{{ ('pages.adminUsers.roles.' + role) | translate }}</mat-option>
-                    }
-                  </mat-select>
+                  @for (_ of [roleSelectEpoch()]; track _) {
+                    <mat-select
+                      [value]="row.role"
+                      [disabled]="isCurrentUser(row) || row.deleted || isUpdating(row.id)"
+                      (selectionChange)="onRoleChange(row, $event.value)">
+                      @for (role of roleOptions; track role) {
+                        <mat-option [value]="role">{{ ('pages.adminUsers.roles.' + role) | translate }}</mat-option>
+                      }
+                    </mat-select>
+                  }
                 </mat-form-field>
               </div>
 
@@ -169,14 +171,16 @@
           </th>
           <td mat-cell *matCellDef="let row">
             <mat-form-field appearance="outline" class="admin-users__role-field" subscriptSizing="dynamic">
-              <mat-select
-                [value]="row.role"
-                [disabled]="isCurrentUser(row) || row.deleted || isUpdating(row.id)"
-                (selectionChange)="onRoleChange(row, $event.value)">
-                @for (role of roleOptions; track role) {
-                  <mat-option [value]="role">{{ ('pages.adminUsers.roles.' + role) | translate }}</mat-option>
-                }
-              </mat-select>
+              @for (_ of [roleSelectEpoch()]; track _) {
+                <mat-select
+                  [value]="row.role"
+                  [disabled]="isCurrentUser(row) || row.deleted || isUpdating(row.id)"
+                  (selectionChange)="onRoleChange(row, $event.value)">
+                  @for (role of roleOptions; track role) {
+                    <mat-option [value]="role">{{ ('pages.adminUsers.roles.' + role) | translate }}</mat-option>
+                  }
+                </mat-select>
+              }
             </mat-form-field>
           </td>
         </ng-container>

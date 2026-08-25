@@ -92,6 +92,8 @@ export class AdminUsersComponent implements AfterViewInit {
   readonly actionError = signal('');
   readonly actionSuccess = signal('');
   readonly updatingIds = signal<Set<string>>(new Set());
+  /** Збільшується, щоб пересоздати mat-select і скинути UI після скасування/помилки */
+  readonly roleSelectEpoch = signal(0);
   readonly isHandset = this.layout.isHandset;
 
   readonly filterForm = this.formBuilder.nonNullable.group({
@@ -258,24 +260,29 @@ export class AdminUsersComponent implements AfterViewInit {
         'pages.adminUsers.roleDemoteAdminConfirm'
       );
       if (!superAdminPassword) {
-        await this.reload();
+        await this.revertRoleSelectUi();
         return;
       }
     } else {
       const confirmed = await this.openConfirmDialog('pages.adminUsers.roleChangeConfirm');
       if (!confirmed) {
-        await this.reload();
+        await this.revertRoleSelectUi();
         return;
       }
     }
 
-    await this.runAction(row.id, async () => {
-      await this.usersApi.updateRole(row.id, {
-        role,
-        ...(superAdminPassword ? { superAdminPassword } : {})
-      });
-      this.actionSuccess.set('pages.adminUsers.roleUpdated');
-    }, 'pages.adminUsers.roleUpdateFailed');
+    await this.runAction(
+      row.id,
+      async () => {
+        await this.usersApi.updateRole(row.id, {
+          role,
+          ...(superAdminPassword ? { superAdminPassword } : {})
+        });
+        this.actionSuccess.set('pages.adminUsers.roleUpdated');
+      },
+      'pages.adminUsers.roleUpdateFailed',
+      { revertRoleSelectOnError: true }
+    );
   }
 
   async onActiveToggle(row: UserAdminContractDto, active: boolean): Promise<void> {
@@ -336,7 +343,8 @@ export class AdminUsersComponent implements AfterViewInit {
   private async runAction(
     id: string,
     action: () => Promise<void>,
-    errorKey: string
+    errorKey: string,
+    options?: { revertRoleSelectOnError?: boolean }
   ): Promise<void> {
     this.actionError.set('');
     this.actionSuccess.set('');
@@ -346,6 +354,9 @@ export class AdminUsersComponent implements AfterViewInit {
       await this.reload();
     } catch (err: unknown) {
       this.actionError.set(this.mapErrorKey(err, errorKey));
+      if (options?.revertRoleSelectOnError) {
+        await this.revertRoleSelectUi();
+      }
     } finally {
       this.updatingIds.update((set) => {
         const next = new Set(set);
@@ -353,6 +364,12 @@ export class AdminUsersComponent implements AfterViewInit {
         return next;
       });
     }
+  }
+
+  /** Повертає select ролі до значення з сервера (mat-select інакше лишає обране). */
+  private async revertRoleSelectUi(): Promise<void> {
+    await this.reload();
+    this.roleSelectEpoch.update((n) => n + 1);
   }
 
   private mapErrorKey(err: unknown, fallback: string): string {
