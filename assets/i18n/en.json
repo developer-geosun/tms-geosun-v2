@@ -539,6 +539,7 @@
       "storageType": "Storage type",
       "refresh": "Refresh",
       "upload": "Upload",
+      "dropZoneHint": "Drop a file here",
       "uploading": "Uploading...",
       "loading": "Loading list...",
       "loadFailed": "Failed to load file list",
