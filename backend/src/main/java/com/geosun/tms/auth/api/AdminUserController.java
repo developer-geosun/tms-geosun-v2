@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -91,5 +92,15 @@ public class AdminUserController {
       @AuthenticationPrincipal UserPrincipal principal, @PathVariable("id") @NonNull String id) {
     adminUserService.softDelete(principal.getUserId(), id);
     return ResponseEntity.noContent().build();
+  }
+
+  @Operation(
+      summary = "Restore soft-deleted user",
+      description = "ADMIN only; clears deleted flag and reactivates. Idempotent if not deleted.")
+  @SecurityRequirement(name = OpenApiConfig.BEARER_SCHEME)
+  @PostMapping("/{id}/restore")
+  public UserAdminDto restore(
+      @AuthenticationPrincipal UserPrincipal principal, @PathVariable("id") @NonNull String id) {
+    return adminUserService.restore(principal.getUserId(), id);
   }
 }

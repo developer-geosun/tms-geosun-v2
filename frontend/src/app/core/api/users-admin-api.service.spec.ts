@@ -77,4 +77,24 @@ describe('UsersAdminApiService', () => {
     request.flush(null);
     await expectAsync(pending).toBeResolved();
   });
+
+  it('restores via POST /admin/users/{id}/restore', async () => {
+    const pending = service.restore('user-2');
+    const request = httpMock.expectOne(`${backendApi.adminUsers}/user-2/restore`);
+    expect(request.request.method).toBe('POST');
+    request.flush({
+      id: 'user-2',
+      email: 'b@example.com',
+      role: 'USER',
+      active: true,
+      deleted: false,
+      emailVerified: true,
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-02T00:00:00Z',
+      deletedAt: null
+    });
+    await expectAsync(pending).toBeResolvedTo(
+      jasmine.objectContaining({ id: 'user-2', deleted: false, active: true })
+    );
+  });
 });

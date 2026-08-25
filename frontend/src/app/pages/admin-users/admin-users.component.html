@@ -53,115 +53,203 @@
     </div>
   }
 
-  <div class="admin-users__table-scroll table-shell">
-    <table
-      mat-table
-      [dataSource]="users()"
-      matSort
-      (matSortChange)="onSort($event)"
-      class="admin-users__table">
-      <ng-container matColumnDef="email">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header="email">
-          {{ 'pages.adminUsers.email' | translate }}
-        </th>
-        <td mat-cell *matCellDef="let row">{{ row.email }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="role">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header="role">
-          {{ 'pages.adminUsers.role' | translate }}
-        </th>
-        <td mat-cell *matCellDef="let row">
-          <mat-form-field appearance="outline" class="admin-users__role-field" subscriptSizing="dynamic">
-            <mat-select
-              [value]="row.role"
-              [disabled]="isCurrentUser(row) || row.deleted || isUpdating(row.id)"
-              (selectionChange)="onRoleChange(row, $event.value)">
-              @for (role of roleOptions; track role) {
-                <mat-option [value]="role">{{ ('pages.adminUsers.roles.' + role) | translate }}</mat-option>
+  @if (isHandset()) {
+    <div class="admin-users__cards">
+      @if (!isLoading() && users().length === 0 && !loadError()) {
+        <p class="admin-users__empty">{{ 'pages.adminUsers.empty' | translate }}</p>
+      } @else {
+        @for (row of users(); track row.id) {
+          <mat-card
+            class="user-card"
+            appearance="outlined"
+            [class.user-card--deleted]="row.deleted"
+            [class.user-card--self]="isCurrentUser(row)">
+            <div class="user-card__header">
+              <div class="user-card__email" [attr.title]="row.email">{{ row.email }}</div>
+              @if (row.deleted) {
+                <span class="user-card__badge user-card__badge--deleted">
+                  {{ 'pages.adminUsers.deleted' | translate }}
+                </span>
               }
-            </mat-select>
-          </mat-form-field>
-        </td>
-      </ng-container>
+            </div>
 
-      <ng-container matColumnDef="active">
-        <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminUsers.active' | translate }}</th>
-        <td mat-cell *matCellDef="let row">
-          <mat-slide-toggle
-            [checked]="row.active"
-            [disabled]="isCurrentUser(row) || row.deleted || isUpdating(row.id)"
-            (change)="onActiveToggle(row, $event.checked)"
-            [matTooltip]="
-              isCurrentUser(row)
-                ? ('pages.adminUsers.selfLocked' | translate)
-                : ''
-            " />
-        </td>
-      </ng-container>
+            <mat-card-content class="user-card__content">
+              <div class="user-card__field">
+                <span class="user-card__label">{{ 'pages.adminUsers.role' | translate }}</span>
+                <mat-form-field appearance="outline" class="user-card__role-field" subscriptSizing="dynamic">
+                  <mat-select
+                    [value]="row.role"
+                    [disabled]="isCurrentUser(row) || row.deleted || isUpdating(row.id)"
+                    (selectionChange)="onRoleChange(row, $event.value)">
+                    @for (role of roleOptions; track role) {
+                      <mat-option [value]="role">{{ ('pages.adminUsers.roles.' + role) | translate }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
 
-      <ng-container matColumnDef="emailVerified">
-        <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminUsers.emailVerified' | translate }}</th>
-        <td mat-cell *matCellDef="let row">
-          {{ (row.emailVerified ? 'pages.adminUsers.yes' : 'pages.adminUsers.no') | translate }}
-        </td>
-      </ng-container>
+              <div class="user-card__row">
+                <div class="user-card__field user-card__field--inline">
+                  <span class="user-card__label">{{ 'pages.adminUsers.active' | translate }}</span>
+                  <mat-slide-toggle
+                    [checked]="row.active"
+                    [disabled]="isCurrentUser(row) || row.deleted || isUpdating(row.id)"
+                    (change)="onActiveToggle(row, $event.checked)"
+                    [matTooltip]="
+                      isCurrentUser(row)
+                        ? ('pages.adminUsers.selfLocked' | translate)
+                        : ''
+                    " />
+                </div>
+                <div class="user-card__field user-card__field--inline">
+                  <span class="user-card__label">{{ 'pages.adminUsers.emailVerified' | translate }}</span>
+                  <span class="user-card__value">
+                    {{ (row.emailVerified ? 'pages.adminUsers.yes' : 'pages.adminUsers.no') | translate }}
+                  </span>
+                </div>
+              </div>
 
-      <ng-container matColumnDef="createdAt">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header="createdAt">
-          {{ 'pages.adminUsers.createdAt' | translate }}
-        </th>
-        <td mat-cell *matCellDef="let row">{{ formatDate(row.createdAt) }}</td>
-      </ng-container>
+              <div class="user-card__field user-card__field--meta">
+                <span class="user-card__label">{{ 'pages.adminUsers.createdAt' | translate }}</span>
+                <span class="user-card__value">{{ formatDate(row.createdAt) }}</span>
+              </div>
+            </mat-card-content>
 
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminUsers.actions' | translate }}</th>
-        <td mat-cell *matCellDef="let row">
-          @if (isHandset()) {
-            <button
-              mat-icon-button
-              type="button"
-              [matMenuTriggerFor]="rowMenu"
+            <mat-card-actions class="user-card__actions" align="end">
+              @if (row.deleted) {
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  type="button"
+                  (click)="onRestore(row)"
+                  [disabled]="isUpdating(row.id)"
+                  [matTooltip]="'pages.adminUsers.restore' | translate">
+                  <mat-icon aria-hidden="true">restore</mat-icon>
+                  {{ 'pages.adminUsers.restore' | translate }}
+                </button>
+              } @else {
+                <button
+                  mat-stroked-button
+                  color="warn"
+                  type="button"
+                  (click)="onSoftDelete(row)"
+                  [disabled]="isCurrentUser(row) || isUpdating(row.id)"
+                  [matTooltip]="
+                    isCurrentUser(row)
+                      ? ('pages.adminUsers.selfLocked' | translate)
+                      : ('pages.adminUsers.delete' | translate)
+                  ">
+                  <mat-icon aria-hidden="true">delete</mat-icon>
+                  {{ 'pages.adminUsers.delete' | translate }}
+                </button>
+              }
+            </mat-card-actions>
+          </mat-card>
+        }
+      }
+    </div>
+  } @else {
+    <div class="admin-users__table-scroll table-shell">
+      <table
+        mat-table
+        [dataSource]="users()"
+        matSort
+        (matSortChange)="onSort($event)"
+        class="admin-users__table">
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="email">
+            {{ 'pages.adminUsers.email' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row">{{ row.email }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="role">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="role">
+            {{ 'pages.adminUsers.role' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row">
+            <mat-form-field appearance="outline" class="admin-users__role-field" subscriptSizing="dynamic">
+              <mat-select
+                [value]="row.role"
+                [disabled]="isCurrentUser(row) || row.deleted || isUpdating(row.id)"
+                (selectionChange)="onRoleChange(row, $event.value)">
+                @for (role of roleOptions; track role) {
+                  <mat-option [value]="role">{{ ('pages.adminUsers.roles.' + role) | translate }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="active">
+          <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminUsers.active' | translate }}</th>
+          <td mat-cell *matCellDef="let row">
+            <mat-slide-toggle
+              [checked]="row.active"
               [disabled]="isCurrentUser(row) || row.deleted || isUpdating(row.id)"
-              [attr.aria-label]="'pages.adminUsers.actions' | translate">
-              <mat-icon>more_vert</mat-icon>
-            </button>
-            <mat-menu #rowMenu="matMenu">
-              <button
-                mat-menu-item
-                type="button"
-                (click)="onSoftDelete(row)"
-                [disabled]="isCurrentUser(row) || row.deleted || isUpdating(row.id)">
-                <mat-icon>delete</mat-icon>
-                <span>{{ 'pages.adminUsers.delete' | translate }}</span>
-              </button>
-            </mat-menu>
-          } @else {
-            <button
-              mat-stroked-button
-              color="warn"
-              type="button"
-              (click)="onSoftDelete(row)"
-              [disabled]="isCurrentUser(row) || row.deleted || isUpdating(row.id)"
+              (change)="onActiveToggle(row, $event.checked)"
               [matTooltip]="
                 isCurrentUser(row)
                   ? ('pages.adminUsers.selfLocked' | translate)
-                  : ('pages.adminUsers.delete' | translate)
-              ">
-              {{ 'pages.adminUsers.delete' | translate }}
-            </button>
-          }
-        </td>
-      </ng-container>
+                  : ''
+              " />
+          </td>
+        </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-    </table>
+        <ng-container matColumnDef="emailVerified">
+          <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminUsers.emailVerified' | translate }}</th>
+          <td mat-cell *matCellDef="let row">
+            {{ (row.emailVerified ? 'pages.adminUsers.yes' : 'pages.adminUsers.no') | translate }}
+          </td>
+        </ng-container>
 
-    @if (!isLoading() && users().length === 0 && !loadError()) {
-      <p class="admin-users__empty">{{ 'pages.adminUsers.empty' | translate }}</p>
-    }
-  </div>
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="createdAt">
+            {{ 'pages.adminUsers.createdAt' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row">{{ formatDate(row.createdAt) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminUsers.actions' | translate }}</th>
+          <td mat-cell *matCellDef="let row">
+            @if (row.deleted) {
+              <button
+                mat-stroked-button
+                color="primary"
+                type="button"
+                (click)="onRestore(row)"
+                [disabled]="isUpdating(row.id)"
+                [matTooltip]="'pages.adminUsers.restore' | translate">
+                {{ 'pages.adminUsers.restore' | translate }}
+              </button>
+            } @else {
+              <button
+                mat-stroked-button
+                color="warn"
+                type="button"
+                (click)="onSoftDelete(row)"
+                [disabled]="isCurrentUser(row) || isUpdating(row.id)"
+                [matTooltip]="
+                  isCurrentUser(row)
+                    ? ('pages.adminUsers.selfLocked' | translate)
+                    : ('pages.adminUsers.delete' | translate)
+                ">
+                {{ 'pages.adminUsers.delete' | translate }}
+              </button>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+
+      @if (!isLoading() && users().length === 0 && !loadError()) {
+        <p class="admin-users__empty">{{ 'pages.adminUsers.empty' | translate }}</p>
+      }
+    </div>
+  }
 
   <mat-paginator
     [length]="totalElements()"

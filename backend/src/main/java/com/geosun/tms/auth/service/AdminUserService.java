@@ -22,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 /**
- * Адмін-операції над користувачами: список, роль, active, soft-delete.
+ * Адмін-операції над користувачами: список, роль, active, soft-delete, restore.
  */
 @Service
 public class AdminUserService {
@@ -113,6 +113,28 @@ public class AdminUserService {
     user.setActive(false);
     refreshTokenRepository.revokeAllActiveByUserId(user.getId(), Instant.now());
     userRepository.save(user);
+  }
+
+  /**
+   * Відновлення після soft-delete: знімає deleted, знову активує акаунт.
+   * Ідемпотентно, якщо вже не видалений. Конфлікт email — якщо є інший активний з тим самим email.
+   */
+  @Transactional
+  public UserAdminDto restore(@NonNull String actorUserId, @NonNull String rawId) {
+    User user = requireUser(rawId);
+    assertNotSelf(actorUserId, user.getId());
+    if (!user.isDeleted()) {
+      return toDto(user);
+    }
+    if (userRepository.existsByEmailAndDeletedFalse(user.getEmail())) {
+      throw ApiException.conflict(
+          "EMAIL_ALREADY_EXISTS",
+          "Cannot restore: another active user already uses this email");
+    }
+    user.setDeleted(false);
+    user.setDeletedAt(null);
+    user.setActive(true);
+    return toDto(userRepository.save(user));
   }
 
   private User requireUser(@NonNull String rawId) {

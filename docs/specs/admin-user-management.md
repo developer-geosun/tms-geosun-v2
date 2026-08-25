@@ -21,11 +21,11 @@
 - Смена роли (`USER` | `MANAGER` | `DRIVER` | `ADMIN`).
 - Activate / deactivate (`isActive`).
 - Soft-delete.
+- Restore после soft-delete.
 - UI `/admin/users` только для роли `admin`, с обязательной handset-адаптацией.
 - Обратная совместимость: `DELETE /api/v1/users/{id}` остаётся.
 
 ## 4) Out of Scope / Out of Scope (не входит)
-- Restore после soft-delete.
 - Multi-role / permission matrix.
 - Invite / создание пользователя админом.
 - Смена email / пароля админом.
@@ -35,7 +35,8 @@
 1. **Как** ADMIN, **я хочу** видеть список пользователей с фильтрами, **чтобы** быстро найти нужный аккаунт.
 2. **Как** ADMIN, **я хочу** менять роль пользователя, **чтобы** выдавать доступ к admin-функциям без правок БД.
 3. **Как** ADMIN, **я хочу** деактивировать или soft-delete пользователя, **чтобы** отозвать доступ.
-4. **Как** ADMIN на телефоне, **я хочу** пользоваться `/admin/users` на handset, **чтобы** управлять пользователями без десктопа.
+4. **Как** ADMIN, **я хочу** восстановить soft-deleted пользователя, **чтобы** снова разрешить вход.
+5. **Как** ADMIN на телефоне, **я хочу** пользоваться `/admin/users` на handset, **чтобы** управлять пользователями без десктопа.
 
 ## 6) Functional Requirements / Функциональные требования
 1. Доступ ко всем `/api/v1/admin/users/**` — только `ADMIN` (`403` иначе).
@@ -44,10 +45,11 @@
 4. `PATCH .../role` — тело `{ "role": "..." }`; revoke всех refresh-токенов цели.
 5. `PATCH .../active` — тело `{ "active": true|false }`; при `false` — revoke refresh.
 6. `DELETE /api/v1/admin/users/{id}` — soft-delete (идемпотентный `204`); revoke refresh.
-7. Запрет операций над собой: роль / deactivate / soft-delete → `400` `SELF_OPERATION_FORBIDDEN`.
-8. Защита последнего активного ADMIN при demote / deactivate / soft-delete → `409` `LAST_ADMIN_PROTECTED`.
-9. Role/active на soft-deleted → `409` `USER_DELETED`.
-10. Frontend: `/admin/users`, toolbar item, i18n uk/en/ru; действия над текущим пользователем в UI заблокированы.
+7. `POST /api/v1/admin/users/{id}/restore` — снять soft-delete, `active=true`; идемпотентно если не удалён; при конфликте email → `409` `EMAIL_ALREADY_EXISTS`.
+8. Запрет операций над собой: роль / deactivate / soft-delete / restore → `400` `SELF_OPERATION_FORBIDDEN`.
+9. Защита последнего активного ADMIN при demote / deactivate / soft-delete → `409` `LAST_ADMIN_PROTECTED`.
+10. Role/active на soft-deleted → `409` `USER_DELETED`.
+11. Frontend: `/admin/users`, toolbar item, i18n uk/en/ru; действия над текущим пользователем в UI заблокированы; restore для deleted.
 
 ## 7) Non-functional Requirements / Нефункциональные требования
 - **Security / Безопасность:** только ADMIN; self-op и last-admin политики; revoke sessions при role/active(false)/delete.
@@ -63,7 +65,7 @@
 
 ### 8.2 Output Data / Выходные данные
 - **Format / Формат:** `UserAdminDto`: `id`, `email`, `role`, `active`, `deleted`, `emailVerified`, `createdAt`, `updatedAt`, `deletedAt`.
-- **Errors / Ошибки:** `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_ERROR`, `SELF_OPERATION_FORBIDDEN`, `LAST_ADMIN_PROTECTED`, `USER_DELETED`.
+- **Errors / Ошибки:** `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_ERROR`, `SELF_OPERATION_FORBIDDEN`, `LAST_ADMIN_PROTECTED`, `USER_DELETED`, `EMAIL_ALREADY_EXISTS`.
 
 ### 8.3 Endpoints (if any) / Эндпоинты (если есть)
 - `GET /api/v1/admin/users` — список.
@@ -71,11 +73,12 @@
 - `PATCH /api/v1/admin/users/{id}/role` — смена роли.
 - `PATCH /api/v1/admin/users/{id}/active` — activate/deactivate.
 - `DELETE /api/v1/admin/users/{id}` — soft-delete.
+- `POST /api/v1/admin/users/{id}/restore` — restore после soft-delete.
 - `DELETE /api/v1/users/{id}` — legacy soft-delete (тот же сервис).
 
 ## 9) UX/UI Requirements (frontend) / UX/UI требования (frontend)
 - States / Состояния: `loading` / `empty` / `error` / `success`.
-- Form behavior / Поведение форм: confirm перед demote/deactivate/delete; role select; slide-toggle active.
+- Form behavior / Поведение форм: confirm перед demote/deactivate/delete/restore; role select; slide-toggle active.
 - Navigation / Навигация: `/admin/users`, `roles: ['admin']`.
 - Handset: компактные фильтры (стек), уменьшенный pageSize, horizontal scroll таблицы, touch-friendly dialogs/actions.
 - UI texts / Тексты интерфейса: `pages.adminUsers.*`, `navigation.adminUsers`.

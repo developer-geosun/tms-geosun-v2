@@ -50,6 +50,18 @@
           <span>{{ 'pages.login.error403' | translate }}</span>
         </p>
       }
+      @if (errorCode() === 'account_disabled') {
+        <p class="error-text">
+          <mat-icon fontIcon="error_outline" aria-hidden="true"></mat-icon>
+          <span>{{ 'pages.login.errorAccountDisabled' | translate }}</span>
+        </p>
+      }
+      @if (errorCode() === 'user_deleted') {
+        <p class="error-text">
+          <mat-icon fontIcon="error_outline" aria-hidden="true"></mat-icon>
+          <span>{{ 'pages.login.errorUserDeleted' | translate }}</span>
+        </p>
+      }
       @if (errorCode() === 'email_not_verified') {
         <p class="error-text">
           <mat-icon fontIcon="error_outline" aria-hidden="true"></mat-icon>

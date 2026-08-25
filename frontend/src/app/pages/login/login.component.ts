@@ -37,7 +37,9 @@ export class LoginComponent {
 
   readonly isLoading = signal(false);
   readonly hasSuccess = signal(false);
-  readonly errorCode = signal<'401' | '403' | 'email_not_verified' | 'generic' | null>(null);
+  readonly errorCode = signal<
+    '401' | '403' | 'account_disabled' | 'user_deleted' | 'email_not_verified' | 'generic' | null
+  >(null);
   readonly isPasswordVisible = signal(false);
 
   readonly form = this.formBuilder.nonNullable.group({
@@ -70,9 +72,18 @@ export class LoginComponent {
     });
   }
 
-  private mapErrorCode(error: { status?: number; error?: { code?: string } }): '401' | '403' | 'email_not_verified' | 'generic' {
-    if (error.status === 403 && error.error?.code === 'EMAIL_NOT_VERIFIED') {
+  private mapErrorCode(
+    error: { status?: number; error?: { code?: string } }
+  ): '401' | '403' | 'account_disabled' | 'user_deleted' | 'email_not_verified' | 'generic' {
+    const code = error.error?.code;
+    if (error.status === 403 && code === 'EMAIL_NOT_VERIFIED') {
       return 'email_not_verified';
+    }
+    if (error.status === 403 && code === 'ACCOUNT_DISABLED') {
+      return 'account_disabled';
+    }
+    if (error.status === 403 && code === 'USER_DELETED') {
+      return 'user_deleted';
     }
     if (error.status === 401) {
       return '401';

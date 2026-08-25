@@ -57,6 +57,7 @@
 - `PATCH /api/v1/admin/users/{id}/role` — смена роли (`ADMIN`).
 - `PATCH /api/v1/admin/users/{id}/active` — activate/deactivate (`ADMIN`).
 - `DELETE /api/v1/admin/users/{id}` — soft-delete пользователя (`ADMIN`); legacy: `DELETE /api/v1/users/{id}`.
+- `POST /api/v1/admin/users/{id}/restore` — восстановить soft-deleted пользователя (`ADMIN`).
 
 Переменные окружения для breakdown по странам: `COUNTRY_BREAKDOWN_PROVIDER=here|geojson` (по умолчанию `here`), `HERE_API_KEY` обязателен только при `COUNTRY_BREAKDOWN_PROVIDER=here`. Для `geojson` используются локальные границы стран из ресурсов backend.
 

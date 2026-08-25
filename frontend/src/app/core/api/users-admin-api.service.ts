@@ -69,4 +69,13 @@ export class UsersAdminApiService {
       this.http.delete(`${this.backendApi.adminUsers}/${encodeURIComponent(id)}`)
     );
   }
+
+  async restore(id: string): Promise<UserAdminContractDto> {
+    return firstValueFrom(
+      this.http.post<UserAdminContractDto>(
+        `${this.backendApi.adminUsers}/${encodeURIComponent(id)}/restore`,
+        null
+      )
+    );
+  }
 }

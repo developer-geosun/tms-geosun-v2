@@ -12,11 +12,10 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -45,11 +44,10 @@ import {
     ReactiveFormsModule,
     TranslateModule,
     MatButtonModule,
+    MatCardModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
-    MatInputModule,
-    MatMenuModule,
     MatPaginatorModule,
     MatSelectModule,
     MatSlideToggleModule,
@@ -291,8 +289,22 @@ export class AdminUsersComponent implements AfterViewInit {
     }
     await this.runAction(row.id, async () => {
       await this.usersApi.softDelete(row.id);
-      this.actionSuccess.set('pages.adminUsers.deleted');
+      this.actionSuccess.set('pages.adminUsers.deleteSuccess');
     }, 'pages.adminUsers.deleteFailed');
+  }
+
+  async onRestore(row: UserAdminContractDto): Promise<void> {
+    if (!row.deleted || this.isUpdating(row.id)) {
+      return;
+    }
+    const confirmed = await this.openConfirmDialog('pages.adminUsers.restoreConfirm');
+    if (!confirmed) {
+      return;
+    }
+    await this.runAction(row.id, async () => {
+      await this.usersApi.restore(row.id);
+      this.actionSuccess.set('pages.adminUsers.restoreSuccess');
+    }, 'pages.adminUsers.restoreFailed');
   }
 
   formatDate(value: string | null | undefined): string {
@@ -343,6 +355,9 @@ export class AdminUsersComponent implements AfterViewInit {
     }
     if (code === 'USER_DELETED') {
       return 'pages.adminUsers.userDeleted';
+    }
+    if (code === 'EMAIL_ALREADY_EXISTS') {
+      return 'pages.adminUsers.emailAlreadyExists';
     }
     return fallback;
   }

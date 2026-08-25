@@ -171,6 +171,42 @@ class AdminUserIntegrationTest {
   }
 
   @Test
+  void admin_restore_afterSoftDelete() throws Exception {
+    User admin = saveUser("admin-restore@example.com", "Admin123!", Role.ADMIN);
+    User victim = saveUser("victim-restore@example.com", "Secret123", Role.USER);
+    Session adminSession = login(admin.getEmail(), "Admin123!");
+
+    mockMvc
+        .perform(
+            delete("/api/v1/admin/users/" + victim.getId())
+                .header("Authorization", "Bearer " + adminSession.access()))
+        .andExpect(status().isNoContent());
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/login")
+                .contentType(jsonContentType())
+                .content(toJson(new LoginRequest(victim.getEmail(), "Secret123"))))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("USER_DELETED"));
+
+    mockMvc
+        .perform(
+            post("/api/v1/admin/users/" + victim.getId() + "/restore")
+                .header("Authorization", "Bearer " + adminSession.access()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.deleted").value(false))
+        .andExpect(jsonPath("$.active").value(true));
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/login")
+                .contentType(jsonContentType())
+                .content(toJson(new LoginRequest(victim.getEmail(), "Secret123"))))
+        .andExpect(status().isOk());
+  }
+
+  @Test
   void admin_selfOperation_forbidden() throws Exception {
     User admin = saveUser("admin-self@example.com", "Admin123!", Role.ADMIN);
     Session adminSession = login(admin.getEmail(), "Admin123!");
