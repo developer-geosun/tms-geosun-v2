@@ -1,0 +1,26 @@
+.not-found-content {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.not-found-content h1 {
+  margin: 0 0 0.75rem;
+  font-size: var(--page-title-size);
+  line-height: 1.25;
+}
+
+.not-found-content p {
+  margin: 0 0 1rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.not-found-content a {
+  display: inline-block;
+  min-height: 48px;
+  line-height: 48px;
+  padding-inline: 1rem;
+}

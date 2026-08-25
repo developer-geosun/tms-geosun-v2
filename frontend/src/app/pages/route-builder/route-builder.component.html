@@ -1,0 +1,393 @@
+<div
+  class="freight-layout"
+  [class.freight-layout--compact-sidebar]="compactRouteLayout() && !mobileMapPanelOpen()"
+  [class.freight-layout--compact-map]="compactRouteLayout() && mobileMapPanelOpen()"
+>
+  <aside class="sidebar">
+    <div class="sidebar-actions">
+      <div class="sidebar-actions__head">
+        <h1 class="sidebar-actions__title">{{ getModeTitleKey() | translate }}</h1>
+        <div class="sidebar-actions__distance-chip">
+          <span class="sidebar-actions__distance-value">{{ (totalDistanceMeters() / 1000).toFixed(1) }}</span>
+          <span>{{ 'pages.freightCalculation.km' | translate }}</span>
+        </div>
+      </div>
+      @if (isViewMode()) {
+        <div class="sidebar-route-timestamps">
+          <small class="sidebar-last-saved">
+            {{ 'pages.routeBuilder.routeId' | translate }}: {{ getRouteIdLabel() ?? '-' }}
+          </small>
+          <small class="sidebar-last-saved">
+            {{ 'pages.routes.createdAt' | translate }}: {{ getRouteCreatedAtLabel() ?? '-' }}
+          </small>
+          <small class="sidebar-last-saved">
+            {{ 'pages.routes.savedAt' | translate }}: {{ getRouteUpdatedAtLabel() ?? '-' }}
+          </small>
+          <small class="sidebar-last-saved">
+            {{ 'pages.routes.lastOpenedAt' | translate }}: {{ getRouteLastOpenedAtLabel() ?? '-' }}
+          </small>
+        </div>
+      } @else if (isEditMode()) {
+        <div class="sidebar-route-timestamps">
+          <small class="sidebar-last-saved">
+            {{ 'pages.routeBuilder.routeId' | translate }}: {{ getRouteIdLabel() ?? '-' }}
+          </small>
+        </div>
+      }
+      <div
+        class="sidebar-actions__buttons"
+        [class.sidebar-actions__buttons--edit]="isEditMode()"
+        [class.sidebar-actions__buttons--create-row]="isCreateMode()"
+      >
+        @if (isViewMode()) {
+          <button
+            mat-mini-fab
+            type="button"
+            class="sidebar-view-action"
+            (click)="goToRoutesList()"
+            [attr.aria-label]="'pages.freightCalculation.myRoutes' | translate"
+            [title]="'pages.freightCalculation.myRoutes' | translate"
+          >
+            <mat-icon>route</mat-icon>
+          </button>
+          @if (!routeLockedByRequest()) {
+            <button
+              mat-mini-fab
+              type="button"
+              class="sidebar-view-action"
+              (click)="switchToEditMode()"
+              [disabled]="!hasRoute() || isLoadingSavedRoute()"
+              [attr.aria-label]="'pages.routeBuilder.editRoute' | translate"
+              [title]="'pages.routeBuilder.editRoute' | translate"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+          } @else {
+            <button
+              mat-mini-fab
+              type="button"
+              class="sidebar-view-action"
+              (click)="duplicateLockedRoute()"
+              [disabled]="!hasRoute() || isSavingRoute() || isLoadingSavedRoute() || isDuplicatingRoute()"
+              [attr.aria-label]="'pages.routeBuilder.duplicateRoute' | translate"
+              [title]="'pages.routeBuilder.duplicateRoute' | translate"
+            >
+              @if (isDuplicatingRoute()) {
+                <mat-spinner diameter="20"></mat-spinner>
+              } @else {
+                <mat-icon>content_copy</mat-icon>
+              }
+            </button>
+          }
+          <button
+            mat-mini-fab
+            type="button"
+            class="sidebar-view-action"
+            (click)="switchToCreateMode()"
+            [attr.aria-label]="'pages.routeBuilder.newRoute' | translate"
+            [title]="'pages.routeBuilder.newRoute' | translate"
+          >
+            <mat-icon>add</mat-icon>
+          </button>
+          <button
+            mat-mini-fab
+            type="button"
+            class="sidebar-view-action sidebar-view-action--danger"
+            (click)="requestCurrentRouteDelete()"
+            [disabled]="!hasRoute() || isSavingRoute() || isLoadingSavedRoute()"
+            [attr.aria-label]="'pages.routeBuilder.deleteRoute' | translate"
+            [title]="'pages.routeBuilder.deleteRoute' | translate"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+          <button
+            class="sidebar-login-button sidebar-request-button"
+            mat-raised-button
+            color="primary"
+            type="button"
+            (click)="openFreightRequestDialog()"
+            [disabled]="!hasRoute() || hasOperationsError()"
+          >
+            {{ 'pages.freightCalculation.openRequest' | translate }}
+          </button>
+        } @else {
+          <button
+            class="sidebar-login-button"
+            mat-raised-button
+            color="primary"
+            type="button"
+            (click)="clearAllPoints()"
+            [disabled]="!canEditRoute()"
+          >
+            {{ 'pages.freightCalculation.clear' | translate }}
+          </button>
+          <button
+            class="sidebar-login-button"
+            mat-raised-button
+            color="primary"
+            type="button"
+            (click)="clearAllOperations()"
+            [disabled]="!canEditRoute() || !hasAnySelectedOperations()"
+          >
+            {{ 'pages.routeBuilder.clearOperations' | translate }}
+          </button>
+          <span
+            class="sidebar-save-button-wrap"
+            [matTooltip]="isEditMode() && !hasEditRouteChanges() ? ('pages.routeBuilder.noChangesToSave' | translate) : ''"
+            [matTooltipDisabled]="!(isEditMode() && !hasEditRouteChanges())"
+            matTooltipPosition="above"
+          >
+            <button
+              class="sidebar-login-button"
+              mat-raised-button
+              color="primary"
+              type="button"
+              (click)="saveCurrentRoute()"
+              [disabled]="!hasRoute() || hasPendingBorder() || hasOperationsError() || isSavingRoute() || isLoadingSavedRoute() || !hasEditRouteChanges()"
+            >
+              @if (isSavingRoute()) {
+                <span class="loading-content">
+                  <mat-spinner diameter="18"></mat-spinner>
+                  <span>{{ isEditMode() ? ('pages.routeBuilder.saveChanges' | translate) : ('pages.routeBuilder.createRoute' | translate) }}</span>
+                </span>
+              } @else {
+                {{ isEditMode() ? ('pages.routeBuilder.saveChanges' | translate) : ('pages.routeBuilder.createRoute' | translate) }}
+              }
+            </button>
+          </span>
+          @if (isEditMode()) {
+            <button
+              class="sidebar-login-button"
+              mat-raised-button
+              color="primary"
+              type="button"
+              (click)="switchToViewMode()"
+              [disabled]="isLoadingSavedRoute()"
+            >
+              {{ 'pages.routeBuilder.cancelEdit' | translate }}
+            </button>
+          }
+        }
+      </div>
+      @if (getSidebarTopErrorKey(); as sidebarErrorKey) {
+        <small class="sidebar-operations-error">{{ sidebarErrorKey | translate }}</small>
+      }
+
+      @if (!isViewMode()) {
+        <div class="search-box">
+          <mat-form-field class="search-field" appearance="outline" subscriptSizing="dynamic">
+            <input
+              #searchInput
+              matInput
+              type="text"
+              [placeholder]="'pages.freightCalculation.searchPlaceholder' | translate"
+              (input)="onSearchChange(searchInput.value)"
+              (keydown)="onSearchKeydown($event, searchInput)"
+              [disabled]="!canEditRoute()"
+            />
+          </mat-form-field>
+          @if (isSearching()) {
+            <span class="small-note">{{ 'pages.freightCalculation.searching' | translate }}</span>
+          }
+          @if (searchResults().length > 0) {
+            <div class="results">
+              @for (item of searchResults(); track item.display_name) {
+                <button
+                  type="button"
+                  [class.active]="$index === highlightedSearchIndex()"
+                  (mouseenter)="highlightedSearchIndex.set($index)"
+                  (click)="selectSearchResult(item, searchInput)"
+                >
+                  {{ item.display_name }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div #pointsListContainer class="points-list">
+      @if (waypoints().length === 0) {
+        <div class="points-list-empty">
+          {{ 'pages.freightCalculation.pointsListEmpty' | translate }}
+        </div>
+      }
+      @for (point of waypoints(); track $index; let pointIndex = $index; let segmentIndex = $index) {
+        <div
+          #pointRowRef
+          class="point-row"
+          role="button"
+          tabindex="0"
+          [class.border]="point.isBorder"
+          [class.selected]="pointIndex === selectedWaypointIndex()"
+          [class.point-row--disabled]="!isPointCardInteractive()"
+          (click)="selectWaypoint(pointIndex)"
+          (keydown.enter)="selectWaypoint(pointIndex)"
+          (keydown.space)="$event.preventDefault(); selectWaypoint(pointIndex)"
+        >
+          <div
+            class="point-order"
+            [class.point-order--regular]="!point.isBorder"
+            [class.point-order--border]="point.isBorder"
+          >
+            {{ pointIndex + 1 }}
+          </div>
+          <div class="point-main">
+            <strong>{{ getPointLabel(pointIndex) | translate }}</strong>
+            <span>{{ point.address }}</span>
+            <mat-chip-set
+              class="point-location-chip-set"
+              (click)="$event.stopPropagation()"
+              aria-label="Point coordinates"
+            >
+              <mat-chip
+                class="point-location-chip"
+                [highlighted]="false"
+                (click)="copyPointCoordinates(point)"
+                [attr.aria-label]="'pages.routeBuilder.copyCoordinates' | translate"
+                [title]="'pages.routeBuilder.copyCoordinates' | translate"
+              >
+                <mat-icon>content_copy</mat-icon>
+                {{ formatPointCoordinates(point) }}
+              </mat-chip>
+            </mat-chip-set>
+            <div
+              class="point-operations-block"
+              tabindex="0"
+              (click)="$event.stopPropagation()"
+              (keydown.enter)="$event.stopPropagation()"
+              (keydown.space)="$event.preventDefault(); $event.stopPropagation()"
+            >
+              @if (isViewMode()) {
+                <mat-chip-set class="point-operations-chips" aria-label="Point operations">
+                  @for (op of getPointOperations(pointIndex); track op) {
+                    <mat-chip class="point-operation-chip">
+                      {{ ('pages.routeBuilder.operations.' + op) | translate }}
+                    </mat-chip>
+                  }
+                </mat-chip-set>
+              } @else {
+                <div class="point-operations-list">
+                  @for (op of getAllowedOperations(pointIndex); track op) {
+                    <mat-checkbox
+                      class="point-operation-checkbox"
+                      [checked]="isPointOperationChecked(pointIndex, op)"
+                      (change)="onPointOperationToggle(pointIndex, op, $event.checked)"
+                      [disabled]="!canEditRoute() || !isPointCardInteractive()"
+                    >
+                      {{ ('pages.routeBuilder.operations.' + op) | translate }}
+                    </mat-checkbox>
+                  }
+                </div>
+              }
+            </div>
+            @if (isOperationsErrorOnPoint(pointIndex); as hasError) {
+              @if (getOperationsErrorKey(); as errorKey) {
+                <small class="point-operations-error">{{ errorKey | translate }}</small>
+              }
+            }
+          </div>
+          @if (canEditRoute()) {
+            <div class="point-actions">
+              <button
+                mat-icon-button
+                type="button"
+                (click)="$event.stopPropagation(); removeWaypoint(segmentIndex)"
+                [disabled]="!isPointCardInteractive()"
+                [attr.aria-label]="'pages.freightCalculation.clear' | translate"
+              >
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+
+        @if ($index < waypoints().length - 1) {
+          <div class="segment">
+            @if (segmentDistances()[segmentIndex]) {
+              <span>{{ (segmentDistances()[segmentIndex] / 1000).toFixed(1) }} {{ 'pages.freightCalculation.km' | translate }}</span>
+            }
+          </div>
+
+          @if (waypoints()[segmentIndex].country && waypoints()[segmentIndex + 1].country && waypoints()[segmentIndex].country !== waypoints()[segmentIndex + 1].country && !waypoints()[segmentIndex].isBorder && !waypoints()[segmentIndex + 1].isBorder && (waypoints()[segmentIndex].country === 'ua' || waypoints()[segmentIndex + 1].country === 'ua')) {
+            <div #borderPickerRef class="border-picker">
+              <div class="border-panel border-panel--selects">
+                <div class="border-panel__title">{{ 'pages.freightCalculation.selectBorder' | translate }}</div>
+                <mat-form-field class="border-field" appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>{{ 'pages.freightCalculation.selectCountry' | translate }}</mat-label>
+                  <mat-select
+                    panelClass="freight-border-select-panel"
+                    [value]="selectedCountryBySegment()[segmentIndex] ?? ''"
+                    (selectionChange)="onBorderCountryMatSelect(segmentIndex, $event.value)"
+                    [disabled]="!canEditRoute()"
+                    [attr.aria-label]="'pages.freightCalculation.selectCountry' | translate"
+                  >
+                    <mat-option value="">{{ 'pages.freightCalculation.notSelected' | translate }}</mat-option>
+                    @for (country of getSegmentCountryOptions(); track country) {
+                      <mat-option [value]="country">{{ ('pages.freightCalculation.countries.' + country) | translate }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field class="border-field" appearance="outline" subscriptSizing="dynamic">
+                  <mat-label>{{ 'pages.freightCalculation.selectCheckpoint' | translate }}</mat-label>
+                  <mat-select
+                    panelClass="freight-border-select-panel"
+                    [disabled]="!canEditRoute() || !selectedCountryBySegment()[segmentIndex]"
+                    [value]="getBorderCheckpointSelectValue(segmentIndex)"
+                    (selectionChange)="onBorderCheckpointMatSelect(segmentIndex, $event.value)"
+                    [attr.aria-label]="'pages.freightCalculation.selectCheckpoint' | translate"
+                  >
+                    <mat-option value="">{{ 'pages.freightCalculation.notSelected' | translate }}</mat-option>
+                    @if (selectedCountryBySegment()[segmentIndex]; as selectedCountry) {
+                      @for (checkpoint of getCheckpoints(selectedCountry); track checkpoint.lat + '-' + checkpoint.lng; let checkpointIndex = $index) {
+                        <mat-option [value]="'' + checkpointIndex">
+                          {{ getCheckpointLocalizedName(checkpoint) }}
+                        </mat-option>
+                      }
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
+          }
+        }
+      }
+    </div>
+
+  </aside>
+
+  <div #mapContainer class="map"></div>
+
+  @if (compactRouteLayout()) {
+    @if (!mobileMapPanelOpen()) {
+      <button
+        mat-fab
+        type="button"
+        class="route-builder-panel-toggle route-builder-panel-toggle--open-map"
+        color="primary"
+        (click)="openMobileMapPanel()"
+        [attr.aria-label]="'pages.routeBuilder.showMap' | translate"
+        [title]="'pages.routeBuilder.showMap' | translate"
+      >
+        <mat-icon>map</mat-icon>
+      </button>
+    } @else {
+      <button
+        mat-fab
+        type="button"
+        class="route-builder-panel-toggle route-builder-panel-toggle--open-sidebar"
+        color="primary"
+        (click)="openMobileSidebarPanel()"
+        [attr.aria-label]="'pages.routeBuilder.showSidebar' | translate"
+        [title]="'pages.routeBuilder.showSidebar' | translate"
+      >
+        <mat-icon>view_list</mat-icon>
+      </button>
+    }
+  }
+
+  @if (toastMessage()) {
+    <div class="toast">{{ toastMessage() | translate: toastMessageParams() }}</div>
+  }
+</div>

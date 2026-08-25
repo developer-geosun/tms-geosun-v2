@@ -1,0 +1,114 @@
+@use 'breakpoints' as bp;
+
+.verify-page {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  box-sizing: border-box;
+}
+
+.verify-card {
+  width: min(92vw, 560px);
+  box-sizing: border-box;
+  padding: 12px;
+  border-radius: 16px;
+  box-shadow: 0 16px 36px rgba(16, 24, 40, 0.16);
+}
+
+.verify-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.header-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(47, 84, 235, 0.12);
+  color: #2f54eb;
+}
+
+h1 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 0;
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 14px;
+}
+
+.info-text,
+.error-text,
+.success-text {
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.error-text {
+  color: #c62828;
+}
+
+.success-text {
+  color: #2e7d32;
+}
+
+.submit-button {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* РџС–РґРІРёС‰СѓС”РјРѕ РєРѕРЅС‚СЂР°СЃС‚ РЅР° С‚РµРјРЅРёС… С‚РµРјР°С… РґР»СЏ СЃС‚РѕСЂС–РЅРєРё РІРµСЂРёС„С–РєР°С†С–С— */
+:host-context(.theme-magenta-violet),
+:host-context(.theme-cyan-orange) {
+  .verify-card {
+    background: rgba(28, 28, 36, 0.92);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+  }
+
+  h1,
+  .subtitle {
+    color: #f3f6ff;
+  }
+
+  .error-text {
+    color: #ff8a80;
+  }
+
+  .success-text {
+    color: #7ee0a1;
+  }
+}
+
+@include bp.handset {
+  .verify-page {
+    padding: 16px 12px;
+  }
+
+  .verify-card {
+    padding: 8px;
+  }
+
+  h1 {
+    font-size: 26px;
+  }
+}

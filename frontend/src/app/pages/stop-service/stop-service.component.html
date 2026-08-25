@@ -1,0 +1,27 @@
+<div class="stop-service-content">
+  <div class="stop-service-header">
+    <h1>{{ 'pages.stopService.title' | translate }}</h1>
+    <p class="message">{{ 'pages.stopService.message' | translate }}</p>
+    <div class="loading-dots">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <p class="sub-message">{{ 'pages.stopService.subMessage' | translate }}</p>
+    <p class="try-later">{{ 'pages.stopService.tryLater' | translate }}</p>
+    <button
+      mat-stroked-button
+      type="button"
+      class="refresh-button"
+      (click)="refresh()"
+      [disabled]="isChecking()"
+    >
+      @if (isChecking()) {
+        <mat-spinner diameter="18"></mat-spinner>
+      } @else {
+        <mat-icon>refresh</mat-icon>
+      }
+      {{ 'pages.stopService.refresh' | translate }}
+    </button>
+  </div>
+</div>

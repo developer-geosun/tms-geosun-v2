@@ -1,0 +1,61 @@
+@use 'breakpoints' as bp;
+
+.filter-route-requests-dialog {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: inherit;
+}
+
+.filter-route-requests-dialog__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: min(480px, 82vw);
+  padding-top: 0.25rem;
+
+  // без помилок у фільтрах: прибираємо порожній subscript
+  .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+
+  @include bp.handset {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+.filter-route-requests-dialog__field {
+  width: 100%;
+}
+
+.filter-route-requests-dialog__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 8px;
+
+  @include bp.handset {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.filter-route-requests-dialog__actions {
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 8px;
+
+  button {
+    min-height: 48px;
+  }
+
+  @include bp.handset {
+    // на смартфоні кнопки в стовпчик / повна ширина для зручного тапу
+    justify-content: stretch !important;
+    flex-direction: column;
+
+    button {
+      width: 100%;
+      margin: 0 !important;
+    }
+  }
+}

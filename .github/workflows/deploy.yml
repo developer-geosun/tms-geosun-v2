@@ -1,0 +1,120 @@
+# Деплой Angular з frontend/ на гілку gh-pages (GitHub Pages: Settings → Pages → branch gh-pages / root)
+# Frontend на GitHub Pages; API — окремо (ngrok або статична IP, див. PUBLIC_ACCESS_MODE).
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Resolve Pages base href
+        id: pages
+        run: |
+          REPO_NAME="${{ github.event.repository.name }}"
+          echo "base_href=/${REPO_NAME}/" >> "$GITHUB_OUTPUT"
+          echo "Using base-href=/${REPO_NAME}/"
+
+      - name: Build Angular application
+        working-directory: frontend
+        run: npx ng build --configuration=production --base-href=${{ steps.pages.outputs.base_href }}
+
+      - name: Inject runtime API config for GitHub Pages
+        env:
+          API_URL: ${{ secrets.API_URL }}
+        run: |
+          set -e
+          DIST="frontend/dist/tms-geosun"
+          CONFIG="$DIST/assets/app-config.js"
+          if [ ! -f "$CONFIG" ]; then
+            echo "Error: $CONFIG not found"
+            exit 1
+          fi
+          # API_URL — публічний URL backend (https://xxx.ngrok-free.app або http://STATIC_IP:8080)
+          node <<'NODE'
+          const fs = require('fs');
+          const configPath = 'frontend/dist/tms-geosun/assets/app-config.js';
+          const apiUrl = (process.env.API_URL || '').trim().replace(/\/+$/, '');
+          let content = fs.readFileSync(configPath, 'utf8');
+          if (apiUrl) {
+            if (/apiUrl\s*:/.test(content)) {
+              content = content.replace(/apiUrl\s*:\s*[^,\n]+/, `apiUrl: ${JSON.stringify(apiUrl)}`);
+            } else {
+              content = content.replace(
+                /window\.__APP_CONFIG__\s*=\s*\{/,
+                `window.__APP_CONFIG__ = {\n  apiUrl: ${JSON.stringify(apiUrl)},`
+              );
+            }
+          } else {
+            console.warn('Warning: secrets.API_URL is empty — frontend will use relative API URLs');
+          }
+          fs.writeFileSync(configPath, content, 'utf8');
+          console.log('Runtime config updated for GitHub Pages deploy');
+          NODE
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Deploy to GitHub Pages
+        env:
+          DEPLOY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          DIST="frontend/dist/tms-geosun"
+          if [ ! -d "$DIST" ]; then
+            echo "Error: $DIST directory not found"
+            exit 1
+          fi
+          mkdir -p /tmp/build-output
+          cp -r "$DIST"/* /tmp/build-output/
+          git remote set-url origin https://${DEPLOY_TOKEN}@github.com/${{ github.repository }}.git
+          git fetch origin gh-pages 2>/dev/null || true
+          if git show-ref --verify --quiet refs/remotes/origin/gh-pages 2>/dev/null; then
+            git checkout -b gh-pages origin/gh-pages 2>/dev/null || git checkout gh-pages
+            git pull origin gh-pages || true
+          else
+            git checkout --orphan gh-pages
+            git rm -rf . --quiet || true
+          fi
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} + 2>/dev/null || true
+          cp -r /tmp/build-output/* .
+          touch .nojekyll
+          git add -A
+          if ! git diff --staged --quiet; then
+            git commit -m "Deploy: $(date +'%Y-%m-%d %H:%M:%S') [skip ci]"
+            git push -u origin gh-pages
+          else
+            echo "No changes to commit"
+          fi

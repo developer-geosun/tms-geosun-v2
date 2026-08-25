@@ -1,0 +1,87 @@
+@use 'breakpoints' as bp;
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-right: 0px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background-color: white;
+  box-sizing: border-box;
+  width: 72px;
+  height: 72px;
+  min-width: 72px;
+  min-height: 72px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.12);
+  }
+}
+
+.logo-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.logo-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-decoration: none;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  cursor: pointer;
+  border-radius: 12px;
+  overflow: hidden;
+
+  &:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.geosun-logo {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  border: none;
+  border-radius: 8px;
+  transition: filter 0.3s ease;
+}
+
+// РљРѕРјРїР°РєС‚РЅС–С€Рµ Р»РѕРіРѕ РЅР° РїР»Р°РЅС€РµС‚С– С‚Р° handset
+@include bp.below-desktop {
+  .logo-container {
+    width: 64px;
+    height: 64px;
+    min-width: 64px;
+    min-height: 64px;
+    padding: 0;
+  }
+
+  .logo-wrapper {
+    width: 56px;
+    height: 56px;
+  }
+
+  .geosun-logo {
+    width: 100%;
+    height: 100%;
+  }
+}
+

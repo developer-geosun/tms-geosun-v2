@@ -1,0 +1,166 @@
+<section class="my-freight-requests-page">
+  <header class="my-freight-requests-page__header">
+    <h1 class="my-freight-requests-page__title">{{ 'pages.myFreightRequests.title' | translate }}</h1>
+    <button
+      mat-stroked-button
+      type="button"
+      color="primary"
+      (click)="reload()"
+      [disabled]="isLoading()"
+      [attr.aria-label]="'pages.myFreightRequests.refresh' | translate">
+      <mat-icon>refresh</mat-icon>
+      {{ 'pages.myFreightRequests.refresh' | translate }}
+    </button>
+  </header>
+
+  @if (isLoading()) {
+    <div class="my-freight-requests-page__spinner">
+      <mat-progress-spinner mode="indeterminate" diameter="40" />
+      <span>{{ 'pages.myFreightRequests.loading' | translate }}</span>
+    </div>
+  } @else if (loadFailed()) {
+    <p class="my-freight-requests-page__message">{{ 'pages.myFreightRequests.loadFailed' | translate }}</p>
+  } @else if (requests().length === 0) {
+    <p class="my-freight-requests-page__message">{{ 'pages.myFreightRequests.empty' | translate }}</p>
+  } @else {
+    <div class="my-freight-requests-page__cards">
+      @for (req of requests(); track req.id) {
+        <mat-card class="freight-request-card" appearance="outlined">
+          <!-- Окремий блок замість mat-card-header: MDC вирівнює title/subtitle в один ряд. -->
+          <div class="freight-request-card__header">
+            <div class="freight-request-card__header-top">
+              <div class="freight-request-card__header-ids">
+                <p class="freight-request-card__id-line">
+                  <span class="freight-request-card__id-label">{{ 'pages.myFreightRequests.requestId' | translate }}</span>
+                  <span class="freight-request-card__id-value">{{ req.id }}</span>
+                </p>
+              </div>
+              <mat-chip-set class="freight-request-card__status-chips" [attr.aria-label]="'pages.adminRouteRequests.status' | translate">
+                <mat-chip [class]="requestStatusChipClass(req.status)">
+                  {{ requestStatusKey(req.status) | translate }}
+                </mat-chip>
+              </mat-chip-set>
+            </div>
+          </div>
+
+          <mat-card-content class="freight-request-card__content">
+            <dl class="freight-request-card__meta">
+              <div class="freight-request-card__meta-row">
+                <dt>{{ 'pages.myFreightRequests.createdAt' | translate }}</dt>
+                <dd>{{ formatDateTime(req.createdAt) }}</dd>
+              </div>
+              <div class="freight-request-card__meta-row">
+                <dt>{{ 'pages.myFreightRequests.updatedAt' | translate }}</dt>
+                <dd>{{ formatDateTime(req.updatedAt) }}</dd>
+              </div>
+              <div class="freight-request-card__meta-row">
+                <dt>{{ 'pages.myFreightRequests.preferredStartDate' | translate }}</dt>
+                <dd>{{ formatPreferredDate(req.preferredStartDate) || ('pages.myFreightRequests.notSet' | translate) }}</dd>
+              </div>
+              <div class="freight-request-card__meta-row">
+                <dt>{{ 'pages.myFreightRequests.comment' | translate }}</dt>
+                <dd>{{ req.comment?.trim() ? req.comment : ('pages.myFreightRequests.noComment' | translate) }}</dd>
+              </div>
+            </dl>
+
+            @if (req.currentQuote; as quote) {
+              <mat-divider />
+              <h3 class="freight-request-card__section-title">{{ 'pages.myFreightRequests.quoteSection' | translate }}</h3>
+              <dl class="freight-request-card__meta">
+                <div class="freight-request-card__meta-row">
+                  <dt>{{ 'pages.myFreightRequests.quoteStatus' | translate }}</dt>
+                  <dd>{{ quoteStatusKey(quote.status) | translate }}</dd>
+                </div>
+                <div class="freight-request-card__meta-row">
+                  <dt>{{ 'pages.myFreightRequests.quoteAmount' | translate }}</dt>
+                  <dd>{{ quote.totalAmount }} {{ quote.currency }}</dd>
+                </div>
+                @if (quote.transitDaysMin !== null || quote.transitDaysMax !== null) {
+                  <div class="freight-request-card__meta-row">
+                    <dt>{{ 'pages.myFreightRequests.quoteTransit' | translate }}</dt>
+                    <dd>
+                      {{ quote.transitDaysMin ?? '—' }} — {{ quote.transitDaysMax ?? '—' }}
+                    </dd>
+                  </div>
+                }
+                <div class="freight-request-card__meta-row">
+                  <dt>{{ 'pages.myFreightRequests.quoteValidUntil' | translate }}</dt>
+                  <dd>{{ formatPreferredDate(quote.validUntil) || ('pages.myFreightRequests.notSet' | translate) }}</dd>
+                </div>
+                @if (quote.publicNote?.trim()) {
+                  <div class="freight-request-card__meta-row">
+                    <dt>{{ 'pages.myFreightRequests.quotePublicNote' | translate }}</dt>
+                    <dd>{{ quote.publicNote }}</dd>
+                  </div>
+                }
+              </dl>
+            } @else {
+              <mat-divider />
+              <p class="freight-request-card__no-quote">{{ 'pages.myFreightRequests.noQuote' | translate }}</p>
+            }
+
+            <mat-divider />
+            <div class="freight-request-card__route-block">
+              <h3 class="freight-request-card__section-title">{{ 'pages.myFreightRequests.routeSection' | translate }}</h3>
+              <p class="freight-request-card__id-line">
+                <span class="freight-request-card__id-label">{{ 'pages.myFreightRequests.routeId' | translate }}</span>
+                <span class="freight-request-card__id-value">{{ req.routeId }}</span>
+              </p>
+              @if (req.countryDistances.length) {
+                <h4 class="freight-request-card__subsection-title">{{ 'pages.myFreightRequests.countryDistances' | translate }}</h4>
+                <p class="freight-request-card__country-order-hint">
+                  {{ 'pages.myFreightRequests.countryDistancesAlongRouteHint' | translate }}
+                </p>
+                <ul class="freight-request-card__country-list">
+                  @for (c of req.countryDistances; track c.countryCode) {
+                    <li>
+                      <span class="freight-request-card__country-step">{{ countryStepNumber(c, $index) }}.</span>
+                      <strong>{{ c.countryCode }}</strong>
+                      — {{ countryDistanceKm(c) }} {{ 'pages.freightCalculation.km' | translate }}
+                    </li>
+                  }
+                </ul>
+              }
+              @if (req.route; as route) {
+                <div class="freight-request-card__route-summary">
+                  <div>
+                    <p class="freight-request-card__route-title">{{ route.title }}</p>
+                    <p class="freight-request-card__route-distance">
+                      {{ route.distanceKm?.toFixed(1) ?? '0.0' }} {{ 'pages.freightCalculation.km' | translate }}
+                    </p>
+                  </div>
+                  <button mat-stroked-button color="primary" type="button" (click)="openRoute(route.id)">
+                    <mat-icon>open_in_new</mat-icon>
+                    {{ 'pages.myFreightRequests.openRoute' | translate }}
+                  </button>
+                </div>
+
+                @if (route.points.length) {
+                  <mat-expansion-panel class="freight-request-card__expansion">
+                    <mat-expansion-panel-header>
+                      <mat-panel-title>{{ 'pages.myFreightRequests.routePoints' | translate }}</mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <mat-list role="list">
+                      @for (point of sortedPoints(route.points); track point.order) {
+                        <mat-list-item role="listitem">
+                          <span matListItemIcon class="freight-request-card__point-order">{{ point.order }}</span>
+                          <span matListItemTitle>{{ point.address }}</span>
+                          <span matListItemLine class="freight-request-card__point-meta">
+                            {{ point.country }}
+                            @if (point.isBorder) {
+                              · {{ 'pages.freightCalculation.labels.border' | translate }}
+                            }
+                          </span>
+                        </mat-list-item>
+                      }
+                    </mat-list>
+                  </mat-expansion-panel>
+                }
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+  }
+</section>

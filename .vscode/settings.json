@@ -1,0 +1,8 @@
+{
+  // Повний JDT Language Server: classpath Maven і резолв типів між main та test.
+  "java.server.launchMode": "Standard",
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.import.maven.enabled": true,
+  "java.import.gradle.enabled": false,
+  "java.compile.nullAnalysis.mode": "automatic",  
+}

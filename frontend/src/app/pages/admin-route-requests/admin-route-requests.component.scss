@@ -1,0 +1,853 @@
+@use 'breakpoints' as bp;
+
+// Сторінка росте за контентом — скрол лише в .content (без вкладеного скролу drawer)
+:host {
+  display: block;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: auto;
+  height: auto;
+}
+
+.admin-route-requests {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  // менше верхній відступ — заголовок і кнопки ближче до тулбара
+  padding: 0 8px 16px;
+  color: var(--mat-sys-on-surface);
+  // запобігає горизонтальному «виїзду» сторінки на вузьких екранах
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  overflow-x: clip;
+  box-sizing: border-box;
+}
+
+.admin-route-requests__drawer-container {
+  // не розтягувати на viewport — інакше з’являється другий (внутрішній) скрол
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: auto !important;
+  // контейнер не обрізає спливаючий drawer і не ламає layout сторінки
+  background: transparent;
+}
+
+.admin-route-requests__drawer-content {
+  min-width: 0;
+  max-width: 100%;
+  // внутрішні відступи контенту (header + layout), щоб кнопки не липли до краю
+  padding: 0 4px 0 0;
+  box-sizing: border-box;
+  // без власного overflow — інакше два скроли справа
+  overflow: visible !important;
+}
+
+.admin-route-requests__quote-drawer {
+  width: min(420px, 100vw);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+}
+
+.admin-route-requests__quote-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 8px 8px 16px;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--mat-sys-surface);
+
+  h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    min-width: 0;
+  }
+}
+
+.admin-route-requests__quote-drawer-body {
+  padding: 12px 16px 24px;
+  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.admin-route-requests__details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+
+  h2 {
+    margin: 0;
+  }
+}
+
+.admin-route-requests__open-quote {
+  mat-icon {
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+}
+
+.admin-route-requests__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 4px;
+  min-width: 0;
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+    line-height: 1.3;
+    color: var(--mat-sys-on-surface);
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+.admin-route-requests__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  flex-shrink: 0;
+  // відступ справа, щоб група кнопок не прилипала до краю картки/viewport
+  margin-right: 8px;
+
+  .admin-route-requests__action-btn {
+    margin: 0;
+  }
+
+  .admin-route-requests__action-btn mat-icon {
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+}
+
+.nbu-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  // не розтягувати батька за межі viewport
+  min-width: 0;
+  max-width: 100%;
+
+  // без помилок у цьому рядку: прибираємо порожній subscript для спільної висоти з кнопками
+  .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+}
+
+.nbu-form__field {
+  min-width: min(200px, 100%);
+  max-width: 100%;
+}
+
+.nbu-form__field--wide {
+  // гнучка ширина: без жорсткого min-width, щоб не ламати handset
+  flex: 1 1 12rem;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+.nbu-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: stretch;
+  height: 56px;
+  min-width: 0;
+  max-width: 100%;
+
+  button {
+    height: 100%;
+  }
+}
+
+.nbu-form--start-point {
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 10px;
+  width: 100%;
+}
+
+.nbu-form--start-point .mat-mdc-slide-toggle {
+  // тогл зліва, не розтягується — місце лишається під контролі справа
+  flex: 0 1 auto;
+  margin-right: 0;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.nbu-form__start-point-controls {
+  // поле адреси + кнопки в один ряд, притиснуті справа
+  display: flex;
+  flex-wrap: nowrap;
+  // як у .nbu-form: верхня межа поля і кнопок на одній лінії
+  align-items: flex-start;
+  gap: 8px;
+  margin-left: auto;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+}
+
+.nbu-form--start-point .nbu-form__field--wide {
+  flex: 1 1 14rem;
+  width: auto;
+  max-width: 28rem;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.nbu-form__actions--start-point {
+  // висота як у outline mat-form-field (56px), без зсуву вниз
+  margin-bottom: 0;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  align-self: flex-start;
+}
+
+.admin-route-requests__nbu-summary {
+  position: relative;
+  margin-bottom: 12px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-route-requests__nbu-summary-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 16px 8px 0 16px;
+
+  mat-card-title,
+  .mat-mdc-card-title {
+    margin: 0;
+    padding: 8px 0 0;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+.admin-route-requests__nbu-summary-close {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.admin-route-requests__nbu-summary-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  line-height: 1.4;
+  margin: 0 16px 8px;
+  color: var(--mat-sys-on-surface-variant);
+  overflow-wrap: anywhere;
+}
+
+// зведена таблиця витрат: desktop — 3 колонки; handset — карткові рядки
+.admin-route-requests__nbu-cost {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 12px;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--mat-sys-surface);
+}
+
+.admin-route-requests__nbu-cost-head,
+.admin-route-requests__nbu-cost-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px 12px;
+  align-items: baseline;
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+.admin-route-requests__nbu-cost-head {
+  font-weight: 600;
+  font-size: 13px;
+  background: var(--mat-sys-surface-container);
+  color: var(--mat-sys-on-surface);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+  span:not(:first-child) {
+    text-align: right;
+  }
+}
+
+.admin-route-requests__nbu-cost-row {
+  color: var(--mat-sys-on-surface);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:nth-child(even) {
+    background: var(--mat-sys-surface-container-low);
+  }
+}
+
+.admin-route-requests__nbu-cost-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-route-requests__nbu-cost-uah,
+.admin-route-requests__nbu-cost-proposal {
+  min-width: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.nbu-cost-row--subtotal {
+  font-weight: 600;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.nbu-cost-row--total {
+  font-weight: 700;
+  background: color-mix(in srgb, var(--mat-sys-primary) 12%, var(--mat-sys-surface)) !important;
+  border-top: 2px solid color-mix(in srgb, var(--mat-sys-primary) 45%, var(--mat-sys-outline-variant));
+}
+
+.admin-route-requests__nbu-breakdown-panel {
+  margin-top: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.admin-route-requests__route-points-panel {
+  margin-top: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.admin-route-requests__nbu-summary-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.4;
+  max-height: 420px;
+  overflow: auto;
+  margin: 0;
+  color: var(--mat-sys-on-surface);
+  background: var(--mat-sys-surface-container-low);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+// дії по розрахунку: не в один «склеєний» ряд
+.admin-route-requests__nbu-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: stretch;
+  padding: 8px 16px 16px !important;
+  margin: 0 !important;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+
+  // скинути стандартні margin Material card-actions
+  .mat-mdc-button-base,
+  button {
+    margin: 0 !important;
+    min-width: 0;
+  }
+}
+
+.admin-route-requests__nbu-history {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  min-width: 0;
+}
+
+.admin-route-requests__nbu-history-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--mat-sys-on-surface);
+  min-width: 0;
+
+  .mat-mdc-button {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: auto;
+    min-height: 40px;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.3;
+    padding-inline: 8px;
+  }
+}
+
+.admin-route-requests__nbu-history-delete {
+  flex-shrink: 0;
+}
+
+.admin-route-requests__layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) 1fr;
+  gap: 16px;
+  min-width: 0;
+}
+
+.admin-route-requests__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.request-card {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 10px;
+  padding: 10px;
+  text-align: left;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+
+  strong {
+    color: var(--mat-sys-on-surface);
+  }
+
+  small {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--mat-sys-primary) 40%, var(--mat-sys-outline-variant));
+    background: color-mix(in srgb, var(--mat-sys-primary) 6%, var(--mat-sys-surface-container-high));
+  }
+}
+
+.request-card--active {
+  border-color: var(--mat-sys-primary);
+  background: color-mix(in srgb, var(--mat-sys-primary) 12%, var(--mat-sys-surface-container-high));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mat-sys-primary) 22%, transparent);
+}
+
+.request-card__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.request-card__status {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.request-card__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.request-card__amount {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mat-sys-primary);
+  white-space: nowrap;
+}
+
+.admin-route-requests__details {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 10px;
+  padding: 14px;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+  box-sizing: border-box;
+  // відступ під sticky-toolbar/header при scrollIntoView
+  scroll-margin-top: 72px;
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--mat-sys-primary) 55%, transparent);
+    outline-offset: 2px;
+  }
+
+  h2,
+  h3 {
+    color: var(--mat-sys-on-surface);
+  }
+
+  p,
+  li {
+    color: var(--mat-sys-on-surface);
+  }
+
+  strong {
+    color: var(--mat-sys-on-surface);
+  }
+}
+
+.request-map {
+  width: 100%;
+  min-height: 280px;
+  height: min(50vh, 420px);
+  border-radius: 8px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  margin-bottom: 12px;
+  overflow: hidden;
+  background: var(--mat-sys-surface-container);
+}
+
+.quote-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.quote-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.quote-form input,
+.quote-form textarea {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  padding: 7px 8px;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+
+  &::placeholder {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &:focus {
+    outline: 2px solid color-mix(in srgb, var(--mat-sys-primary) 45%, transparent);
+    outline-offset: 1px;
+    border-color: var(--mat-sys-primary);
+  }
+}
+
+.quote-form__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+}
+
+.quote-history {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.quote-history__item {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+  background: var(--mat-sys-surface-container);
+  color: var(--mat-sys-on-surface);
+}
+
+.admin-route-requests__error {
+  color: var(--mat-sys-error);
+}
+
+.admin-route-requests__error-detail {
+  color: color-mix(in srgb, var(--mat-sys-error) 85%, var(--mat-sys-on-surface));
+  font-size: 12px;
+  margin: 4px 0 8px;
+  word-break: break-word;
+}
+
+.admin-route-requests__success {
+  color: color-mix(in srgb, var(--mat-sys-primary) 55%, #2bb673);
+}
+
+.admin-route-requests__country-actions {
+  margin: 8px 0 12px;
+}
+
+.admin-route-requests__btn-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-route-requests__points {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--mat-sys-on-surface);
+  min-width: 0;
+
+  li {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
+
+.admin-country-distances {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--mat-sys-on-surface);
+}
+
+.admin-country-distances th,
+.admin-country-distances td {
+  border: 1px solid var(--mat-sys-outline-variant);
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.admin-country-distances th {
+  background: var(--mat-sys-surface-container);
+  color: var(--mat-sys-on-surface);
+  font-weight: 600;
+}
+
+.admin-country-distances td {
+  background: var(--mat-sys-surface-container-low);
+}
+
+@include bp.below-desktop {
+  .admin-route-requests__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .quote-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-route-requests__header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .admin-route-requests__actions {
+    margin-right: 0;
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  .request-map {
+    min-height: 240px;
+    height: min(42vh, 360px);
+  }
+
+  .nbu-form__field {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .nbu-form__actions {
+    height: auto;
+    width: 100%;
+
+    button {
+      height: auto;
+      min-height: 48px;
+    }
+  }
+
+  // кнопки розрахунку — перенос і повноцінні зони тапу
+  .admin-route-requests__nbu-actions {
+    flex-direction: column;
+    align-items: stretch;
+
+    button {
+      width: 100%;
+      height: auto;
+      min-height: 48px;
+      white-space: normal;
+      line-height: 1.25;
+    }
+  }
+
+  // результат розрахунку: повні суми без обрізання колонок
+  .admin-route-requests__nbu-cost-head {
+    display: none;
+  }
+
+  .admin-route-requests__nbu-cost-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+    padding: 12px;
+  }
+
+  .admin-route-requests__nbu-cost-label {
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .admin-route-requests__nbu-cost-uah,
+  .admin-route-requests__nbu-cost-proposal {
+    display: block;
+    width: 100%;
+    text-align: right;
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  .quote-form__actions {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+      min-height: 48px;
+    }
+  }
+
+  .admin-route-requests__quote-drawer {
+    width: min(100vw, 100%);
+  }
+
+  .admin-route-requests__details-header {
+    flex-direction: column;
+    align-items: stretch;
+
+    .admin-route-requests__open-quote {
+      width: 100%;
+      min-height: 48px;
+    }
+  }
+}
+
+@include bp.handset {
+  .admin-route-requests {
+    padding: 0 4px 12px;
+  }
+
+  // заголовок: назва + тільки іконки дій
+  .admin-route-requests__header {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .admin-route-requests__header h1 {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-route-requests__actions {
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+    gap: 8px;
+    margin-right: 4px;
+
+    .admin-route-requests__action-label {
+      display: none;
+    }
+
+    .admin-route-requests__action-btn {
+      min-width: 44px;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      line-height: 44px;
+
+      mat-icon {
+        margin: 0;
+        vertical-align: middle;
+      }
+    }
+  }
+
+  // стартова точка: колонка на вузькому екрані (toggle + адреса + кнопки)
+  .nbu-form--start-point {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+  }
+
+  .nbu-form--start-point .mat-mdc-slide-toggle {
+    width: 100%;
+  }
+
+  .nbu-form__start-point-controls {
+    flex-direction: column;
+    align-items: stretch;
+    margin-left: 0;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .nbu-form--start-point .nbu-form__field--wide {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .nbu-form__actions--start-point {
+    flex-direction: column;
+    flex-wrap: wrap;
+    height: auto;
+    width: 100%;
+
+    button {
+      width: 100%;
+      height: auto;
+      min-height: 48px;
+      margin: 0;
+      white-space: normal;
+      line-height: 1.25;
+    }
+  }
+}

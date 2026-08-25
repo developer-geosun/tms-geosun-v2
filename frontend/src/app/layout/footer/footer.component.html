@@ -1,0 +1,20 @@
+<footer class="app-footer">
+  <div class="footer-content">
+    @if (authService.user(); as user) {
+      <div class="user-section">
+        <span class="user-login">{{ user.email }}</span>
+        <span class="user-role">{{ user.role }}</span>
+      </div>
+    } @else {
+      <div class="footer-section">
+        <p>&copy; {{ 'common.designedBy' | translate }}</p>
+        <app-social-icon type="telegram" [url]="configService.developerTelegramUrl"></app-social-icon>
+        <app-social-icon type="whatsapp" [url]="configService.developerWhatsAppUrl"></app-social-icon>
+        <app-social-icon type="viber" [url]="configService.developerViberUrl"></app-social-icon>
+        <app-social-icon type="facebook" [url]="configService.developerFacebookUrl"></app-social-icon>
+        <app-social-icon type="linkedin" [url]="configService.developerLinkedInUrl"></app-social-icon>
+      </div>
+    }
+  </div>
+</footer>
+

@@ -1,0 +1,133 @@
+<section class="admin-currencies">
+  <header class="admin-currencies__header">
+    <h1>{{ 'pages.adminCurrencies.title' | translate }}</h1>
+    <div class="admin-currencies__actions">
+      <button
+        mat-stroked-button
+        type="button"
+        class="admin-currencies__action-btn"
+        (click)="reload()"
+        [disabled]="isLoading() || isSyncing()">
+        {{ 'pages.adminCurrencies.refresh' | translate }}
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        class="admin-currencies__action-btn"
+        (click)="syncNbuRates()"
+        [disabled]="isLoading() || isSyncing()">
+        {{ (isSyncing() ? 'pages.adminCurrencies.syncing' : 'pages.adminCurrencies.syncNbu') | translate }}
+      </button>
+    </div>
+  </header>
+
+  <form class="admin-currencies__rate-form" [formGroup]="rateDateForm" (ngSubmit)="loadNbuRatesByDate()">
+    <mat-form-field appearance="outline" class="admin-currencies__rate-field">
+      <mat-label>{{ 'pages.adminCurrencies.nbuRatesByDate' | translate }}</mat-label>
+      <input matInput type="date" formControlName="rateDate" />
+    </mat-form-field>
+    <button mat-stroked-button type="submit" [disabled]="isLoadingNbuSnapshot()">
+      {{ 'pages.adminCurrencies.loadNbuRates' | translate }}
+    </button>
+  </form>
+
+  @if (nbuSnapshotError()) {
+    <p class="admin-currencies__error">{{ nbuSnapshotError() | translate }}</p>
+  }
+  @if (nbuSnapshot(); as snapshot) {
+    <section class="admin-currencies__snapshot">
+      <h2>
+        {{
+          'pages.adminCurrencies.nbuSnapshot'
+            | translate: { rateDate: snapshot.rateDate, fetchedAt: formatFetchedAt(snapshot.fetchedAt) }
+        }}
+      </h2>
+      <div class="admin-currencies__table-scroll table-shell">
+        <table mat-table [dataSource]="nbuSnapshotSource" class="admin-currencies__table">
+          <ng-container matColumnDef="currencyCode">
+            <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminCurrencies.code' | translate }}</th>
+            <td mat-cell *matCellDef="let row">{{ row.currencyCode }}</td>
+          </ng-container>
+          <ng-container matColumnDef="nbuUnits">
+            <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminCurrencies.nbuUnits' | translate }}</th>
+            <td mat-cell *matCellDef="let row">{{ row.nbuUnits }}</td>
+          </ng-container>
+          <ng-container matColumnDef="ratePerUnit">
+            <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminCurrencies.ratePerUnit' | translate }}</th>
+            <td mat-cell *matCellDef="let row">{{ formatRate(row.ratePerUnit) }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="nbuSnapshotColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: nbuSnapshotColumns"></tr>
+        </table>
+      </div>
+    </section>
+  }
+
+  @if (isLoading() || loadError() || actionError() || actionSuccess()) {
+    <div class="admin-currencies__messages">
+      @if (isLoading()) {
+        <p>{{ 'pages.adminCurrencies.loading' | translate }}</p>
+      } @else if (loadError()) {
+        <p class="admin-currencies__error">{{ loadError() | translate }}</p>
+      }
+      @if (actionError()) {
+        <p class="admin-currencies__error">{{ actionError() | translate }}</p>
+      }
+      @if (actionSuccess()) {
+        <p class="admin-currencies__success">{{ actionSuccess() | translate }}</p>
+      }
+    </div>
+  }
+
+  <div class="admin-currencies__table-panel">
+    <div class="admin-currencies__table-scroll table-shell">
+      <table mat-table [dataSource]="dataSource" matSort class="admin-currencies__table">
+        <ng-container matColumnDef="code">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="code">
+            {{ 'pages.adminCurrencies.code' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row">{{ row.code }}</td>
+        </ng-container>
+        <ng-container matColumnDef="nameUk">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="nameUk">
+            {{ 'pages.adminCurrencies.name' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row" [matTooltip]="row.nameUk">{{ row.nameUk }}</td>
+        </ng-container>
+        <ng-container matColumnDef="nbuUnits">
+          <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminCurrencies.nbuUnits' | translate }}</th>
+          <td mat-cell *matCellDef="let row">{{ row.nbuUnits }}</td>
+        </ng-container>
+        <ng-container matColumnDef="ratePerUnit">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="ratePerUnit">
+            {{ 'pages.adminCurrencies.ratePerUnit' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row">{{ formatRate(row.latestNbuRatePerUnit) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="rateDate">
+          <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminCurrencies.rateDate' | translate }}</th>
+          <td mat-cell *matCellDef="let row">{{ row.latestRateDate ?? '—' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="isActive">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="isActive">
+            {{ 'pages.adminCurrencies.isActive' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row">
+            <mat-slide-toggle
+              [checked]="row.isActive"
+              [disabled]="isUpdating(row.code)"
+              (change)="toggleActive(row, $event.checked)" />
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+    </div>
+    <mat-paginator
+      class="admin-currencies__paginator"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="pageSizeOptions"
+      [showFirstLastButtons]="true" />
+  </div>
+</section>

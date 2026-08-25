@@ -1,0 +1,12 @@
+.main-content {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.main-content h1 {
+  margin: 0 0 0.75rem;
+  font-size: var(--page-title-size);
+  line-height: 1.25;
+}

@@ -1,0 +1,165 @@
+/* Стилі карток «Показати» та «Сортування» у bottom sheet (перенесено з routes). */
+.routes-toolbar-bottom-sheet {
+  --routes-toolbar-sheet-font-size: 0.75rem;
+  --routes-toolbar-sheet-line-height: 1.25;
+  /* Як у .route-point-card на сторінці маршрутів — щоб шапка не «різала» дугу картки. */
+  --routes-toolbar-card-radius: 12px;
+
+  display: block;
+  padding: 0.35rem 0.5rem 0.6rem;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: var(--routes-toolbar-sheet-font-size);
+  line-height: var(--routes-toolbar-sheet-line-height);
+}
+
+.routes-page__toolbar-cards {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.45rem;
+  min-width: 0;
+  width: 100%;
+}
+
+.routes-page__view-radios {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.15rem;
+  margin: 0;
+  min-width: 0;
+  width: 100%;
+}
+
+.routes-page__filters-card,
+.routes-page__sort-card {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-shadow: none;
+  border-radius: var(--routes-toolbar-card-radius);
+  overflow: hidden;
+}
+
+.routes-page__filters-card .routes-page__view-radios,
+.routes-page__sort-card .routes-page__sort-radios {
+  width: 100%;
+}
+
+.routes-page__filters-card__header,
+.routes-page__sort-card__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  /* Зона заголовка відрізняється від списку опцій. */
+  background: var(--mat-sys-surface-container);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  border-top-left-radius: var(--routes-toolbar-card-radius);
+  border-top-right-radius: var(--routes-toolbar-card-radius);
+  padding: 0.35rem 0.45rem 0.4rem !important;
+  margin: 0;
+}
+
+.routes-page__filters-card__header .mat-mdc-card-header-text,
+.routes-page__sort-card__header .mat-mdc-card-header-text {
+  margin: 0;
+  width: 100%;
+  text-align: center;
+}
+
+.routes-page__filters-card__title,
+.routes-page__sort-card__title {
+  margin: 0 auto;
+  font-size: var(--routes-toolbar-sheet-font-size);
+  font-weight: 500;
+  line-height: var(--routes-toolbar-sheet-line-height);
+  color: var(--mat-sys-on-surface);
+  text-align: center;
+  width: 100%;
+}
+
+.routes-page__filters-card__content,
+.routes-page__sort-card__content {
+  padding: 0.3rem 0.3rem 0.25rem !important;
+  min-width: 0;
+  display: block;
+  box-sizing: border-box;
+}
+
+/* Група сортування: рядок на критерій; стрілки лише в рядку обраного, справа. */
+mat-radio-group.routes-page__sort-radios {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  gap: 0.15rem;
+  margin: 0;
+}
+
+.routes-page__sort-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  gap: 0.2rem;
+  box-sizing: border-box;
+}
+
+.routes-page__sort-row > mat-radio-button {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.routes-page__sort-direction {
+  display: flex;
+  flex-direction: row;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
+  gap: 0;
+}
+
+.routes-page__sort-dir-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+
+  mat-icon {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  &.routes-page__sort-dir-btn--active {
+    color: var(--mat-sys-primary);
+    background-color: color-mix(in srgb, var(--mat-sys-primary) 14%, transparent);
+  }
+}
+
+/* Текст радіо всередині Material — один розмір з заголовком картки. */
+:host ::ng-deep .routes-toolbar-bottom-sheet mat-radio-button.mat-mdc-radio-button {
+  --mat-radio-state-layer-size: 32px;
+}
+
+:host ::ng-deep .routes-toolbar-bottom-sheet mat-radio-button .mdc-label,
+:host ::ng-deep .routes-toolbar-bottom-sheet mat-radio-button .mat-mdc-radio-label-content {
+  font-size: var(--routes-toolbar-sheet-font-size);
+  font-weight: 400;
+  line-height: var(--routes-toolbar-sheet-line-height);
+}
+:host-context(.theme-magenta-violet),
+:host-context(.theme-cyan-orange) {
+  .routes-page__filters-card.route-point-card,
+  .routes-page__sort-card.route-point-card {
+    background: color-mix(in srgb, var(--mat-sys-surface-container-low) 88%, #101218);
+  }
+}

@@ -1,0 +1,17 @@
+<div class="main-content">
+  <h1>{{ 'pages.main.title' | translate }}</h1>
+  <p>{{ 'pages.main.welcome' | translate }}</p>
+  @if (user(); as currentUser) {
+    <p>{{ 'pages.main.signedInAs' | translate }}: {{ currentUser.email }}</p>
+  }
+
+  @if (canSeeManagerSection()) {
+    <p>{{ 'pages.main.managerSection' | translate }}</p>
+  }
+
+  @if (canSeeAdminSection()) {
+    <p>{{ 'pages.main.adminSection' | translate }}</p>
+  }
+
+</div>
+

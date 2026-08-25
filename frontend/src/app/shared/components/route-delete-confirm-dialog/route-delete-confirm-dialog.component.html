@@ -1,0 +1,22 @@
+<h2 mat-dialog-title>{{ 'pages.routes.deleteConfirmTitle' | translate }}</h2>
+<mat-dialog-content>
+  <p>{{ 'pages.routes.deleteConfirmText' | translate }}</p>
+  @if (data.routeTitle) {
+    <p><strong>{{ data.routeTitle }}</strong></p>
+  }
+  <p>
+    {{ 'pages.routes.savedAt' | translate }}: <strong>{{ data.routeCreatedAt }}</strong>
+  </p>
+  <p>
+    {{ 'pages.routes.totalDistance' | translate }}:
+    <strong>{{ data.routeDistanceKm }} {{ 'pages.freightCalculation.km' | translate }}</strong>
+  </p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button [mat-dialog-close]="false" type="button">
+    {{ 'pages.routes.deleteCancel' | translate }}
+  </button>
+  <button mat-flat-button class="route-delete-confirm-dialog__delete-btn" [mat-dialog-close]="true" type="button">
+    {{ 'pages.routes.deleteConfirmAction' | translate }}
+  </button>
+</mat-dialog-actions>

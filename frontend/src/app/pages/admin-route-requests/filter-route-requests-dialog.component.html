@@ -1,0 +1,94 @@
+<h2 mat-dialog-title>{{ 'pages.adminRouteRequests.filterTitle' | translate }}</h2>
+
+<form class="filter-route-requests-dialog" [formGroup]="filterForm" (ngSubmit)="apply()">
+  <mat-dialog-content class="filter-route-requests-dialog__content">
+    <mat-form-field appearance="outline" class="filter-route-requests-dialog__field">
+      <mat-label>{{ 'pages.adminRouteRequests.filterStatus' | translate }}</mat-label>
+      <mat-select formControlName="status">
+        <mat-option value="">{{ 'pages.adminRouteRequests.filterAll' | translate }}</mat-option>
+        @for (status of data.statusOptions; track status) {
+          <mat-option [value]="status">{{ status }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <div class="filter-route-requests-dialog__row">
+      <mat-form-field appearance="outline" class="filter-route-requests-dialog__field">
+        <mat-label>{{ 'pages.adminRouteRequests.filterCreatedFrom' | translate }}</mat-label>
+        <input matInput type="date" formControlName="createdFrom" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="filter-route-requests-dialog__field">
+        <mat-label>{{ 'pages.adminRouteRequests.filterCreatedTo' | translate }}</mat-label>
+        <input matInput type="date" formControlName="createdTo" />
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="filter-route-requests-dialog__field">
+      <mat-label>{{ 'pages.adminRouteRequests.filterOwnerEmail' | translate }}</mat-label>
+      <input
+        matInput
+        formControlName="ownerEmail"
+        type="email"
+        autocomplete="off"
+        [matAutocomplete]="ownerEmailAutocomplete"
+      />
+      @if (filterForm.controls.ownerEmail.value) {
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          [attr.aria-label]="'pages.adminRouteRequests.filterOwnerEmailClear' | translate"
+          (click)="clearOwnerEmail()"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      } @else {
+        <mat-icon matSuffix>arrow_drop_down</mat-icon>
+      }
+      <mat-autocomplete #ownerEmailAutocomplete="matAutocomplete">
+        @for (email of filteredOwnerEmails(); track email) {
+          <mat-option [value]="email">{{ email }}</mat-option>
+        } @empty {
+          <mat-option disabled>{{ 'pages.adminRouteRequests.filterOwnerEmailEmpty' | translate }}</mat-option>
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="filter-route-requests-dialog__field">
+      <mat-label>{{ 'pages.adminRouteRequests.filterRouteTitle' | translate }}</mat-label>
+      <input matInput formControlName="routeTitle" />
+    </mat-form-field>
+
+    <div class="filter-route-requests-dialog__row">
+      <mat-form-field appearance="outline" class="filter-route-requests-dialog__field">
+        <mat-label>{{ 'pages.adminRouteRequests.filterSort' | translate }}</mat-label>
+        <mat-select formControlName="sort">
+          <mat-option value="createdAt">{{ 'pages.adminRouteRequests.sortCreatedAt' | translate }}</mat-option>
+          <mat-option value="status">{{ 'pages.adminRouteRequests.sortStatus' | translate }}</mat-option>
+          <mat-option value="preferredStartDate">
+            {{ 'pages.adminRouteRequests.sortPreferredStartDate' | translate }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="filter-route-requests-dialog__field">
+        <mat-label>{{ 'pages.adminRouteRequests.filterOrder' | translate }}</mat-label>
+        <mat-select formControlName="order">
+          <mat-option value="desc">{{ 'pages.adminRouteRequests.orderDesc' | translate }}</mat-option>
+          <mat-option value="asc">{{ 'pages.adminRouteRequests.orderAsc' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="filter-route-requests-dialog__actions" align="end">
+    <button mat-stroked-button type="button" (click)="cancel()">
+      {{ 'pages.adminRouteRequests.filterCancel' | translate }}
+    </button>
+    <button mat-stroked-button type="button" (click)="reset()">
+      {{ 'pages.adminRouteRequests.resetFilters' | translate }}
+    </button>
+    <button mat-flat-button color="primary" type="submit">
+      {{ 'pages.adminRouteRequests.applyFilters' | translate }}
+    </button>
+  </mat-dialog-actions>
+</form>

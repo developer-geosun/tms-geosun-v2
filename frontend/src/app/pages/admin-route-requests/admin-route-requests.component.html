@@ -1,0 +1,440 @@
+<section class="admin-route-requests">
+  <mat-drawer-container class="admin-route-requests__drawer-container" autosize hasBackdrop="true">
+    <mat-drawer-content class="admin-route-requests__drawer-content">
+      <header class="admin-route-requests__header">
+        <h1>{{ 'pages.adminRouteRequests.title' | translate }}</h1>
+        <div class="admin-route-requests__actions">
+          <button
+            mat-stroked-button
+            type="button"
+            class="admin-route-requests__action-btn"
+            [attr.aria-label]="'pages.adminRouteRequests.refresh' | translate"
+            (click)="loadRequests()">
+            <mat-icon aria-hidden="true">refresh</mat-icon>
+            <span class="admin-route-requests__action-label">{{ 'pages.adminRouteRequests.refresh' | translate }}</span>
+          </button>
+          @if (filtersActive()) {
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              class="admin-route-requests__action-btn admin-route-requests__filter-btn"
+              [attr.aria-label]="'pages.adminRouteRequests.filter' | translate"
+              (click)="openFiltersDialog()">
+              <mat-icon aria-hidden="true">filter_list</mat-icon>
+              <span class="admin-route-requests__action-label">{{ 'pages.adminRouteRequests.filter' | translate }}</span>
+            </button>
+          } @else {
+            <button
+              mat-stroked-button
+              type="button"
+              class="admin-route-requests__action-btn admin-route-requests__filter-btn"
+              [attr.aria-label]="'pages.adminRouteRequests.filter' | translate"
+              (click)="openFiltersDialog()">
+              <mat-icon aria-hidden="true">filter_list</mat-icon>
+              <span class="admin-route-requests__action-label">{{ 'pages.adminRouteRequests.filter' | translate }}</span>
+            </button>
+          }
+          <button
+            mat-stroked-button
+            type="button"
+            class="admin-route-requests__action-btn"
+            [attr.aria-label]="'pages.adminRouteRequests.backToMain' | translate"
+            (click)="backToMain()">
+            <mat-icon aria-hidden="true">home</mat-icon>
+            <span class="admin-route-requests__action-label">{{ 'pages.adminRouteRequests.backToMain' | translate }}</span>
+          </button>
+        </div>
+      </header>
+
+      @if (isLoading()) {
+        <p>{{ 'pages.adminRouteRequests.loading' | translate }}</p>
+      } @else if (loadError()) {
+        <p class="admin-route-requests__error">{{ loadError() | translate }}</p>
+      } @else if (!requests().length) {
+        <p>{{ 'pages.adminRouteRequests.empty' | translate }}</p>
+      } @else {
+        <div class="admin-route-requests__layout">
+          <aside class="admin-route-requests__list">
+            @for (request of requests(); track request.id) {
+              <button
+                type="button"
+                class="request-card"
+                [class.request-card--active]="request.id === selectedRequestId()"
+                (click)="selectRequest(request.id)">
+                <div class="request-card__top">
+                  <strong>{{ request.route?.title || request.routeId }}</strong>
+                  <span class="request-card__status">{{ request.status }}</span>
+                </div>
+                <div class="request-card__meta">
+                  <small>{{ request.createdAt | date: 'short' }}</small>
+                  @if (cardQuoteAmount(request); as quoteAmount) {
+                    <span class="request-card__amount" [attr.title]="'pages.adminRouteRequests.quoteAmount' | translate">
+                      {{ quoteAmount }}
+                    </span>
+                  }
+                </div>
+              </button>
+            }
+            <mat-paginator
+              [length]="totalElements()"
+              [pageIndex]="pageIndex()"
+              [pageSize]="pageSize()"
+              [pageSizeOptions]="[5, 10, 20, 50]"
+              (page)="onPageChange($event)" />
+          </aside>
+
+          <article #requestDetails class="admin-route-requests__details" tabindex="-1">
+            @if (selectedRequest(); as selected) {
+              <div class="admin-route-requests__details-header">
+                <h2>{{ 'pages.adminRouteRequests.details' | translate }}</h2>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  class="admin-route-requests__open-quote"
+                  (click)="openQuotePanel()">
+                  <mat-icon aria-hidden="true">request_quote</mat-icon>
+                  {{ 'pages.adminRouteRequests.openQuotePanel' | translate }}
+                </button>
+              </div>
+          <p><strong>ID:</strong> {{ selected.id }}</p>
+          <p><strong>{{ 'pages.adminRouteRequests.status' | translate }}:</strong> {{ selected.status }}</p>
+          <p>
+            <strong>{{ 'pages.adminRouteRequests.preferredStartDate' | translate }}:</strong>
+            {{ selected.preferredStartDate || '-' }}
+          </p>
+          <p><strong>{{ 'pages.adminRouteRequests.comment' | translate }}:</strong> {{ selected.comment || '-' }}</p>
+
+          <h3>{{ 'pages.adminRouteRequests.nbuCalculation' | translate }}</h3>
+          <form class="nbu-form" [formGroup]="nbuForm" (ngSubmit)="runNbuCostPreview()">
+            <mat-form-field appearance="outline" class="nbu-form__field">
+              <mat-label>{{ 'pages.adminRouteRequests.nbuScenario' | translate }}</mat-label>
+              <mat-select formControlName="scenarioId">
+                @for (scenario of numericScenarios(); track scenario.id) {
+                  <mat-option [value]="scenario.id">{{ scenario.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="nbu-form__field">
+              <mat-label>{{ 'pages.adminRouteRequests.nbuCalculationDate' | translate }}</mat-label>
+              <input matInput type="date" formControlName="calculationDate" />
+            </mat-form-field>
+            <div class="nbu-form__actions">
+              <button
+                mat-flat-button
+                color="primary"
+                type="submit"
+                [disabled]="isNbuPreviewLoading() || !numericScenarios().length">
+                @if (isNbuPreviewLoading()) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                }
+                {{ 'pages.adminRouteRequests.nbuPreviewButton' | translate }}
+              </button>
+            </div>
+          </form>
+          @if (nbuActionError()) {
+            <p class="admin-route-requests__error">{{ nbuActionError() | translate }}</p>
+            @if (nbuActionErrorDetail()) {
+              <p class="admin-route-requests__error-detail">{{ nbuActionErrorDetail() }}</p>
+            }
+            @if (showNbuRatesLink()) {
+              <a mat-stroked-button routerLink="/admin/currencies">
+                {{ 'pages.adminRouteRequests.nbuOpenCurrencies' | translate }}
+              </a>
+            }
+          }
+          @if (nbuActionSuccess()) {
+            <p class="admin-route-requests__success">{{ nbuActionSuccess() | translate }}</p>
+          }
+          @if (nbuCostDisplay(); as display) {
+            <mat-card class="admin-route-requests__nbu-summary">
+              <div class="admin-route-requests__nbu-summary-header">
+                <mat-card-title>{{ 'pages.adminRouteRequests.nbuResultTitle' | translate }}</mat-card-title>
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="admin-route-requests__nbu-summary-close"
+                  [attr.aria-label]="'pages.adminRouteRequests.nbuCloseResult' | translate"
+                  (click)="closeNbuSummary()">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+              <mat-card-subtitle class="admin-route-requests__nbu-summary-meta">
+                <span>{{ display.calculationDate }}</span>
+                <span>·</span>
+                <span>{{ 'pages.adminRouteRequests.nbuProposalCurrency' | translate }}: {{ display.proposalCurrency }}</span>
+                @if (display.nbuRateDate && display.proposalRatePerUnit) {
+                  <span>·</span>
+                  <span>
+                    {{ 'pages.adminRouteRequests.nbuNbuRateHint' | translate }}:
+                    1 {{ display.proposalCurrency }} = {{ display.proposalRatePerUnit | number: '1.2-4' }} UAH
+                    ({{ display.nbuRateDate }})
+                  </span>
+                }
+              </mat-card-subtitle>
+              <mat-card-content>
+                <div class="admin-route-requests__nbu-cost" role="table">
+                  <div class="admin-route-requests__nbu-cost-head" role="row">
+                    <span role="columnheader">{{ 'pages.adminRouteRequests.nbuColArticle' | translate }}</span>
+                    <span role="columnheader">UAH</span>
+                    <span role="columnheader">{{ display.proposalCurrency }}</span>
+                  </div>
+                  @for (row of display.rows; track row.labelKey) {
+                    <div
+                      class="admin-route-requests__nbu-cost-row"
+                      role="row"
+                      [class.nbu-cost-row--subtotal]="row.emphasis === 'subtotal'"
+                      [class.nbu-cost-row--total]="row.emphasis === 'total'">
+                      <span class="admin-route-requests__nbu-cost-label" role="cell">
+                        {{ row.labelKey | translate }}
+                      </span>
+                      <span class="admin-route-requests__nbu-cost-uah" role="cell">
+                        {{ formatNbuMoney(row.uah, 'UAH') }}
+                      </span>
+                      <span class="admin-route-requests__nbu-cost-proposal" role="cell">
+                        {{ formatNbuMoney(row.proposal, display.proposalCurrency) }}
+                      </span>
+                    </div>
+                  }
+                </div>
+                @if (nbuCostSummary()) {
+                  <mat-expansion-panel class="admin-route-requests__nbu-breakdown-panel">
+                    <mat-expansion-panel-header>
+                      <mat-panel-title>
+                        {{ 'pages.adminRouteRequests.nbuBreakdownDetails' | translate }}
+                      </mat-panel-title>
+                    </mat-expansion-panel-header>
+                    <pre class="admin-route-requests__nbu-summary-text">{{ nbuCostSummary() }}</pre>
+                  </mat-expansion-panel>
+                }
+              </mat-card-content>
+              <mat-card-actions class="admin-route-requests__nbu-actions" align="start">
+                <button mat-stroked-button type="button" (click)="copyNbuSummary()">
+                  <mat-icon aria-hidden="true">content_copy</mat-icon>
+                  {{ 'pages.adminRouteRequests.nbuCopySummary' | translate }}
+                </button>
+                <button mat-stroked-button type="button" (click)="applyNbuToQuoteDraft()" [disabled]="!lastNbuPreview()">
+                  {{ 'pages.adminRouteRequests.nbuApplyToQuote' | translate }}
+                </button>
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="button"
+                  (click)="createQuoteFromNbu()"
+                  [disabled]="isCreatingQuote() || !lastNbuPreview()">
+                  {{ 'pages.adminRouteRequests.nbuCreateQuote' | translate }}
+                </button>
+                <button
+                  mat-flat-button
+                  color="accent"
+                  type="button"
+                  (click)="openSendProposalDialog()"
+                  [disabled]="isSendingQuote() || isCreatingQuote() || !lastNbuPreview()">
+                  {{ 'pages.adminRouteRequests.sendProposal' | translate }}
+                </button>
+              </mat-card-actions>
+            </mat-card>
+          }
+          @if (nbuCostHistory().length) {
+            <h4>{{ 'pages.adminRouteRequests.nbuHistory' | translate }}</h4>
+            <ul class="admin-route-requests__nbu-history">
+              @for (item of nbuCostHistory(); track item.id) {
+                <li class="admin-route-requests__nbu-history-item">
+                  <button type="button" mat-button (click)="viewNbuCalculation(item.id)">
+                    {{ item.createdAt | date: 'short' }} — {{ item.scenarioName || '-' }}
+                    ({{ item.totalProposalAmount }} {{ item.proposalCurrency }})
+                  </button>
+                  <button
+                    type="button"
+                    mat-icon-button
+                    color="warn"
+                    class="admin-route-requests__nbu-history-delete"
+                    [disabled]="isDeletingNbuCalculation()"
+                    [attr.aria-label]="'pages.adminRouteRequests.nbuHistoryDelete' | translate"
+                    (click)="deleteNbuCalculation(item.id, $event)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+
+          <mat-expansion-panel
+            class="admin-route-requests__route-points-panel"
+            [expanded]="true"
+            (afterExpand)="onRoutePointsPanelExpanded()">
+            <mat-expansion-panel-header>
+              <mat-panel-title>{{ 'pages.adminRouteRequests.routePoints' | translate }}</mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <div class="nbu-form nbu-form--start-point" [formGroup]="nbuForm">
+              <mat-slide-toggle formControlName="useStartPoint" (change)="onStartPointToggleChange()">
+                {{ 'pages.adminRouteRequests.useStartPoint' | translate }}
+              </mat-slide-toggle>
+              @if (nbuForm.controls.useStartPoint.value) {
+                <div class="nbu-form__start-point-controls">
+                  <mat-form-field appearance="outline" class="nbu-form__field nbu-form__field--wide">
+                    <mat-label>{{ 'pages.adminRouteRequests.startPointAddress' | translate }}</mat-label>
+                    <input matInput formControlName="startPointAddress" />
+                  </mat-form-field>
+                  <div class="nbu-form__actions nbu-form__actions--start-point">
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      (click)="setStartPointFromAddress()"
+                      [disabled]="isStartPointGeocoding()">
+                      {{ 'pages.adminRouteRequests.applyStartPointAddress' | translate }}
+                    </button>
+                    <button mat-stroked-button type="button" (click)="clearStartPoint()">
+                      {{ 'pages.adminRouteRequests.clearStartPoint' | translate }}
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+            <div #requestMap class="request-map"></div>
+            @if (displayedRoutePoints().length) {
+              <ul class="admin-route-requests__points">
+                @for (point of displayedRoutePoints(); track point.order + '-' + point.lat + '-' + point.lng) {
+                  <li>
+                    {{ point.order }}. {{ point.address }} ({{ point.lat.toFixed(5) }}, {{ point.lng.toFixed(5) }})
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p>{{ 'pages.adminRouteRequests.noRoutePoints' | translate }}</p>
+            }
+
+            @if (!selected.countryDistances.length) {
+              <p>{{ 'pages.adminRouteRequests.countryDistancesEmpty' | translate }}</p>
+            } @else {
+              <p>
+                <strong>{{ 'pages.adminRouteRequests.countryDistanceTotal' | translate }}:</strong>
+                {{ formatCountryDistanceTotalKm(selected.countryDistances) }}
+                {{ 'pages.freightCalculation.km' | translate }}
+              </p>
+              <table class="admin-country-distances">
+                <thead>
+                  <tr>
+                    <th>{{ 'pages.adminRouteRequests.countryCode' | translate }}</th>
+                    <th>{{ 'pages.adminRouteRequests.distanceMeters' | translate }}</th>
+                    <th>{{ 'pages.adminRouteRequests.alongRouteOrder' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of selected.countryDistances; track row.countryCode + '-' + $index) {
+                    <tr>
+                      <td>{{ row.countryCode }}</td>
+                      <td>{{ formatCountryDistanceKm(row.distanceMeters) }}</td>
+                      <td>{{ row.alongRouteOrder ?? '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          </mat-expansion-panel>
+        }
+      </article>
+        </div>
+      }
+    </mat-drawer-content>
+
+    <mat-drawer
+      class="admin-route-requests__quote-drawer"
+      mode="over"
+      position="end"
+      [opened]="quotePanelOpen()"
+      (closedStart)="closeQuotePanel()">
+      <div class="admin-route-requests__quote-drawer-header">
+        <h2>{{ 'pages.adminRouteRequests.quoteEditor' | translate }}</h2>
+        <button
+          mat-icon-button
+          type="button"
+          [attr.aria-label]="'pages.adminRouteRequests.closeQuotePanel' | translate"
+          (click)="closeQuotePanel()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="admin-route-requests__quote-drawer-body">
+        <form class="quote-form" [formGroup]="quoteDraftForm" (ngSubmit)="createDraftQuote()">
+          <label>
+            {{ 'pages.adminRouteRequests.quoteCurrency' | translate }}
+            <input formControlName="currency" type="text" />
+          </label>
+          <label>
+            {{ 'pages.adminRouteRequests.quoteAmount' | translate }}
+            <input formControlName="totalAmount" type="number" min="0.01" step="0.01" />
+          </label>
+          <label>
+            {{ 'pages.adminRouteRequests.quoteTransitDaysMin' | translate }}
+            <input formControlName="transitDaysMin" type="number" min="0" />
+          </label>
+          <label>
+            {{ 'pages.adminRouteRequests.quoteTransitDaysMax' | translate }}
+            <input formControlName="transitDaysMax" type="number" min="0" />
+          </label>
+          <label>
+            {{ 'pages.adminRouteRequests.quoteValidUntil' | translate }}
+            <input formControlName="validUntil" type="date" />
+          </label>
+          <label>
+            {{ 'pages.adminRouteRequests.quotePublicNote' | translate }}
+            <textarea formControlName="publicNote" rows="2"></textarea>
+          </label>
+          <label>
+            {{ 'pages.adminRouteRequests.quoteInternalNote' | translate }}
+            <textarea formControlName="internalNote" rows="2"></textarea>
+          </label>
+          <div class="quote-form__actions">
+            <button mat-flat-button color="primary" type="submit" [disabled]="isCreatingQuote()">
+              {{ 'pages.adminRouteRequests.createDraftQuote' | translate }}
+            </button>
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="!selectedDraftQuote() || isSendingQuote()"
+              (click)="sendSelectedDraft()">
+              {{ 'pages.adminRouteRequests.sendDraftQuote' | translate }}
+            </button>
+          </div>
+        </form>
+        @if (quoteActionError()) {
+          <p class="admin-route-requests__error">{{ quoteActionError() | translate }}</p>
+        }
+        @if (quoteActionSuccess()) {
+          <p class="admin-route-requests__success">{{ quoteActionSuccess() | translate }}</p>
+        }
+
+        <h3>{{ 'pages.adminRouteRequests.quoteHistory' | translate }}</h3>
+        @if (quoteLoadError()) {
+          <p class="admin-route-requests__error">{{ quoteLoadError() | translate }}</p>
+        } @else if (!quoteHistory().length) {
+          <p>{{ 'pages.adminRouteRequests.quoteHistoryEmpty' | translate }}</p>
+        } @else {
+          <div class="quote-history">
+            @for (quote of quoteHistory(); track quote.id) {
+              <div class="quote-history__item">
+                <div><strong>ID:</strong> {{ quote.id }}</div>
+                <div><strong>{{ 'pages.adminRouteRequests.status' | translate }}:</strong> {{ quote.status }}</div>
+                <div>
+                  <strong>{{ 'pages.adminRouteRequests.quoteAmount' | translate }}:</strong>
+                  {{ quote.totalAmount }} {{ quote.currency }}
+                </div>
+                <div>
+                  <strong>{{ 'pages.adminRouteRequests.quoteCreatedAt' | translate }}:</strong>
+                  {{ quote.createdAt | date: 'short' }}
+                </div>
+                <div>
+                  <strong>{{ 'pages.adminRouteRequests.quoteSentAt' | translate }}:</strong>
+                  {{ quote.sentAt ? (quote.sentAt | date: 'short') : '-' }}
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </mat-drawer>
+  </mat-drawer-container>
+</section>

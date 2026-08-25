@@ -1,0 +1,93 @@
+<section class="register-page">
+  <mat-card class="register-card">
+    <div class="register-header">
+      <div class="header-icon" aria-hidden="true">
+        <mat-icon fontIcon="person_add" />
+      </div>
+      <h1>{{ 'pages.register.title' | translate }}</h1>
+      <p class="subtitle">{{ 'pages.register.subtitle' | translate }}</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="register-form">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'pages.register.email' | translate }}</mat-label>
+        <input matInput formControlName="email" autocomplete="email" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'pages.register.password' | translate }}</mat-label>
+        <input
+          matInput
+          [type]="isPasswordVisible() ? 'text' : 'password'"
+          formControlName="password"
+          autocomplete="new-password"
+        />
+        @if (form.controls.password.touched && form.controls.password.hasError('pattern')) {
+          <mat-error>{{ 'pages.register.passwordRule' | translate }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'pages.register.confirmPassword' | translate }}</mat-label>
+        <input
+          matInput
+          [type]="isPasswordVisible() ? 'text' : 'password'"
+          formControlName="confirmPassword"
+          autocomplete="new-password"
+        />
+        @if (form.controls.confirmPassword.touched && form.controls.confirmPassword.hasError('mismatch')) {
+          <mat-error>{{ 'pages.register.passwordMismatch' | translate }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-checkbox
+        class="show-password-toggle"
+        [checked]="isPasswordVisible()"
+        (change)="isPasswordVisible.set($event.checked)"
+      >
+        {{ 'pages.register.showPassword' | translate }}
+      </mat-checkbox>
+
+      @if (errorCode() === '409') {
+        <p class="error-text">
+          <mat-icon fontIcon="error_outline" aria-hidden="true"></mat-icon>
+          <span>{{ 'pages.register.error409' | translate }}</span>
+        </p>
+      }
+      @if (errorCode() === '429') {
+        <p class="error-text">
+          <mat-icon fontIcon="error_outline" aria-hidden="true"></mat-icon>
+          <span>{{ 'pages.register.error429' | translate }}</span>
+        </p>
+      }
+      @if (errorCode() === 'generic') {
+        <p class="error-text">
+          <mat-icon fontIcon="error_outline" aria-hidden="true"></mat-icon>
+          <span>{{ 'pages.register.errorGeneric' | translate }}</span>
+        </p>
+      }
+      @if (hasSuccess()) {
+        <p class="success-text">
+          <mat-icon fontIcon="check_circle_outline" aria-hidden="true"></mat-icon>
+          <span>{{ 'pages.register.success' | translate }}</span>
+        </p>
+      }
+
+      <button class="submit-button" mat-raised-button color="primary" type="submit" [disabled]="isLoading()">
+        @if (isLoading()) {
+          <span class="loading-content">
+            <mat-spinner diameter="18"></mat-spinner>
+            <span>{{ 'pages.register.loading' | translate }}</span>
+          </span>
+        } @else {
+          {{ 'pages.register.submit' | translate }}
+        }
+      </button>
+    </form>
+
+    <p class="switch-auth">
+      {{ 'pages.register.haveAccount' | translate }}
+      <a [routerLink]="['/login']">{{ 'auth.login' | translate }}</a>
+    </p>
+  </mat-card>
+</section>

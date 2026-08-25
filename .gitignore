@@ -1,0 +1,21 @@
+# Залежності та збірка (Angular після ініціалізації)
+node_modules/
+dist/
+.angular/
+.env
+backend/.env
+frontend/.env
+frontend/src/assets/app-config.local.js
+
+# Локальна конфігурація clasp (скопіюйте з .clasp.json.example і додайте scriptId)
+backend/.clasp.json
+
+# IDE / ОС (лише корінь репо; frontend/.vscode залишається з шаблону Angular)
+.idea/
+# У корені .vscode ігноруємо все, крім зафіксованих налаштувань Java для Cursor/VS Code
+/.vscode/*
+!/.vscode/settings.json
+!/.vscode/extensions.json
+*.log
+.DS_Store
+Thumbs.db

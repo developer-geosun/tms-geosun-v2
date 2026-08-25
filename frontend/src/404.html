@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <title>TMS GeoSun</title>
+  <base href="/tms-geosun-v1/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="assets/GeoSun_logo_svg.svg">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+  <script>
+    // Перенаправляем на index.html для обработки Angular Router
+    // Сохраняем текущий URL для восстановления после загрузки
+    sessionStorage.redirect = location.href;
+    // Перенаправляем на index.html
+    location.replace('/tms-geosun-v1/index.html');
+  </script>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>
+

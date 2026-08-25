@@ -1,0 +1,77 @@
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+// Стандартні теми Angular Material 3 (M3)
+$azure-blue-theme: mat.define-theme((
+  color: (
+    theme-type: light,
+    primary: mat.$azure-palette,
+    tertiary: mat.$blue-palette,
+    use-system-variables: true
+  ),
+  typography: (
+    use-system-variables: true
+  )
+));
+
+$rose-red-theme: mat.define-theme((
+  color: (
+    theme-type: light,
+    primary: mat.$rose-palette,
+    tertiary: mat.$red-palette,
+    use-system-variables: true
+  ),
+  typography: (
+    use-system-variables: true
+  )
+));
+
+$magenta-violet-theme: mat.define-theme((
+  color: (
+    theme-type: dark,
+    primary: mat.$magenta-palette,
+    tertiary: mat.$violet-palette,
+    use-system-variables: true
+  ),
+  typography: (
+    use-system-variables: true
+  )
+));
+
+$cyan-orange-theme: mat.define-theme((
+  color: (
+    theme-type: dark,
+    primary: mat.$cyan-palette,
+    tertiary: mat.$orange-palette,
+    use-system-variables: true
+  ),
+  typography: (
+    use-system-variables: true
+  )
+));
+
+.theme-rose-red {
+  @include mat.all-component-themes($rose-red-theme);
+  @include mat.system-level-colors($rose-red-theme);
+  @include mat.system-level-typography($rose-red-theme);
+}
+
+.theme-azure-blue {
+  @include mat.all-component-themes($azure-blue-theme);
+  @include mat.system-level-colors($azure-blue-theme);
+  @include mat.system-level-typography($azure-blue-theme);
+}
+
+.theme-magenta-violet {
+  @include mat.all-component-themes($magenta-violet-theme);
+  @include mat.system-level-colors($magenta-violet-theme);
+  @include mat.system-level-typography($magenta-violet-theme);
+}
+
+.theme-cyan-orange {
+  @include mat.all-component-themes($cyan-orange-theme);
+  @include mat.system-level-colors($cyan-orange-theme);
+  @include mat.system-level-typography($cyan-orange-theme);
+}
+

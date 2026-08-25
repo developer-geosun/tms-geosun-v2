@@ -1,0 +1,224 @@
+<section class="routes-page">
+  <header class="routes-page__header">
+    <h1 class="routes-page__title">{{ listViewPageHeadingKey() | translate }}</h1>
+    <div class="routes-page__header-actions">
+      <div class="routes-page__header-fabs">
+        <button
+          mat-mini-fab
+          type="button"
+          class="routes-page__add-route"
+          (click)="createNewRoute()"
+          [attr.aria-label]="'pages.routes.addNewRoute' | translate"
+          [title]="'pages.routes.addNewRoute' | translate"
+        >
+          <mat-icon>add</mat-icon>
+        </button>
+        <button
+          mat-mini-fab
+          type="button"
+          class="routes-page__routes-settings"
+          (click)="onRoutesSettingsClick()"
+          [attr.aria-label]="'settings.buttonLabel' | translate"
+          [title]="'settings.buttonLabel' | translate"
+        >
+          <mat-icon fontSet="material-icons-outlined">settings</mat-icon>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  @if (deleteFailed()) {
+    <p>{{ 'pages.routes.deleteFailed' | translate }}</p>
+  }
+
+  @if (isLoading()) {
+    <p>{{ 'pages.routes.loading' | translate }}</p>
+  } @else if (loadFailed()) {
+    <p>{{ 'pages.routes.loadFailed' | translate }}</p>
+  } @else if (routeCards().length === 0) {
+    @if (listView() === 'deleted') {
+      <p>{{ 'pages.routes.emptyDeleted' | translate }}</p>
+    } @else {
+      <p>{{ 'pages.routes.empty' | translate }}</p>
+    }
+  } @else {
+    <div class="routes-page__cards">
+      @for (route of routeCards(); track route.id) {
+        <mat-card class="route-card" appearance="outlined">
+          <mat-card-header class="route-card__header">
+            <div class="route-card__header-row">
+              <mat-card class="route-point-card route-card__meta-subcard" appearance="outlined">
+                <mat-card-content class="route-point-card__content route-card__meta-subcard-content">
+                  <div class="route-card__meta-row">
+                    <span class="route-card__meta-label">{{ 'pages.routeBuilder.routeId' | translate }}</span>
+                    <span class="route-card__meta-value">{{ route.id }}</span>
+                  </div>
+                  <div class="route-card__meta-row">
+                    <span class="route-card__meta-label">{{ 'pages.routes.createdAt' | translate }}</span>
+                    <span class="route-card__meta-value">{{ formatRouteDateTime(route.createdAt) }}</span>
+                  </div>
+                  <div class="route-card__meta-row">
+                    <span class="route-card__meta-label">{{ 'pages.routes.savedAt' | translate }}</span>
+                    <span class="route-card__meta-value">{{ formatRouteDateTime(route.updatedAt) }}</span>
+                  </div>
+                  <div class="route-card__meta-row">
+                    <span class="route-card__meta-label">{{ 'pages.routes.lastOpenedAt' | translate }}</span>
+                    <span class="route-card__meta-value">{{
+                      formatRouteDateTime(route.lastOpenedAt) || '-'
+                    }}</span>
+                  </div>
+                </mat-card-content>
+              </mat-card>
+              <div class="route-card__distance-actions">
+                <mat-card-subtitle class="route-card__meta route-card__meta--secondary">
+                  {{ route.distanceKm?.toFixed(1) ?? '0.0' }} {{ 'pages.freightCalculation.km' | translate }}
+                </mat-card-subtitle>
+                @if (route.deleted) {
+                  <mat-chip-set class="route-card__status-chips">
+                    <mat-chip color="warn">{{ 'pages.routes.deletedChip' | translate }}</mat-chip>
+                  </mat-chip-set>
+                }
+              </div>
+            </div>
+          </mat-card-header>
+
+          <mat-card-content class="route-card__content">
+            @if (route.points.length === 0) {
+              <mat-list>
+                <mat-list-item>{{ 'pages.routes.pointsUnavailable' | translate }}</mat-list-item>
+              </mat-list>
+            } @else {
+              <div class="route-card__points" role="list">
+                @for (point of route.points; track point.order) {
+                  <mat-card class="route-point-card" appearance="outlined" role="listitem">
+                    <mat-card-content class="route-point-card__content">
+                      <div class="route-point-card__row">
+                        <span class="route-point-card__order" aria-hidden="true">
+                          <span
+                            class="point-order"
+                            [class.point-order--regular]="!point.isBorder"
+                            [class.point-order--border]="point.isBorder"
+                          >
+                            {{ point.order }}
+                          </span>
+                        </span>
+                        <div class="route-point-card__main">
+                          <p class="route-point-card__address">{{ point.address }}</p>
+                          <mat-chip-set class="route-point-operations" aria-label="Point operations">
+                            <mat-chip
+                              class="route-point-operation-chip route-point-operation-chip--coordinates"
+                              (click)="copyPointCoordinates(point)"
+                              [attr.aria-label]="'pages.routeBuilder.copyCoordinates' | translate"
+                              [title]="'pages.routeBuilder.copyCoordinates' | translate"
+                            >
+                              <mat-icon>content_copy</mat-icon>
+                              {{ formatPointCoordinates(point) }}
+                            </mat-chip>
+                            @for (operation of point.operations; track operation) {
+                              <mat-chip class="route-point-operation-chip">
+                                {{ ('pages.routeBuilder.operations.' + operation) | translate }}
+                              </mat-chip>
+                            }
+                          </mat-chip-set>
+                        </div>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                }
+              </div>
+            }
+          </mat-card-content>
+
+          <mat-card-footer class="route-card__footer">
+            <div class="route-card__actions">
+              <div class="route-card__actions-left">
+                @if (route.deleted) {
+                  <button
+                    mat-mini-fab
+                    type="button"
+                    class="route-card__restore-action"
+                    (click)="restoreRoute(route.id)"
+                    [disabled]="restoringRouteId() !== null || deletingRouteId() !== null"
+                    [attr.aria-label]="'pages.routes.restoreRoute' | translate"
+                    [title]="'pages.routes.restoreRoute' | translate"
+                  >
+                    <mat-icon>
+                      @if (restoringRouteId() === route.id) {
+                        hourglass_top
+                      } @else {
+                        restore
+                      }
+                    </mat-icon>
+                  </button>
+                } @else {
+                  <button
+                    mat-mini-fab
+                    type="button"
+                    class="route-card__delete-action"
+                    (click)="requestRouteDelete(route.id, route.title, route.createdAt, route.distanceKm)"
+                    [disabled]="deletingRouteId() !== null || restoringRouteId() !== null"
+                    [attr.aria-label]="'pages.routesHistory.deleteRoute' | translate"
+                    [title]="'pages.routesHistory.deleteRoute' | translate"
+                  >
+                    <mat-icon>
+                      @if (deletingRouteId() === route.id) {
+                        hourglass_top
+                      } @else {
+                        delete
+                      }
+                    </mat-icon>
+                  </button>
+                  <span
+                    class="route-card__edit-button-host"
+                    [matTooltip]="route.lockedByRequest ? ('pages.routes.lockedByRequest' | translate) : ''"
+                    [matTooltipDisabled]="!route.lockedByRequest"
+                  >
+                    <button
+                      mat-mini-fab
+                      type="button"
+                      (click)="editRoute(route.id)"
+                      [disabled]="route.lockedByRequest"
+                      [attr.aria-label]="'pages.routes.editRoute' | translate"
+                      [title]="route.lockedByRequest ? '' : ('pages.routes.editRoute' | translate)"
+                    >
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                  </span>
+                }
+                <button
+                  mat-mini-fab
+                  class="route-card__open-action"
+                  type="button"
+                  (click)="openRoute(route.id)"
+                  [attr.aria-label]="'pages.routesHistory.openRoute' | translate"
+                  [title]="'pages.routesHistory.openRoute' | translate"
+                >
+                  <mat-icon>open_in_new</mat-icon>
+                </button>
+              </div>
+              <div class="route-card__actions-right">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  type="button"
+                  class="route-card__freight-request"
+                  (click)="openFreightRequestDialog(route)"
+                  [disabled]="
+                    route.points.length === 0 || deletingRouteId() === route.id || route.deleted
+                  "
+                  [title]="route.deleted ? ('pages.routes.freightRequestDisabled' | translate) : ''"
+                >
+                  {{ 'pages.freightCalculation.openRequest' | translate }}
+                </button>
+              </div>
+            </div>
+          </mat-card-footer>
+        </mat-card>
+      }
+    </div>
+  }
+</section>
+
+@if (toastMessage()) {
+  <div class="toast">{{ toastMessage() | translate }}</div>
+}

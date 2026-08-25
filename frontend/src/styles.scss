@@ -1,0 +1,232 @@
+/* You can add global styles to this file, and also import other style files */
+@use 'styles/theme';
+@use 'page-layout';
+@use 'breakpoints' as bp;
+@import 'leaflet/dist/leaflet.css';
+
+html, body {
+  height: 100%;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Inter, Roboto, "Helvetica Neue", sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+app-root {
+  display: block;
+  height: 100%;
+}
+
+// Стили для выбранных кнопок языков
+mat-button-toggle.ua-button.mat-button-toggle-checked {
+  background-color: #FFD700 !important;
+  color: #0000FF !important;
+  // Рамку групи задає mat-button-toggle-group; власний border давав подвійну темну обводку на першому сегменті
+
+  .mat-button-toggle-button,
+  .mat-button-toggle-label-content {
+    background-color: #FFD700 !important;
+    color: #0000FF !important;
+  }
+}
+
+mat-button-toggle.en-button.mat-button-toggle-checked {
+  background-color: #0000FF !important;
+  color: #FFFFFF !important;
+
+  .mat-button-toggle-button,
+  .mat-button-toggle-label-content {
+    background-color: #0000FF !important;
+    color: #FFFFFF !important;
+  }
+}
+
+mat-button-toggle.ru-button.mat-button-toggle-checked {
+  background-color: #FF0000 !important;
+  color: #FFFFFF !important;
+
+  .mat-button-toggle-button,
+  .mat-button-toggle-label-content {
+    background-color: #FF0000 !important;
+    color: #FFFFFF !important;
+  }
+}
+
+mat-button-toggle.ua-button:not(.mat-button-toggle-checked),
+mat-button-toggle.en-button:not(.mat-button-toggle-checked),
+mat-button-toggle.ru-button:not(.mat-button-toggle-checked) {
+  background-color: var(--mat-sys-surface-container) !important;
+  color: var(--mat-sys-on-surface-variant) !important;
+
+  .mat-button-toggle-button,
+  .mat-button-toggle-label-content,
+  .mat-mdc-button-toggle-button,
+  .mdc-button__label {
+    background-color: var(--mat-sys-surface-container) !important;
+    color: var(--mat-sys-on-surface-variant) !important;
+  }
+}
+
+mat-button-toggle.ua-button:not(.mat-button-toggle-checked):hover,
+mat-button-toggle.en-button:not(.mat-button-toggle-checked):hover,
+mat-button-toggle.ru-button:not(.mat-button-toggle-checked):hover {
+  background-color: var(--mat-sys-surface-container-highest) !important;
+
+  .mat-button-toggle-button,
+  .mat-button-toggle-label-content,
+  .mat-mdc-button-toggle-button,
+  .mdc-button__label {
+    background-color: var(--mat-sys-surface-container-highest) !important;
+  }
+}
+
+// Приховуємо галочку в mat-button-toggle
+mat-button-toggle {
+  // Приховуємо всі іконки всередині toggle
+  mat-icon,
+  .mat-icon,
+  svg {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  
+  .mat-button-toggle-label-content,
+  .mat-button-toggle-button {
+    mat-icon,
+    .mat-icon,
+    svg {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+    
+    // Приховуємо псевдоелементи
+    &::before,
+    &::after {
+      display: none !important;
+      content: none !important;
+    }
+  }
+  
+  // Специфічно для checked стану
+  &.mat-button-toggle-checked {
+    mat-icon,
+    .mat-icon,
+    svg {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+    
+    .mat-button-toggle-label-content,
+    .mat-button-toggle-button {
+      mat-icon,
+      .mat-icon,
+      svg {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+      
+      &::before,
+      &::after {
+        display: none !important;
+        content: none !important;
+      }
+    }
+  }
+}
+
+mat-button-toggle .mat-button-toggle-button,
+mat-button-toggle .mat-mdc-button-toggle-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+mat-button-toggle .mat-button-toggle-label-content,
+mat-button-toggle .mdc-button__label {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100%;
+  text-align: center !important;
+  line-height: normal !important;
+}
+
+.theme-preview--rose-red {
+  --preview-bg: #ffffff;
+  --preview-top: #f2d8e2;
+  --preview-bottom: #e9c4d3;
+}
+
+.theme-preview--azure-blue {
+  --preview-bg: #ffffff;
+  --preview-top: #d8e2f4;
+  --preview-bottom: #bdd0ee;
+}
+
+.theme-preview--magenta-violet {
+  --preview-bg: #150f17;
+  --preview-top: #9700aa;
+  --preview-bottom: #8d049d;
+}
+
+.theme-preview--cyan-orange {
+  --preview-bg: #081217;
+  --preview-top: #0a6a6c;
+  --preview-bottom: #04575a;
+}
+
+/* Випадаючі списки КПП: panelClass у route-builder (overlay поза :host) */
+.cdk-overlay-container .mat-mdc-select-panel.freight-border-select-panel {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+/* Full-screen form-діалоги на handset (panelClass на `.cdk-overlay-pane`). */
+@include bp.handset {
+  .cdk-overlay-pane.route-freight-request-dialog-shell,
+  .cdk-overlay-pane.dialog-shell--handset-fullscreen {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    margin: 0;
+  }
+
+  .cdk-overlay-pane.route-freight-request-dialog-shell .mat-mdc-dialog-container .mat-mdc-dialog-surface,
+  .cdk-overlay-pane.dialog-shell--handset-fullscreen .mat-mdc-dialog-container .mat-mdc-dialog-surface {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cdk-overlay-pane.route-freight-request-dialog-shell .mat-mdc-dialog-content,
+  .cdk-overlay-pane.dialog-shell--handset-fullscreen .mat-mdc-dialog-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none !important;
+  }
+}
+
+/* Панель налаштувань списку маршрутів (MatBottomSheet). */
+.routes-toolbar-bottom-sheet-panel .mat-bottom-sheet-container,
+.routes-toolbar-bottom-sheet-panel .mat-mdc-bottom-sheet-container {
+  padding: 0;
+  max-height: min(90dvh, 900px);
+}

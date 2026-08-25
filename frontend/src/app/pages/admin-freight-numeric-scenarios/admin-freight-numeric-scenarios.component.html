@@ -1,0 +1,182 @@
+<section class="admin-freight-numeric-scenarios">
+  <header class="admin-freight-numeric-scenarios__header">
+    <h1>{{ 'pages.adminFreightNumericScenarios.title' | translate }}</h1>
+    <div class="admin-freight-numeric-scenarios__actions">
+      <button mat-stroked-button type="button" (click)="loadScenarios()">
+        {{ 'pages.adminFreightNumericScenarios.refresh' | translate }}
+      </button>
+      <button mat-stroked-button type="button" (click)="backToRouteRequests()">
+        {{ 'pages.adminFreightNumericScenarios.backToRequests' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (isLoading() || loadError() || actionError() || actionSuccess()) {
+    <div class="admin-freight-numeric-scenarios__messages">
+      @if (isLoading()) {
+        <p>{{ 'pages.adminFreightNumericScenarios.loading' | translate }}</p>
+      } @else if (loadError()) {
+        <p class="admin-freight-numeric-scenarios__error">{{ loadError() | translate }}</p>
+      }
+      @if (actionError()) {
+        <p class="admin-freight-numeric-scenarios__error">{{ actionError() | translate }}</p>
+      }
+      @if (actionSuccess()) {
+        <p class="admin-freight-numeric-scenarios__success">{{ actionSuccess() | translate }}</p>
+      }
+    </div>
+  }
+
+  <div class="admin-freight-numeric-scenarios__layout">
+    <div class="admin-freight-numeric-scenarios__table-panel">
+      <div class="admin-freight-numeric-scenarios__table-scroll table-shell">
+        <table mat-table [dataSource]="pagedScenarios()" class="admin-freight-numeric-scenarios__table">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminFreightNumericScenarios.name' | translate }}</th>
+            <td mat-cell *matCellDef="let row" class="admin-freight-numeric-scenarios__cell-ellipsis" [matTooltip]="row.name">
+              {{ row.name }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="proposalCurrency">
+            <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminFreightNumericScenarios.proposalCurrency' | translate }}</th>
+            <td mat-cell *matCellDef="let row">{{ row.proposalCurrency }}</td>
+          </ng-container>
+          <ng-container matColumnDef="isActive">
+            <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminFreightNumericScenarios.isActive' | translate }}</th>
+            <td mat-cell *matCellDef="let row">{{ row.isActive }}</td>
+          </ng-container>
+          <ng-container matColumnDef="updatedAt">
+            <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminFreightNumericScenarios.updatedAt' | translate }}</th>
+            <td mat-cell *matCellDef="let row">{{ row.updatedAt | date: 'short' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let row">
+              <div class="admin-freight-numeric-scenarios__cell-actions">
+                <button mat-button type="button" (click)="startEdit(row)">
+                  {{ 'pages.adminFreightNumericScenarios.edit' | translate }}
+                </button>
+                <button mat-button type="button" (click)="duplicateScenario(row)">
+                  {{ 'pages.adminFreightNumericScenarios.duplicate' | translate }}
+                </button>
+                <button mat-button color="warn" type="button" (click)="deleteScenario(row)">
+                  {{ 'pages.adminFreightNumericScenarios.delete' | translate }}
+                </button>
+              </div>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+      <mat-paginator
+        class="admin-freight-numeric-scenarios__paginator"
+        [length]="scenarios().length"
+        [pageIndex]="pageIndex()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="pageSizeOptions"
+        [showFirstLastButtons]="true"
+        (page)="onScenariosPageChange($event)" />
+    </div>
+
+    <div class="admin-freight-numeric-scenarios__form-panel">
+      <h2>
+        {{
+          (editingId() ? 'pages.adminFreightNumericScenarios.editTitle' : 'pages.adminFreightNumericScenarios.createTitle')
+            | translate
+        }}
+      </h2>
+      <form [formGroup]="scenarioForm" (ngSubmit)="saveScenario()">
+        <mat-form-field appearance="outline" class="admin-freight-numeric-scenarios__field">
+          <mat-label>{{ 'pages.adminFreightNumericScenarios.name' | translate }}</mat-label>
+          <input matInput formControlName="name" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="admin-freight-numeric-scenarios__field">
+          <mat-label>{{ 'pages.adminFreightNumericScenarios.description' | translate }}</mat-label>
+          <input matInput formControlName="description" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="admin-freight-numeric-scenarios__field">
+          <mat-label>{{ 'pages.adminFreightNumericScenarios.tollTariffSet' | translate }}</mat-label>
+          <mat-select formControlName="tollTariffSetId">
+            @for (set of tollTariffSets(); track set.id) {
+              <mat-option [value]="set.id">{{ set.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="admin-freight-numeric-scenarios__field">
+          <mat-label>{{ 'pages.adminFreightNumericScenarios.seasonModeLabel' | translate }}</mat-label>
+          <mat-select formControlName="seasonMode">
+            @for (mode of seasonModeOptions; track mode) {
+              <mat-option [value]="mode">{{ seasonModeLabel(mode) | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="admin-freight-numeric-scenarios__field">
+          <mat-label>{{ 'pages.adminFreightNumericScenarios.proposalCurrency' | translate }}</mat-label>
+          <input matInput formControlName="proposalCurrency" maxlength="3" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="admin-freight-numeric-scenarios__field">
+          <mat-label>{{ 'pages.adminFreightNumericScenarios.marginTypeLabel' | translate }}</mat-label>
+          <mat-select formControlName="marginType">
+            @for (type of marginTypeOptions; track type) {
+              <mat-option [value]="type">{{ marginTypeLabel(type) | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <div class="admin-freight-numeric-scenarios__field-grid">
+          <mat-form-field appearance="outline" class="admin-freight-numeric-scenarios__field">
+            <mat-label>{{ 'pages.adminFreightNumericScenarios.marginPercent' | translate }}</mat-label>
+            <input matInput type="number" step="0.01" formControlName="marginPercent" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="admin-freight-numeric-scenarios__field">
+            <mat-label>{{ 'pages.adminFreightNumericScenarios.marginFixedAmount' | translate }}</mat-label>
+            <input matInput type="number" step="0.01" formControlName="marginFixedAmount" />
+          </mat-form-field>
+        </div>
+        <div class="admin-freight-numeric-scenarios__field-grid">
+          <mat-form-field appearance="outline" class="admin-freight-numeric-scenarios__field">
+            <mat-label>{{ 'pages.adminFreightNumericScenarios.fuelConsumptionEmpty' | translate }}</mat-label>
+            <input matInput type="number" step="0.01" formControlName="fuelConsumptionEmptyLPer100km" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="admin-freight-numeric-scenarios__field">
+            <mat-label>{{ 'pages.adminFreightNumericScenarios.fuelConsumptionLoadedNonWinter' | translate }}</mat-label>
+            <input matInput type="number" step="0.01" formControlName="fuelConsumptionLoadedNonWinterLPer100km" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="admin-freight-numeric-scenarios__field">
+            <mat-label>{{ 'pages.adminFreightNumericScenarios.fuelConsumptionLoadedWinter' | translate }}</mat-label>
+            <input matInput type="number" step="0.01" formControlName="fuelConsumptionLoadedWinterLPer100km" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="admin-freight-numeric-scenarios__field">
+            <mat-label>{{ 'pages.adminFreightNumericScenarios.fuelPricePerLiter' | translate }}</mat-label>
+            <input matInput type="number" step="0.01" formControlName="fuelPricePerLiter" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="admin-freight-numeric-scenarios__field">
+            <mat-label>{{ 'pages.adminFreightNumericScenarios.driverSalaryPercent' | translate }}</mat-label>
+            <input matInput type="number" step="0.01" formControlName="driverSalaryPercentOfFreight" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="admin-freight-numeric-scenarios__field">
+            <mat-label>{{ 'pages.adminFreightNumericScenarios.perDiemAmountPerDay' | translate }}</mat-label>
+            <input matInput type="number" step="0.01" formControlName="perDiemAmountPerDay" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="admin-freight-numeric-scenarios__field">
+            <mat-label>{{ 'pages.adminFreightNumericScenarios.perDiemRouteDivisorKm' | translate }}</mat-label>
+            <input matInput type="number" step="1" formControlName="perDiemRouteDivisorKm" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="admin-freight-numeric-scenarios__field">
+            <mat-label>{{ 'pages.adminFreightNumericScenarios.perDiemFixedExtraDays' | translate }}</mat-label>
+            <input matInput type="number" step="1" formControlName="perDiemFixedExtraDays" />
+          </mat-form-field>
+        </div>
+        <mat-checkbox formControlName="isActive">{{ 'pages.adminFreightNumericScenarios.isActive' | translate }}</mat-checkbox>
+        <div class="admin-freight-numeric-scenarios__form-actions">
+          <button mat-flat-button color="primary" type="submit">
+            {{ 'pages.adminFreightNumericScenarios.save' | translate }}
+          </button>
+          <button mat-stroked-button type="button" (click)="startCreate()">
+            {{ 'pages.adminFreightNumericScenarios.resetForm' | translate }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>

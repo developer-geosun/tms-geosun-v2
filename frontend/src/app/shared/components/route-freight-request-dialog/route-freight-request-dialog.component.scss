@@ -1,0 +1,152 @@
+@use 'breakpoints' as bp;
+
+:host.route-freight-request-dialog-host {
+  display: block;
+  box-sizing: border-box;
+}
+
+.route-freight-request-dialog__title {
+  margin: 0;
+  padding: 0 0 0.25rem;
+  font-size: clamp(1.05rem, 2.8vw, 1.25rem);
+  line-height: 1.35;
+  font-weight: 600;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: center;
+}
+
+.route-freight-request-dialog__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.5rem !important;
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@include bp.tablet-up {
+  .route-freight-request-dialog__content {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+.route-freight-request-dialog__summary-card {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.route-freight-request-dialog__summary-card-header {
+  padding: 0.75rem 1rem 0;
+}
+
+.route-freight-request-dialog__summary-card-header .mat-mdc-card-header-text {
+  margin: 0;
+}
+
+.route-freight-request-dialog__summary-card-title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--mat-sys-on-surface-variant);
+  letter-spacing: 0.02em;
+}
+
+.route-freight-request-dialog__summary-card-content {
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.75rem !important;
+}
+
+.route-freight-request-dialog__summary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: 0.5rem;
+  row-gap: 0.45rem;
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.route-freight-request-dialog__summary-label {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-weight: 500;
+  min-width: 0;
+  padding-inline-end: 0.25rem;
+}
+
+.route-freight-request-dialog__summary-value {
+  margin: 0;
+  color: var(--mat-sys-on-surface);
+  font-weight: 600;
+  word-break: break-word;
+  text-align: right;
+  justify-self: end;
+  max-width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.route-freight-request-dialog__form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.route-freight-request-dialog__field {
+  width: 100%;
+}
+
+.route-freight-request-dialog__textarea {
+  resize: vertical;
+  min-height: 4.5rem;
+  max-height: 12rem;
+}
+
+.route-freight-request-dialog__error {
+  margin: 0 0 0.75rem;
+  color: var(--mat-sys-error);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.route-freight-request-dialog__submit-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.route-freight-request-dialog__actions {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.5rem !important;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px)) !important;
+}
+
+@include bp.tablet-up {
+  .route-freight-request-dialog__form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .route-freight-request-dialog__field--full {
+    grid-column: 1 / -1;
+  }
+}
+
+@include bp.handset {
+  .route-freight-request-dialog__actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+
+    button {
+      width: 100%;
+    }
+  }
+}

@@ -1,0 +1,249 @@
+@use 'breakpoints' as bp;
+
+:host {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-currencies {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 1rem;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  &__rate-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  &__rate-field {
+    min-width: 12rem;
+  }
+
+  &__snapshot {
+    flex-shrink: 0;
+    margin-bottom: 0.75rem;
+
+    h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+  }
+
+  &__messages {
+    flex-shrink: 0;
+    margin-bottom: 0.5rem;
+
+    p {
+      margin: 0.25rem 0;
+    }
+  }
+
+  &__error {
+    color: var(--mat-sys-error, #b3261e);
+  }
+
+  &__success {
+    color: var(--mat-sys-primary, #1565c0);
+  }
+
+  &__table-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__table-scroll {
+    flex: 0 1 auto;
+    max-height: 100%;
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+
+  &__table {
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  &__table .mat-column-nameUk .mat-mdc-cell,
+  &__table .mat-column-nameUk.mat-mdc-header-cell {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__paginator {
+    flex-shrink: 0;
+  }
+}
+
+@include bp.handset {
+  .admin-currencies {
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.75rem;
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+
+    &__header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
+
+      h1 {
+        font-size: 1rem;
+        line-height: 1.25;
+      }
+    }
+
+    &__actions {
+      flex-direction: column;
+      align-items: stretch;
+      width: 100%;
+
+      .mat-mdc-button {
+        font-size: 0.75rem;
+      }
+    }
+
+    &__action-btn {
+      width: 100%;
+    }
+
+    &__messages p {
+      font-size: 0.75rem;
+    }
+
+    &__table-panel {
+      border: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.12));
+      border-radius: 8px;
+      background: var(--mat-sys-surface-container-low, #fafafa);
+      overflow: hidden;
+    }
+
+    &__table-scroll {
+      flex: 1 1 auto;
+      overflow-x: auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    &__table {
+      min-width: 18.5rem;
+      font-size: 0.75rem;
+
+      .mat-mdc-header-cell,
+      .mat-mdc-cell {
+        padding-inline: 0.375rem;
+        font-size: 0.75rem;
+      }
+
+      .mat-mdc-header-cell {
+        font-size: 0.6875rem;
+      }
+
+      .mat-sort-header-content {
+        font-size: 0.6875rem;
+      }
+
+      .mat-column-nbuUnits,
+      .mat-column-rateDate {
+        display: none;
+      }
+
+      .mat-column-code {
+        width: 3.25rem;
+      }
+
+      .mat-column-nameUk {
+        width: auto;
+        min-width: 5.5rem;
+      }
+
+      .mat-column-ratePerUnit {
+        width: 5.5rem;
+      }
+
+      .mat-column-isActive {
+        width: 3.75rem;
+        text-align: center;
+      }
+    }
+
+    &__paginator {
+      border-top: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.12));
+      font-size: 0.75rem;
+
+      ::ng-deep .mat-mdc-paginator-container {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.25rem 0.5rem;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+      }
+
+      ::ng-deep .mat-mdc-paginator-page-size-label,
+      ::ng-deep .mat-mdc-paginator-range-label,
+      ::ng-deep .mat-mdc-select-value-text {
+        font-size: 0.75rem;
+      }
+
+      ::ng-deep .mat-mdc-paginator-page-size {
+        flex: 1 1 100%;
+        justify-content: center;
+        margin: 0;
+      }
+
+      ::ng-deep .mat-mdc-paginator-range-actions {
+        flex: 1 1 auto;
+        justify-content: center;
+      }
+
+      ::ng-deep .mat-mdc-paginator-navigation-first,
+      ::ng-deep .mat-mdc-paginator-navigation-last {
+        display: none;
+      }
+    }
+  }
+}

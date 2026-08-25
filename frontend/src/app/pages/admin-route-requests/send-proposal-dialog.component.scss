@@ -1,0 +1,38 @@
+@use 'breakpoints' as bp;
+
+.send-proposal-dialog__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: min(560px, 82vw);
+  padding-top: 0.25rem;
+
+  @include bp.handset {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+.send-proposal-dialog__field {
+  width: 100%;
+}
+
+.send-proposal-dialog__field--message textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.send-proposal-dialog__error {
+  margin: 0;
+  color: #b71c1c;
+}
+
+mat-dialog-actions button {
+  min-height: 48px;
+}
+
+mat-dialog-actions button mat-spinner {
+  display: inline-block;
+  margin: 0 0.5rem;
+}

@@ -1,0 +1,114 @@
+@use 'breakpoints' as bp;
+
+:root {
+  --page-padding-inline: 1.25rem;
+  --page-padding-block: 1.25rem;
+  --page-title-size: 1.5rem;
+  --fab-inset: max(16px, env(safe-area-inset-bottom, 0px));
+  --fab-inset-inline: max(16px, env(safe-area-inset-right, 0px));
+}
+
+@include bp.handset {
+  :root {
+    --page-padding-inline: 0.75rem;
+    --page-padding-block: 0.75rem;
+    --page-title-size: 1.25rem;
+  }
+}
+
+.page {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  padding-left: max(0px, env(safe-area-inset-left, 0px));
+  padding-right: max(0px, env(safe-area-inset-right, 0px));
+  padding-bottom: max(0px, env(safe-area-inset-bottom, 0px));
+}
+
+.page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  min-width: 0;
+
+  @include bp.handset {
+    flex-wrap: wrap;
+  }
+}
+
+.page__title {
+  margin: 0;
+  font-size: var(--page-title-size);
+  line-height: 1.25;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.page__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  min-width: 0;
+
+  @include bp.handset {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+}
+
+.table-shell {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-shell .mat-mdc-table {
+  min-width: 640px;
+}
+
+/* Компактний paginator на handset (спільні правила admin-сторінок). */
+@include bp.handset {
+  .table-shell + mat-paginator,
+  .table-shell ~ mat-paginator,
+  .page mat-paginator {
+    .mat-mdc-paginator-page-size-label,
+    .mat-mdc-paginator-range-label {
+      font-size: 0.75rem;
+    }
+
+    .mat-mdc-paginator-page-size {
+      margin-right: 4px;
+    }
+
+    .mat-mdc-paginator-container {
+      flex-wrap: wrap;
+      justify-content: center;
+      min-height: auto;
+      padding: 4px 0;
+    }
+  }
+}
+
+/* Auth-форми: спільні обмеження ширини. */
+.auth-page {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+@include bp.handset {
+  .auth-page {
+    .auth-card,
+    mat-card {
+      max-width: 100%;
+    }
+  }
+}

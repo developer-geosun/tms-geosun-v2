@@ -1,0 +1,97 @@
+spring:
+  application:
+    name: tms-geosun-backend-java
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/tms_auth?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${DB_USER:tms_user}
+    password: ${DB_PASSWORD:tms_password}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:1025}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SMTP_AUTH:false}
+          starttls:
+            enable: ${SMTP_STARTTLS:false}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  show-actuator: true
+  override-with-generic-response: false
+
+app:
+  # Режим публічного доступу (інформаційно; тунель керує Docker Compose-профіль ngrok).
+  public-access:
+    mode: ${PUBLIC_ACCESS_MODE:static-ip}
+    url: ${PUBLIC_API_URL:}
+  cors:
+    allowed-origin-patterns-extra: ${CORS_ALLOWED_ORIGIN_PATTERNS:}
+  security:
+    jwt:
+      secret: ${JWT_SECRET:replace-me-with-strong-secret-of-at-least-32-characters}
+      issuer: ${JWT_ISSUER:}
+      audience: ${JWT_AUDIENCE:}
+      expires-seconds: ${JWT_EXPIRES_SECONDS:900}
+      refresh-expires-seconds: ${JWT_REFRESH_EXPIRES_SECONDS:604800}
+  email:
+    from: ${MAIL_FROM:no-reply@example.com}
+    verification-expires-seconds: ${EMAIL_VERIFICATION_EXPIRES_SECONDS:86400}
+    password-reset-expires-seconds: ${PASSWORD_RESET_EXPIRES_SECONDS:3600}
+    # Посилання в листах — на frontend (локально або GitHub Pages), не на ngrok API.
+    verification-link-base: ${EMAIL_VERIFICATION_LINK_BASE:http://localhost:4200/verify-email}
+    password-reset-link-base: ${PASSWORD_RESET_LINK_BASE:http://localhost:4200/reset-password}
+  rate-limit:
+    login-max-attempts: ${RATE_LIMIT_LOGIN_MAX_ATTEMPTS:5}
+    login-window-seconds: ${RATE_LIMIT_LOGIN_WINDOW_SECONDS:900}
+    resend-verification-seconds: ${RATE_LIMIT_RESEND_VERIFICATION_SECONDS:60}
+    forgot-password-seconds: ${RATE_LIMIT_FORGOT_PASSWORD_SECONDS:60}
+    refresh-max-requests: ${RATE_LIMIT_REFRESH_MAX_REQUESTS:30}
+    refresh-window-seconds: ${RATE_LIMIT_REFRESH_WINDOW_SECONDS:60}
+    register-max-per-window: ${RATE_LIMIT_REGISTER_MAX_PER_WINDOW:30}
+  cleanup:
+    token-retention-days: ${TOKEN_CLEANUP_RETENTION_DAYS:30}
+    cron: ${TOKEN_CLEANUP_CRON:0 0 2 * * *}
+  here:
+    api-key: ${HERE_API_KEY:}
+    base-url: ${HERE_BASE_URL:https://router.hereapi.com}
+    transport-mode: ${HERE_TRANSPORT_MODE:truck}
+    routing-mode: ${HERE_ROUTING_MODE:fast}
+    timeout-millis: ${HERE_TIMEOUT_MILLIS:5000}
+    cache-ttl-seconds: ${HERE_CACHE_TTL_SECONDS:86400}
+  country-breakdown:
+    provider: ${COUNTRY_BREAKDOWN_PROVIDER:here}
+  nbu:
+    base-url: ${NBU_API_BASE_URL:https://bank.gov.ua/NBUStatService/v1/statdirectory}
+    timeout-millis: ${NBU_API_TIMEOUT_MILLIS:10000}
+    max-lookback-days: ${NBU_MAX_LOOKBACK_DAYS:14}

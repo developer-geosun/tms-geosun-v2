@@ -1,0 +1,89 @@
+<section class="login-page">
+  <mat-card class="login-card">
+    <div class="login-header">
+      <div class="header-icon" aria-hidden="true">
+        <mat-icon fontIcon="lock" />
+      </div>
+      <h1>{{ 'pages.login.title' | translate }}</h1>
+      <p class="subtitle">{{ 'pages.login.subtitle' | translate }}</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="login-form">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'pages.login.email' | translate }}</mat-label>
+        <input matInput formControlName="email" autocomplete="email" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'pages.login.password' | translate }}</mat-label>
+        <input
+          matInput
+          [type]="isPasswordVisible() ? 'text' : 'password'"
+          formControlName="password"
+          autocomplete="current-password"
+        />
+        <button
+          type="button"
+          mat-icon-button
+          matSuffix
+          [attr.aria-label]="isPasswordVisible() ? 'Hide password' : 'Show password'"
+          [attr.aria-pressed]="isPasswordVisible()"
+          (click)="isPasswordVisible.set(!isPasswordVisible())"
+        >
+          <mat-icon [fontIcon]="isPasswordVisible() ? 'visibility_off' : 'visibility'"></mat-icon>
+        </button>
+      </mat-form-field>
+
+      <p class="forgot-password-link">
+        <a [routerLink]="['/forgot-password']">{{ 'pages.login.forgotPassword' | translate }}</a>
+      </p>
+
+      @if (errorCode() === '401') {
+        <p class="error-text">
+          <mat-icon fontIcon="error_outline" aria-hidden="true"></mat-icon>
+          <span>{{ 'pages.login.error401' | translate }}</span>
+        </p>
+      }
+      @if (errorCode() === '403') {
+        <p class="error-text">
+          <mat-icon fontIcon="error_outline" aria-hidden="true"></mat-icon>
+          <span>{{ 'pages.login.error403' | translate }}</span>
+        </p>
+      }
+      @if (errorCode() === 'email_not_verified') {
+        <p class="error-text">
+          <mat-icon fontIcon="error_outline" aria-hidden="true"></mat-icon>
+          <span>{{ 'pages.login.errorEmailNotVerified' | translate }}</span>
+        </p>
+      }
+      @if (errorCode() === 'generic') {
+        <p class="error-text">
+          <mat-icon fontIcon="error_outline" aria-hidden="true"></mat-icon>
+          <span>{{ 'pages.login.errorGeneric' | translate }}</span>
+        </p>
+      }
+      @if (hasSuccess()) {
+        <p class="success-text">
+          <mat-icon fontIcon="check_circle_outline" aria-hidden="true"></mat-icon>
+          <span>{{ 'pages.login.success' | translate }}</span>
+        </p>
+      }
+
+      <button class="submit-button" mat-raised-button color="primary" type="submit" [disabled]="isLoading()">
+        @if (isLoading()) {
+          <span class="loading-content">
+            <mat-spinner diameter="18"></mat-spinner>
+            <span>{{ 'pages.login.loading' | translate }}</span>
+          </span>
+        } @else {
+          {{ 'pages.login.submit' | translate }}
+        }
+      </button>
+    </form>
+
+    <p class="switch-auth">
+      {{ 'pages.login.noAccount' | translate }}
+      <a [routerLink]="['/register']">{{ 'auth.register' | translate }}</a>
+    </p>
+  </mat-card>
+</section>

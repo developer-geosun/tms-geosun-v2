@@ -1,0 +1,60 @@
+// Синхрон з app/core/layout/layout-breakpoints.ts — не змінювати числа лише в одному місці.
+
+$handset-max: 599.98px;
+$tablet-min: 600px;
+$tablet-max: 1023.98px;
+$desktop-min: 1024px;
+$compact-split-max: 1099.98px;
+
+// Card-grid (routes): іменовані винятки, не «магічні» ad-hoc.
+$grid-2col-min: 840px;
+$grid-3col-min: 1320px;
+
+@mixin handset {
+  @media (max-width: $handset-max) {
+    @content;
+  }
+}
+
+@mixin tablet-up {
+  @media (min-width: $tablet-min) {
+    @content;
+  }
+}
+
+@mixin tablet-only {
+  @media (min-width: $tablet-min) and (max-width: $tablet-max) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: $desktop-min) {
+    @content;
+  }
+}
+
+/** ≤ desktop-1px: burger nav (toolbar). */
+@mixin below-desktop {
+  @media (max-width: $tablet-max) {
+    @content;
+  }
+}
+
+@mixin compact-split {
+  @media (max-width: $compact-split-max) {
+    @content;
+  }
+}
+
+@mixin grid-2col {
+  @media (min-width: $grid-2col-min) {
+    @content;
+  }
+}
+
+@mixin grid-3col {
+  @media (min-width: $grid-3col-min) {
+    @content;
+  }
+}

@@ -1,0 +1,30 @@
+<h2 mat-dialog-title>{{ 'pages.adminRouteRequests.sendProposalTitle' | translate }}</h2>
+
+<mat-dialog-content class="send-proposal-dialog__content" [formGroup]="form">
+  <mat-form-field appearance="outline" class="send-proposal-dialog__field">
+    <mat-label>{{ 'pages.adminRouteRequests.sendProposalRecipient' | translate }}</mat-label>
+    <input matInput formControlName="recipientEmail" type="email" readonly />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="send-proposal-dialog__field send-proposal-dialog__field--message">
+    <mat-label>{{ 'pages.adminRouteRequests.sendProposalMessage' | translate }}</mat-label>
+    <textarea matInput formControlName="messageBody" rows="14"></textarea>
+  </mat-form-field>
+
+  @if (submitErrorKey()) {
+    <p class="send-proposal-dialog__error">{{ submitErrorKey() | translate }}</p>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cancel()" [disabled]="isSubmitting()">
+    {{ 'pages.adminRouteRequests.sendProposalCancel' | translate }}
+  </button>
+  <button mat-flat-button color="primary" type="button" (click)="confirmSend()" [disabled]="isSubmitting()">
+    @if (isSubmitting()) {
+      <mat-spinner diameter="18"></mat-spinner>
+    } @else {
+      {{ 'pages.adminRouteRequests.sendProposalConfirm' | translate }}
+    }
+  </button>
+</mat-dialog-actions>

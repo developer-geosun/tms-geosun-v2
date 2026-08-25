@@ -1,0 +1,16 @@
+EN:
+Welcome!
+Please verify your email using this link:
+{{VERIFICATION_LINK}}
+
+RU:
+Добро пожаловать!
+Подтвердите email по ссылке:
+{{VERIFICATION_LINK}}
+
+UK:
+Ласкаво просимо!
+Підтвердіть email за посиланням:
+{{VERIFICATION_LINK}}
+
+If you did not create an account / Если вы не создавали аккаунт / Якщо ви не створювали акаунт, просто проігноруйте цей лист.

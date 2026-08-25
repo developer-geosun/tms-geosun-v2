@@ -1,0 +1,16 @@
+.route-delete-confirm-dialog__delete-btn {
+  --mdc-filled-button-container-color: var(--mat-sys-error);
+  --mdc-filled-button-label-text-color: var(--mat-sys-on-error);
+  background-color: var(--mat-sys-error) !important;
+  color: var(--mat-sys-on-error) !important;
+}
+
+:host {
+  display: block;
+  max-width: min(100vw - 24px, 400px);
+}
+
+button {
+  min-height: 48px;
+}
+

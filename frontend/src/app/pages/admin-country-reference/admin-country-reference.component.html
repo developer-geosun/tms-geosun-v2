@@ -1,0 +1,74 @@
+<section class="admin-country-reference">
+  <header class="admin-country-reference__header">
+    <h1>{{ 'pages.adminCountryReference.title' | translate }}</h1>
+    <div class="admin-country-reference__actions">
+      <button mat-stroked-button type="button" (click)="reload()" [disabled]="isLoading()">
+        {{ 'pages.adminCountryReference.refresh' | translate }}
+      </button>
+    </div>
+  </header>
+
+  <form class="admin-country-reference__search" [formGroup]="searchForm" (ngSubmit)="reload()">
+    <mat-form-field appearance="outline" class="admin-country-reference__search-field">
+      <mat-label>{{ 'pages.adminCountryReference.search' | translate }}</mat-label>
+      <input matInput formControlName="search" />
+    </mat-form-field>
+    <button mat-stroked-button type="button" (click)="clearSearch()">
+      {{ 'pages.adminCountryReference.clearSearch' | translate }}
+    </button>
+  </form>
+
+  @if (isLoading() || loadError()) {
+    <div class="admin-country-reference__messages">
+      @if (isLoading()) {
+        <p>{{ 'pages.adminCountryReference.loading' | translate }}</p>
+      } @else if (loadError()) {
+        <p class="admin-country-reference__error">{{ loadError() | translate }}</p>
+      }
+    </div>
+  }
+
+  <div class="admin-country-reference__table-panel">
+    <div class="admin-country-reference__table-scroll table-shell">
+      <table mat-table [dataSource]="dataSource" matSort class="admin-country-reference__table">
+        <ng-container matColumnDef="codeAlpha2">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="codeAlpha2">
+            {{ 'pages.adminCountryReference.codeAlpha2' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row">{{ row.codeAlpha2 }}</td>
+        </ng-container>
+        <ng-container matColumnDef="codeAlpha3">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="codeAlpha3">
+            {{ 'pages.adminCountryReference.codeAlpha3' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row">{{ row.codeAlpha3 }}</td>
+        </ng-container>
+        <ng-container matColumnDef="nameUk">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="nameUk">
+            {{ 'pages.adminCountryReference.nameUk' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row" [matTooltip]="row.nameUk">{{ row.nameUk }}</td>
+        </ng-container>
+        <ng-container matColumnDef="nameEn">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="nameEn">
+            {{ 'pages.adminCountryReference.nameEn' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row" [matTooltip]="row.nameEn">{{ row.nameEn }}</td>
+        </ng-container>
+        <ng-container matColumnDef="nameRu">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="nameRu">
+            {{ 'pages.adminCountryReference.nameRu' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row" [matTooltip]="row.nameRu">{{ row.nameRu }}</td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+    </div>
+    <mat-paginator
+      class="admin-country-reference__paginator"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="pageSizeOptions"
+      [showFirstLastButtons]="true" />
+  </div>
+</section>

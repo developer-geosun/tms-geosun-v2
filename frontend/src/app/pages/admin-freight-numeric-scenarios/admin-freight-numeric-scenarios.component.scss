@@ -1,0 +1,161 @@
+@use 'breakpoints' as bp;
+
+:host {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-freight-numeric-scenarios {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 1rem;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  &__messages {
+    flex-shrink: 0;
+    margin-bottom: 0.5rem;
+  }
+
+  &__layout {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: 1rem;
+    overflow: hidden;
+
+    @include bp.below-desktop {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 40vh) minmax(0, 1fr);
+    }
+  }
+
+  &__table-panel {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.12));
+    border-radius: 8px;
+    background: var(--mat-sys-surface-container-low, #fafafa);
+  }
+
+  &__table-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  &__paginator {
+    flex-shrink: 0;
+    border-top: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.12));
+  }
+
+  &__form-panel {
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    padding-right: 0.25rem;
+  }
+
+  &__field {
+    width: 100%;
+    display: block;
+  }
+
+  &__field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 0.5rem;
+
+    @include bp.handset {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  &__form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  &__table {
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  &__cell-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__cell-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__error {
+    color: var(--mat-sys-error, #b3261e);
+  }
+
+  &__success {
+    color: #2e7d32;
+  }
+}
+
+.admin-freight-numeric-scenarios__table .mat-column-name {
+  width: 34%;
+}
+
+.admin-freight-numeric-scenarios__table .mat-column-proposalCurrency {
+  width: 12%;
+}
+
+.admin-freight-numeric-scenarios__table .mat-column-isActive {
+  width: 12%;
+}
+
+.admin-freight-numeric-scenarios__table .mat-column-updatedAt {
+  width: 22%;
+}
+
+.admin-freight-numeric-scenarios__table .mat-column-actions {
+  width: 20%;
+}

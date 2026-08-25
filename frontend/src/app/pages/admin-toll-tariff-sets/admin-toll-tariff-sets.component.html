@@ -1,0 +1,212 @@
+<section class="admin-toll-tariff-sets">
+  <header class="admin-toll-tariff-sets__header">
+    <h1>{{ 'pages.adminTollTariffSets.title' | translate }}</h1>
+    <div class="admin-toll-tariff-sets__actions">
+      <button mat-stroked-button type="button" (click)="loadSets()" [disabled]="isLoadingSets()">
+        {{ 'pages.adminTollTariffSets.refresh' | translate }}
+      </button>
+      <button mat-stroked-button type="button" (click)="backToRouteRequests()">
+        {{ 'pages.adminTollTariffSets.backToRequests' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (loadError() || actionError() || actionSuccess()) {
+    <div class="admin-toll-tariff-sets__messages">
+      @if (loadError()) {
+        <p class="admin-toll-tariff-sets__error">{{ loadError() | translate }}</p>
+      }
+      @if (actionError()) {
+        <p class="admin-toll-tariff-sets__error">{{ actionError() | translate }}</p>
+      }
+      @if (actionSuccess()) {
+        <p class="admin-toll-tariff-sets__success">{{ actionSuccess() | translate }}</p>
+      }
+    </div>
+  }
+
+  <div class="admin-toll-tariff-sets__layout">
+    <aside class="admin-toll-tariff-sets__sets-panel">
+      <h2>{{ 'pages.adminTollTariffSets.setsTitle' | translate }}</h2>
+      @if (isLoadingSets()) {
+        <p>{{ 'pages.adminTollTariffSets.loading' | translate }}</p>
+      } @else {
+        <div class="admin-toll-tariff-sets__table-scroll table-shell">
+          <table mat-table [dataSource]="sets()" class="admin-toll-tariff-sets__table">
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminTollTariffSets.name' | translate }}</th>
+              <td mat-cell *matCellDef="let row">{{ row.name }}</td>
+            </ng-container>
+            <ng-container matColumnDef="isActive">
+              <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminTollTariffSets.isActive' | translate }}</th>
+              <td mat-cell *matCellDef="let row">{{ row.isActive }}</td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let row">
+                <button mat-button type="button" (click)="startEditSet(row); $event.stopPropagation()">
+                  {{ 'pages.adminTollTariffSets.edit' | translate }}
+                </button>
+              </td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="setColumns"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: setColumns"
+              class="admin-toll-tariff-sets__set-row"
+              [class.admin-toll-tariff-sets__set-row--active]="row.id === selectedSetId()"
+              (click)="selectSet(row)"></tr>
+          </table>
+        </div>
+      }
+
+      <form class="admin-toll-tariff-sets__set-form" [formGroup]="setForm" (ngSubmit)="saveSet()">
+        <mat-form-field appearance="outline" class="admin-toll-tariff-sets__field">
+          <mat-label>{{ 'pages.adminTollTariffSets.name' | translate }}</mat-label>
+          <input matInput formControlName="name" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="admin-toll-tariff-sets__field">
+          <mat-label>{{ 'pages.adminTollTariffSets.description' | translate }}</mat-label>
+          <input matInput formControlName="description" />
+        </mat-form-field>
+        <mat-checkbox formControlName="isActive">{{ 'pages.adminTollTariffSets.isActive' | translate }}</mat-checkbox>
+        <div class="admin-toll-tariff-sets__form-actions">
+          <button mat-flat-button color="primary" type="submit">{{ 'pages.adminTollTariffSets.save' | translate }}</button>
+          <button mat-stroked-button type="button" (click)="startCreateSet()">
+            {{ 'pages.adminTollTariffSets.resetForm' | translate }}
+          </button>
+          @if (selectedSet(); as set) {
+            <button mat-button color="warn" type="button" (click)="deleteSet(set)">
+              {{ 'pages.adminTollTariffSets.delete' | translate }}
+            </button>
+          }
+        </div>
+      </form>
+    </aside>
+
+    <section class="admin-toll-tariff-sets__rules-panel">
+      <h2>{{ 'pages.adminTollTariffSets.rulesTitle' | translate }}</h2>
+      @if (!selectedSet()) {
+        <p>{{ 'pages.adminTollTariffSets.selectSetHint' | translate }}</p>
+      } @else {
+        <p class="admin-toll-tariff-sets__selected-set">{{ selectedSet()!.name }}</p>
+        <div class="admin-toll-tariff-sets__rules-body">
+          <form class="admin-toll-tariff-sets__rule-form" [formGroup]="ruleForm" (ngSubmit)="saveRule()">
+            <mat-form-field appearance="outline" class="admin-toll-tariff-sets__field">
+              <mat-label>{{ 'pages.adminTollTariffSets.countryCode' | translate }}</mat-label>
+              <input
+                matInput
+                type="text"
+                [formControl]="countrySearchControl"
+                [matAutocomplete]="countryAutocomplete"
+                (blur)="onCountrySearchBlur()" />
+              <mat-autocomplete
+                #countryAutocomplete="matAutocomplete"
+                autoActiveFirstOption
+                (optionSelected)="onCountryOptionSelected($event)">
+                @for (option of filteredCountryOptions(); track option.code) {
+                  <mat-option [value]="option.code">{{ option.label }}</mat-option>
+                }
+              </mat-autocomplete>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="admin-toll-tariff-sets__field">
+              <mat-label>{{ 'pages.adminTollTariffSets.tollTypeLabel' | translate }}</mat-label>
+              <mat-select formControlName="tollType">
+                @for (type of tollTypeOptions; track type) {
+                  <mat-option [value]="type">{{ tollTypeLabel(type) | translate }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="admin-toll-tariff-sets__field">
+              <mat-label>{{ 'pages.adminTollTariffSets.rate' | translate }}</mat-label>
+              <input matInput type="number" step="0.0001" formControlName="rate" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="admin-toll-tariff-sets__field">
+              <mat-label>{{ 'pages.adminTollTariffSets.fixedDays' | translate }}</mat-label>
+              <input matInput type="number" step="1" formControlName="fixedDays" />
+            </mat-form-field>
+            <mat-checkbox formControlName="isActive">{{ 'pages.adminTollTariffSets.isActive' | translate }}</mat-checkbox>
+            <div class="admin-toll-tariff-sets__form-actions">
+              <button mat-flat-button color="primary" type="submit">{{ 'pages.adminTollTariffSets.saveRule' | translate }}</button>
+              <button mat-stroked-button type="button" (click)="startCreateRule()">
+                {{ 'pages.adminTollTariffSets.resetRuleForm' | translate }}
+              </button>
+            </div>
+          </form>
+
+          <div class="admin-toll-tariff-sets__rules-table-area">
+            @if (isLoadingRules()) {
+              <p class="admin-toll-tariff-sets__rules-loading">{{ 'pages.adminTollTariffSets.loading' | translate }}</p>
+            }
+            <div class="admin-toll-tariff-sets__rules-table-panel">
+              <div class="admin-toll-tariff-sets__table-scroll admin-toll-tariff-sets__table-scroll--rules table-shell">
+                <table
+                  mat-table
+                  [dataSource]="rulesDataSource"
+                  matSort
+                  #rulesSort="matSort"
+                  class="admin-toll-tariff-sets__table">
+                  <ng-container matColumnDef="countryCode">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header="countryCode">
+                      {{ 'pages.adminTollTariffSets.countryCode' | translate }}
+                    </th>
+                    <td mat-cell *matCellDef="let row">{{ row.countryCode }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="countryName">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header="countryName">
+                      {{ 'pages.adminTollTariffSets.countryName' | translate }}
+                    </th>
+                    <td mat-cell *matCellDef="let row">{{ countryName(row.countryCode) }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="tollType">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header="tollType">
+                      {{ 'pages.adminTollTariffSets.tollTypeLabel' | translate }}
+                    </th>
+                    <td mat-cell *matCellDef="let row">{{ tollTypeLabel(row.tollType) | translate }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="rate">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header="rate">
+                      {{ 'pages.adminTollTariffSets.rate' | translate }}
+                    </th>
+                    <td mat-cell *matCellDef="let row">{{ row.rate }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="fixedDays">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header="fixedDays">
+                      {{ 'pages.adminTollTariffSets.fixedDays' | translate }}
+                    </th>
+                    <td mat-cell *matCellDef="let row">{{ row.fixedDays ?? '—' }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="isActive">
+                    <th mat-header-cell *matHeaderCellDef mat-sort-header="isActive">
+                      {{ 'pages.adminTollTariffSets.isActive' | translate }}
+                    </th>
+                    <td mat-cell *matCellDef="let row">{{ row.isActive }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef></th>
+                    <td mat-cell *matCellDef="let row">
+                      <button mat-button type="button" (click)="startEditRule(row)">
+                        {{ 'pages.adminTollTariffSets.edit' | translate }}
+                      </button>
+                      <button mat-button color="warn" type="button" (click)="deleteRule(row)">
+                        {{ 'pages.adminTollTariffSets.delete' | translate }}
+                      </button>
+                    </td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="ruleColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: ruleColumns"></tr>
+                </table>
+              </div>
+              <mat-paginator
+                #rulesPaginator
+                class="admin-toll-tariff-sets__rules-paginator"
+                [pageSize]="rulesPageSize()"
+                [pageSizeOptions]="rulesPageSizeOptions"
+                [showFirstLastButtons]="true" />
+            </div>
+          </div>
+        </div>
+      }
+    </section>
+  </div>
+</section>

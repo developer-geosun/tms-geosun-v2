@@ -1,0 +1,79 @@
+<h2 mat-dialog-title class="route-freight-request-dialog__title">
+  {{ 'pages.freightCalculation.requestTitle' | translate }}
+</h2>
+<mat-dialog-content class="route-freight-request-dialog__content">
+  @if (submitErrorKey(); as errKey) {
+    <p class="route-freight-request-dialog__error" role="alert">{{ errKey | translate }}</p>
+  }
+  <mat-card
+    class="route-freight-request-dialog__summary-card"
+    appearance="outlined"
+    [attr.aria-label]="'pages.freightCalculation.requestRouteSummaryTitle' | translate"
+  >
+    <mat-card-header class="route-freight-request-dialog__summary-card-header">
+      <mat-card-title class="route-freight-request-dialog__summary-card-title">
+        {{ 'pages.freightCalculation.requestRouteSummaryTitle' | translate }}
+      </mat-card-title>
+    </mat-card-header>
+    <mat-card-content class="route-freight-request-dialog__summary-card-content">
+      <dl class="route-freight-request-dialog__summary-grid">
+        <dt class="route-freight-request-dialog__summary-label">{{ 'pages.freightCalculation.requestSummaryRouteId' | translate }}</dt>
+        <dd class="route-freight-request-dialog__summary-value">{{ data.routeId }}</dd>
+        <dt class="route-freight-request-dialog__summary-label">{{ 'pages.freightCalculation.requestSummaryCreatedAt' | translate }}</dt>
+        <dd class="route-freight-request-dialog__summary-value">{{ formatRouteDateTime(data.createdAt) }}</dd>
+        <dt class="route-freight-request-dialog__summary-label">{{ 'pages.freightCalculation.requestSummaryUpdatedAt' | translate }}</dt>
+        <dd class="route-freight-request-dialog__summary-value">{{ formatRouteDateTime(data.updatedAt) }}</dd>
+        <dt class="route-freight-request-dialog__summary-label">{{ 'pages.freightCalculation.requestSummaryPointsCount' | translate }}</dt>
+        <dd class="route-freight-request-dialog__summary-value">{{ data.pointsCount }}</dd>
+        <dt class="route-freight-request-dialog__summary-label">{{ 'pages.freightCalculation.requestSummaryDistance' | translate }}</dt>
+        <dd class="route-freight-request-dialog__summary-value">
+          {{ formatDistanceKm() }} {{ 'pages.freightCalculation.km' | translate }}
+        </dd>
+      </dl>
+    </mat-card-content>
+  </mat-card>
+  <form [formGroup]="form" id="route-freight-request-form" class="route-freight-request-dialog__form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="route-freight-request-dialog__field route-freight-request-dialog__field--full">
+      <mat-label>{{ 'pages.freightCalculation.preferredStartDate' | translate }}</mat-label>
+      <input matInput [matDatepicker]="startPicker" formControlName="preferredStartDate" autocomplete="off" />
+      <mat-datepicker-toggle matIconSuffix [for]="startPicker" />
+      <mat-datepicker #startPicker />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="route-freight-request-dialog__field route-freight-request-dialog__field--full">
+      <mat-label>{{ 'pages.freightCalculation.routeComment' | translate }}</mat-label>
+      <textarea
+        matInput
+        formControlName="comment"
+        rows="3"
+        class="route-freight-request-dialog__textarea"
+      ></textarea>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="route-freight-request-dialog__field route-freight-request-dialog__field--full">
+      <mat-label>{{ 'pages.freightCalculation.cargoType' | translate }}</mat-label>
+      <input matInput type="text" formControlName="cargoType" autocomplete="off" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="route-freight-request-dialog__field route-freight-request-dialog__field--half">
+      <mat-label>{{ 'pages.freightCalculation.cargoWeightKg' | translate }}</mat-label>
+      <input matInput type="number" min="0" step="0.001" formControlName="cargoWeightKg" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="route-freight-request-dialog__field route-freight-request-dialog__field--half">
+      <mat-label>{{ 'pages.freightCalculation.cargoVolumeM3' | translate }}</mat-label>
+      <input matInput type="number" min="0" step="0.001" formControlName="cargoVolumeM3" />
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end" class="route-freight-request-dialog__actions">
+  <button mat-button type="button" (click)="cancel()" [disabled]="isSubmitting()">
+    {{ 'pages.routes.deleteCancel' | translate }}
+  </button>
+  <button mat-flat-button color="primary" type="submit" form="route-freight-request-form" [disabled]="isSubmitting()">
+    @if (isSubmitting()) {
+      <span class="route-freight-request-dialog__submit-wrap">
+        <mat-spinner diameter="18"></mat-spinner>
+        <span>{{ 'pages.freightCalculation.submit' | translate }}</span>
+      </span>
+    } @else {
+      {{ 'pages.freightCalculation.submit' | translate }}
+    }
+  </button>
+</mat-dialog-actions>

@@ -1,0 +1,120 @@
+@use 'breakpoints' as bp;
+
+.app-footer {
+  background-color: var(--mat-sys-surface-container, #f3f3f3);
+  color: var(--mat-sys-on-surface, #1a1a1a);
+  border-top: 1px solid var(--mat-sys-outline-variant, #c7c7c7);
+  min-height: 80px;
+  padding: 16px 12px;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+
+  .footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 1200px;
+
+    .user-section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .user-login {
+      opacity: 0.95;
+    }
+
+    .user-role {
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 10px;
+      border: 1px solid currentColor;
+      font-size: 11px;
+      letter-spacing: 0.3px;
+    }
+
+    .footer-section {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+
+      p {
+        margin: 0;
+        font-size: 12px;
+        text-align: center;
+        width: 100%;
+        flex-basis: 100%;
+      }
+
+      app-social-icon {
+        margin: 0;
+      }
+    }
+  }
+}
+
+app-social-icon {
+  --background-color: var(--mat-sys-surface, #ffffff);
+  color: var(--mat-sys-on-surface, #1a1a1a);
+}
+
+app-social-icon:hover {
+  ::ng-deep {
+    color: #fff !important;
+
+    svg {
+      fill: #fff !important;
+    }
+  }
+}
+
+// РџР»Р°РЅС€РµС‚Рё С– Р±С–Р»СЊС€Рµ
+@include bp.tablet-up {
+  .app-footer {
+    padding: 16px 20px;
+    min-height: 80px;
+
+    .footer-content {
+      gap: 15px;
+
+      .user-section {
+        font-size: 14px;
+      }
+
+      .footer-section {
+        gap: 5px;
+        flex-wrap: nowrap;
+
+        p {
+          font-size: 14px;
+          width: auto;
+          flex-basis: auto;
+          text-align: left;
+        }
+      }
+    }
+  }
+}
+
+// Р”РµСЃРєС‚РѕРї: С„СѓС‚РµСЂ РІ РѕРґРёРЅ СЂСЏРґРѕРє
+@include bp.desktop {
+  .app-footer {
+    .footer-content {
+      flex-direction: row;
+      justify-content: center;
+    }
+  }
+}
+

@@ -1,0 +1,152 @@
+<mat-toolbar color="primary">
+  <div class="logo-icons-group" [class.is-open]="isLogoIconsOpen()">
+    <app-logo (click)="toggleLogoIcons($event)"></app-logo>
+    <div class="logo-hover-icons">
+      <a
+        mat-icon-button
+        class="company-site-button"
+        [href]="configService.logoUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="World Wide Web"
+        title="World Wide Web">
+        <mat-icon>public</mat-icon>
+      </a>
+      <app-social-icon type="telegram" [url]="configService.telegramUrl"></app-social-icon>
+      <app-social-icon type="whatsapp" [url]="configService.whatsAppUrl"></app-social-icon>
+      <app-social-icon type="viber" [url]="configService.viberUrl"></app-social-icon>
+      <app-social-icon type="facebook" [url]="configService.facebookUrl"></app-social-icon>
+    </div>
+  </div>
+
+  <div class="toolbar-end">
+    <span class="spacer"></span>
+
+    @if (isAuthenticated()) {
+      <nav class="toolbar-nav" aria-label="Навигация по разделам">
+        @for (item of navigationItems; track item.route) {
+          @if (canAccess(item.roles)) {
+            <button
+              mat-stroked-button
+              type="button"
+              class="nav-button"
+              [class.nav-button--active]="isRouteActive(item.route)"
+              (click)="navigateTo(item.route)">
+              @if (item.icon; as icon) {
+                <mat-icon aria-hidden="true">{{ icon }}</mat-icon>
+              }
+              {{ item.labelKey | translate }}
+            </button>
+          }
+        }
+      </nav>
+
+      <button
+        mat-mini-fab
+        type="button"
+        class="nav-menu-button"
+        [matMenuTriggerFor]="navigationMenu"
+        [attr.aria-label]="'Навигационное меню'"
+        title="Навигация">
+        <mat-icon fontIcon="menu" aria-hidden="true"></mat-icon>
+      </button>
+    }
+
+    <div class="toolbar-actions">
+      <div class="auth-actions">
+        @if (!isAuthenticated()) {
+          <button
+            mat-mini-fab
+            type="button"
+            class="auth-button login-button"
+            (click)="navigateToLogin()"
+            [attr.aria-label]="'auth.login' | translate"
+            [attr.title]="'auth.login' | translate">
+            <mat-icon fontIcon="login" aria-hidden="true"></mat-icon>
+          </button>
+        } @else {
+          <button
+            mat-mini-fab
+            type="button"
+            class="auth-button register-button"
+            (click)="logout()"
+            [attr.aria-label]="'auth.logout' | translate"
+            [attr.title]="'auth.logout' | translate">
+            <mat-icon fontIcon="logout" aria-hidden="true"></mat-icon>
+          </button>
+        }
+      </div>
+
+      <button
+        mat-mini-fab
+        class="settings-button"
+        type="button"
+        [matMenuTriggerFor]="settingsMenu"
+        [attr.aria-label]="'settings.buttonLabel' | translate"
+        [attr.title]="'settings.buttonLabel' | translate">
+        <mat-icon fontIcon="settings" aria-hidden="true"></mat-icon>
+      </button>
+    </div>
+  </div>
+</mat-toolbar>
+
+<mat-menu #navigationMenu="matMenu" class="navigation-menu" panelClass="navigation-menu-panel">
+  @for (item of navigationItems; track item.route) {
+    @if (canAccess(item.roles)) {
+      <button
+        mat-menu-item
+        type="button"
+        class="navigation-menu-item"
+        [ngStyle]="navMenuActiveStyles(item.route)"
+        [attr.aria-current]="isRouteActive(item.route) ? 'page' : null"
+        (click)="navigateTo(item.route)">
+        @if (item.icon; as icon) {
+          <mat-icon aria-hidden="true">{{ icon }}</mat-icon>
+        }
+        <span>{{ item.labelKey | translate }}</span>
+      </button>
+    }
+  }
+</mat-menu>
+
+<mat-menu #settingsMenu="matMenu" class="settings-menu" panelClass="settings-menu-panel">
+  <div
+    class="settings-menu-content"
+    tabindex="0"
+    (click)="$event.stopPropagation()"
+    (keydown.enter)="$event.stopPropagation()"
+    (keydown.space)="$event.preventDefault(); $event.stopPropagation()"
+  >
+    <div class="settings-menu-section-title">{{ getLanguageSectionTitle() }}</div>
+    <mat-button-toggle-group
+      [value]="currentLanguage()"
+      (change)="changeLanguage($event.value)"
+      [hideSingleSelectionIndicator]="true"
+      aria-label="Вибір мови">
+      @for (lang of languages; track lang.code) {
+      <mat-button-toggle [value]="lang.code" [class.ua-button]="lang.code === 'uk'" [class.en-button]="lang.code === 'en'" [class.ru-button]="lang.code === 'ru'">
+        {{ lang.label }}
+      </mat-button-toggle>
+      }
+    </mat-button-toggle-group>
+
+    <div class="settings-menu-section-title">{{ getThemeSectionTitle() }}</div>
+    <div class="theme-options" role="radiogroup" aria-label="Вибір теми">
+      @for (theme of themes; track theme.code) {
+      <button
+        type="button"
+        class="theme-option"
+        [class.selected]="currentTheme() === theme.code"
+        role="radio"
+        [attr.aria-checked]="currentTheme() === theme.code"
+        (click)="changeTheme(theme.code)">
+        <mat-icon class="theme-option-radio" aria-hidden="true">
+          {{ currentTheme() === theme.code ? 'radio_button_checked' : 'radio_button_unchecked' }}
+        </mat-icon>
+        <span class="theme-option-label">{{ theme.label }}</span>
+        <span class="theme-option-preview" [ngClass]="'theme-preview--' + theme.code" aria-hidden="true"></span>
+      </button>
+      }
+    </div>
+  </div>
+</mat-menu>

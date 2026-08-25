@@ -1,0 +1,17 @@
+---
+description: Unified mobile breakpoints — no magic media queries
+globs: frontend/src/**/*.{scss,ts,html}
+alwaysApply: false
+---
+
+# Mobile / responsive layout
+
+- Breakpoints live only in:
+  - `frontend/src/app/core/layout/layout-breakpoints.ts` (`LAYOUT_BP`, `LAYOUT_QUERIES`)
+  - `frontend/src/styles/_breakpoints.scss` (mixins: `handset`, `tablet-up`, `desktop`, `below-desktop`, `compact-split`, `grid-2col`, `grid-3col`)
+- JS viewport state: inject `LayoutService` (`isHandset`, `isTablet`, `isDesktop`, `isCompactSplit`, `handsetPageSize`). Do not use local `MediaMatcher` / raw `matchMedia` on feature pages.
+- SCSS: `@use 'breakpoints' as bp;` then `@include bp.handset { ... }`. No ad-hoc `@media (max-width: Npx)`.
+- Allowed named grid exceptions: `$grid-2col-min` (840), `$grid-3col-min` (1320) via mixins only.
+- Page padding / title: CSS vars `--page-padding-*`, `--page-title-size` from `_page-layout.scss` (set on shell `.content`).
+- Admin tables: wrap in `.table-shell` (horizontal scroll). Forms dialogs: `getHandsetFriendlyDialogConfig` / `dialog-shell--handset-fullscreen`.
+- Comments in code: Ukrainian.

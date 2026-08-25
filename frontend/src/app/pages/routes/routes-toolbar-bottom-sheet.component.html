@@ -1,0 +1,78 @@
+<div class="routes-toolbar-bottom-sheet">
+  <div class="routes-page__toolbar-cards">
+    <mat-card class="routes-page__filters-card route-point-card" appearance="outlined">
+      <mat-card-header class="routes-page__filters-card__header">
+        <mat-card-title class="routes-page__filters-card__title" id="routes-sheet-list-view-label">
+          {{ 'pages.routes.listViewLabel' | translate }}
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="routes-page__filters-card__content">
+        <mat-radio-group
+          class="routes-page__view-radios"
+          [value]="data.listView()"
+          (change)="onListViewRadioChange($event)"
+          [disabled]="data.isBusy()"
+          aria-labelledby="routes-sheet-list-view-label"
+        >
+          <mat-radio-button value="all">{{ 'pages.routes.listViewAll' | translate }}</mat-radio-button>
+          <mat-radio-button value="active">{{ 'pages.routes.listViewActive' | translate }}</mat-radio-button>
+          <mat-radio-button value="deleted">{{ 'pages.routes.listViewDeleted' | translate }}</mat-radio-button>
+        </mat-radio-group>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="routes-page__sort-card route-point-card" appearance="outlined">
+      <mat-card-header class="routes-page__sort-card__header">
+        <mat-card-title class="routes-page__sort-card__title" id="routes-sheet-sort-label">
+          {{ 'pages.routes.sortCardTitle' | translate }}
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="routes-page__sort-card__content">
+        <mat-radio-group
+          class="routes-page__sort-radios"
+          [value]="data.sortBy()"
+          (change)="onSortRadioChange($event)"
+          [disabled]="data.isBusy()"
+          aria-labelledby="routes-sheet-sort-label"
+        >
+          @for (c of sortCriteria; track c.value) {
+            <div class="routes-page__sort-row">
+              <mat-radio-button [value]="c.value">{{ c.labelKey | translate }}</mat-radio-button>
+              @if (data.sortBy() === c.value) {
+                <div
+                  class="routes-page__sort-direction"
+                  role="group"
+                  [attr.aria-label]="'pages.routes.sortDirectionGroup' | translate"
+                >
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="routes-page__sort-dir-btn"
+                    [class.routes-page__sort-dir-btn--active]="data.sortDirection() === 'asc'"
+                    (click)="onSortDirectionClick('asc')"
+                    [disabled]="data.isBusy()"
+                    [attr.aria-label]="'pages.routes.sortAsc' | translate"
+                    [title]="'pages.routes.sortAsc' | translate"
+                  >
+                    <mat-icon>arrow_upward</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    class="routes-page__sort-dir-btn"
+                    [class.routes-page__sort-dir-btn--active]="data.sortDirection() === 'desc'"
+                    (click)="onSortDirectionClick('desc')"
+                    [disabled]="data.isBusy()"
+                    [attr.aria-label]="'pages.routes.sortDesc' | translate"
+                    [title]="'pages.routes.sortDesc' | translate"
+                  >
+                    <mat-icon>arrow_downward</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </mat-radio-group>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

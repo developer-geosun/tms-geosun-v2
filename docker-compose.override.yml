@@ -1,0 +1,53 @@
+## Додаткові сервіси для локальної розробки (профіль dev)
+services:
+  # Angular dev-server з hot reload і монтуванням локального коду
+  frontend-dev:
+    profiles:
+      - dev
+    image: node:20-alpine
+    container_name: tms-frontend-dev
+    working_dir: /app
+    depends_on:
+      - backend
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      CHOKIDAR_INTERVAL: "1000"
+      HERE_API_KEY: ${HERE_API_KEY:-}
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    command: sh -c "if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm ci; fi && npm run start -- --host 0.0.0.0 --port 4200 --poll 1000 --proxy-config proxy.docker.conf.json --allowed-hosts all"
+    ports:
+      - "4200:4200"
+
+  # Dev gateway з окремим nginx-конфігом для маршрутизації у dev-режимі
+  gateway-dev:
+    profiles:
+      - dev
+    image: nginx:1.27-alpine
+    container_name: tms-gateway-dev
+    depends_on:
+      - backend
+      - frontend-dev
+    volumes:
+      - ./nginx.gateway.dev.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "${GATEWAY_DEV_PORT:-8082}:80"
+
+  # Окремий ngrok-тунель для dev (профіль ngrok-dev, щоб не дублювати сервіс ngrok)
+  ngrok-dev:
+    profiles:
+      - ngrok-dev
+    image: ngrok/ngrok:latest
+    container_name: tms-ngrok-dev
+    depends_on:
+      - backend
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN:-}
+    command: http --url=${NGROK_DOMAIN} backend:8080
+    ports:
+      - "${NGROK_DEV_INSPECT_PORT:-4041}:4040"
+
+volumes:
+  # Окремий том для node_modules, щоб не перевстановлювати залежності щоразу
+  frontend_node_modules:
