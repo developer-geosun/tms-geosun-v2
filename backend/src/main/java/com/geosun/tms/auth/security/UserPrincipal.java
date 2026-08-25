@@ -20,8 +20,7 @@ public class UserPrincipal implements UserDetails {
   private final Role role;
   private final String refreshSessionId;
 
-  public UserPrincipal(
-      @NonNull String userId, String email, Role role, String refreshSessionId) {
+  public UserPrincipal(@NonNull String userId, String email, Role role, String refreshSessionId) {
     this.userId = userId;
     this.email = email;
     this.role = role;

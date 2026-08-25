@@ -128,8 +128,7 @@ public class AdminUserService {
     }
     if (userRepository.existsByEmailAndDeletedFalse(user.getEmail())) {
       throw ApiException.conflict(
-          "EMAIL_ALREADY_EXISTS",
-          "Cannot restore: another active user already uses this email");
+          "EMAIL_ALREADY_EXISTS", "Cannot restore: another active user already uses this email");
     }
     user.setDeleted(false);
     user.setDeletedAt(null);
