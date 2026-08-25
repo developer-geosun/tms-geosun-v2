@@ -81,6 +81,8 @@
       "loading": "Sending...",
       "success": "If an account exists, we sent an email with a password reset link",
       "error429": "Too many attempts, please try later",
+      "errorAccountDisabled": "Account is deactivated. Contact an administrator to reactivate it.",
+      "errorUserDeleted": "Account has been deleted. Contact an administrator to restore it.",
       "errorGeneric": "Unable to send the email. Please try again later",
       "backToLogin": "Back to sign in"
     },

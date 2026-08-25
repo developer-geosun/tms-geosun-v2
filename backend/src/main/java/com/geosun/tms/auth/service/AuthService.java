@@ -215,8 +215,19 @@ public class AuthService {
     String email = EmailNormalizer.normalize(request.email());
     rateLimitService.checkForgotPassword(email);
 
-    User user = userRepository.findByEmailAndDeletedFalse(email).orElse(null);
-    if (user == null || !user.isActive() || !user.isEmailVerified()) {
+    // Знаходимо і невидалені, і soft-deleted — щоб відрізнити USER_DELETED від «немає акаунта».
+    User user = userRepository.findTopByEmailOrderByDeletedAsc(email).orElse(null);
+    if (user == null) {
+      // Anti-enumeration: невідомий email — той самий успішний ответ.
+      return new OperationSuccessResponse(true, "Password reset email sent");
+    }
+    if (user.isDeleted()) {
+      throw ApiException.forbidden("USER_DELETED", "User account has been deleted");
+    }
+    if (!user.isActive()) {
+      throw ApiException.forbidden("ACCOUNT_DISABLED", "Account is disabled");
+    }
+    if (!user.isEmailVerified()) {
       return new OperationSuccessResponse(true, "Password reset email sent");
     }
 

@@ -132,20 +132,21 @@
     }
     ```
 
-- `POST /api/v1/auth/forgot-password` - запрос письма для сброса пароля (anti-enumeration: всегда 200).
+- `POST /api/v1/auth/forgot-password` - запрос письма для сброса пароля.
   - Request:
     ```json
     {
       "email": "user@example.com"
     }
     ```
-  - Response 200:
+  - Response 200 (неизвестный email / неподтверждённый email — anti-enumeration):
     ```json
     {
       "success": true,
       "message": "Password reset email sent"
     }
     ```
+  - Response 403: `ACCOUNT_DISABLED` (деактивирован) или `USER_DELETED` (soft-delete).
   - Письмо отправляется только для active + emailVerified пользователя. Токен opaque, TTL по `PASSWORD_RESET_EXPIRES_SECONDS` (default 3600).
 
 - `POST /api/v1/auth/reset-password` - установка нового пароля по токену из письма.

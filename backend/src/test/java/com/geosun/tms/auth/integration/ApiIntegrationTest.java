@@ -405,6 +405,48 @@ class ApiIntegrationTest {
   }
 
   @Test
+  void forgotPassword_disabledUser_returns403() throws Exception {
+    User u = new User();
+    u.setEmail("disabled-reset@example.com");
+    u.setPasswordHash(passwordEncoder.encode("Secret123"));
+    u.setRole(Role.USER);
+    u.setEmailVerified(true);
+    u.setActive(false);
+    userRepository.save(u);
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/forgot-password")
+                .contentType(jsonContentType())
+                .content(toJson(new ForgotPasswordRequest("disabled-reset@example.com"))))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("ACCOUNT_DISABLED"));
+    verify(javaMailSender, times(0)).send(anyMailMessage());
+  }
+
+  @Test
+  void forgotPassword_deletedUser_returns403() throws Exception {
+    User u = new User();
+    u.setEmail("deleted-reset@example.com");
+    u.setPasswordHash(passwordEncoder.encode("Secret123"));
+    u.setRole(Role.USER);
+    u.setEmailVerified(true);
+    u.setActive(false);
+    u.setDeleted(true);
+    u.setDeletedAt(java.time.Instant.now());
+    userRepository.save(u);
+
+    mockMvc
+        .perform(
+            post("/api/v1/auth/forgot-password")
+                .contentType(jsonContentType())
+                .content(toJson(new ForgotPasswordRequest("deleted-reset@example.com"))))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("USER_DELETED"));
+    verify(javaMailSender, times(0)).send(anyMailMessage());
+  }
+
+  @Test
   void forgotPassword_unverifiedUser_returns200_withoutMail() throws Exception {
     mockMvc.perform(
         post("/api/v1/auth/register")
