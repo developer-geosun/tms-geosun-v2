@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>TMS GeoSun</title>
-  <base href="/tms-geosun-v1/">
+  <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/svg+xml" href="assets/GeoSun_logo_svg.svg">
   <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -11,11 +11,31 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
   <script>
-    // Перенаправляем на index.html для обработки Angular Router
-    // Сохраняем текущий URL для восстановления после загрузки
-    sessionStorage.redirect = location.href;
-    // Перенаправляем на index.html
-    location.replace('/tms-geosun-v1/index.html');
+    // Базовий шлях деплою: /tms-geosun-v2/ на GitHub Pages або / локально
+    (function () {
+      var topLevelRoutes = {
+        login: 1,
+        register: 1,
+        'verify-email': 1,
+        'forgot-password': 1,
+        'reset-password': 1,
+        main: 1,
+        'stop-service': 1,
+        'route-builder': 1,
+        routes: 1,
+        'my-freight-requests': 1,
+        admin: 1,
+        '404': 1
+      };
+      var parts = location.pathname.split('/').filter(Boolean);
+      var baseHref = '/';
+      if (parts.length > 0 && !topLevelRoutes[parts[0]]) {
+        baseHref = '/' + parts[0] + '/';
+      }
+      document.querySelector('base').setAttribute('href', baseHref);
+      sessionStorage.redirect = location.href;
+      location.replace(baseHref + 'index.html');
+    })();
   </script>
 </head>
 <body>

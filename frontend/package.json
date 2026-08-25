@@ -3,13 +3,14 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "prestart": "node ./scripts/sync-here-key.mjs",
-    "prebuild": "node ./scripts/sync-here-key.mjs",
+    "prestart": "node ./scripts/sync-from-env.mjs",
+    "prebuild": "node ./scripts/sync-from-env.mjs",
+    "predeploy": "node ./scripts/sync-from-env.mjs",
     "start": "node --no-deprecation ./node_modules/@angular/cli/bin/ng serve --proxy-config proxy.conf.json",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test --watch=false --browsers=ChromeHeadless",
-    "deploy": "ng build --configuration production --base-href=/tms-geosun-v1/ && npx gh-pages@latest -d dist/tms-geosun",
+    "deploy": "node ./scripts/deploy.mjs",
     "lint": "ng lint",
     "lint:fix": "ng lint --fix"
   },
