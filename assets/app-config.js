@@ -11,6 +11,6 @@ window.__APP_CONFIG__ = {
   logoUrl: "https://www.geosun.net.ua",
   isServiceStopped: false,
   // Порожній = relative URL (локальний proxy / gateway). На GitHub Pages — URL backend (ngrok або статична IP).
-  apiUrl: "https://pointy-mongoose-zipping.ngrok-free.dev",
+  apiUrl: "https://knee-zippy-fiber.ngrok-free.dev",
   hereApiKey: ""
 };
