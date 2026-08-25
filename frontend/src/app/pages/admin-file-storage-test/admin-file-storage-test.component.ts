@@ -1,0 +1,179 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { firstValueFrom } from 'rxjs';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { StoredFileContractDto, StoredFilesApiService } from '../../core/api';
+import { LayoutService } from '../../core/layout';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+
+@Component({
+  selector: 'app-admin-file-storage-test',
+  standalone: true,
+  imports: [
+    CommonModule,
+    TranslateModule,
+    MatButtonModule,
+    MatCardModule,
+    MatDialogModule,
+    MatIconModule,
+    MatPaginatorModule,
+    MatTableModule,
+    MatTooltipModule
+  ],
+  templateUrl: './admin-file-storage-test.component.html',
+  styleUrl: './admin-file-storage-test.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class AdminFileStorageTestComponent implements OnInit {
+  private static readonly DESKTOP_PAGE_SIZE = 10;
+
+  private readonly filesApi = inject(StoredFilesApiService);
+  private readonly layout = inject(LayoutService);
+  private readonly dialog = inject(MatDialog);
+
+  readonly displayedColumns = [
+    'originalFilename',
+    'contentType',
+    'sizeBytes',
+    'storageKey',
+    'createdAt',
+    'actions'
+  ];
+
+  readonly isLoading = signal(false);
+  readonly isUploading = signal(false);
+  readonly loadError = signal<string | null>(null);
+  readonly actionError = signal<string | null>(null);
+  readonly actionSuccess = signal<string | null>(null);
+  readonly storageType = signal<string>('-');
+  readonly files = signal<StoredFileContractDto[]>([]);
+  readonly pageIndex = signal(0);
+  readonly pageSize = signal(AdminFileStorageTestComponent.DESKTOP_PAGE_SIZE);
+
+  readonly pagedFiles = computed(() => {
+    const all = this.files();
+    const start = this.pageIndex() * this.pageSize();
+    return all.slice(start, start + this.pageSize());
+  });
+
+  readonly pageSizeOptions = [5, 10, 25, 50];
+
+  ngOnInit(): void {
+    if (this.layout.isHandset()) {
+      this.pageSize.set(5);
+    }
+    void this.reload();
+  }
+
+  async reload(): Promise<void> {
+    this.isLoading.set(true);
+    this.loadError.set(null);
+    try {
+      const [info, list] = await Promise.all([
+        this.filesApi.storageInfo(),
+        this.filesApi.list()
+      ]);
+      this.storageType.set(info.type);
+      this.files.set(list);
+      const maxPage = Math.max(0, Math.ceil(list.length / this.pageSize()) - 1);
+      if (this.pageIndex() > maxPage) {
+        this.pageIndex.set(maxPage);
+      }
+    } catch {
+      this.loadError.set('pages.adminFileStorageTest.loadFailed');
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  onPage(event: PageEvent): void {
+    this.pageIndex.set(event.pageIndex);
+    this.pageSize.set(event.pageSize);
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) {
+      return;
+    }
+    void this.upload(file);
+  }
+
+  async upload(file: File): Promise<void> {
+    this.isUploading.set(true);
+    this.actionError.set(null);
+    this.actionSuccess.set(null);
+    try {
+      await this.filesApi.upload(file);
+      this.actionSuccess.set('pages.adminFileStorageTest.uploadSuccess');
+      await this.reload();
+    } catch {
+      this.actionError.set('pages.adminFileStorageTest.uploadFailed');
+    } finally {
+      this.isUploading.set(false);
+    }
+  }
+
+  async download(row: StoredFileContractDto): Promise<void> {
+    this.actionError.set(null);
+    try {
+      const blob = await this.filesApi.downloadBlob(row.id);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = row.originalFilename || 'file';
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      this.actionError.set('pages.adminFileStorageTest.downloadFailed');
+    }
+  }
+
+  async confirmDelete(row: StoredFileContractDto): Promise<void> {
+    const confirmed = await firstValueFrom(
+      this.dialog
+        .open(ConfirmDialogComponent, {
+          data: { messageKey: 'pages.adminFileStorageTest.deleteConfirm' }
+        })
+        .afterClosed()
+    );
+    if (!confirmed) {
+      return;
+    }
+    this.actionError.set(null);
+    this.actionSuccess.set(null);
+    try {
+      await this.filesApi.delete(row.id);
+      this.actionSuccess.set('pages.adminFileStorageTest.deleteSuccess');
+      await this.reload();
+    } catch {
+      this.actionError.set('pages.adminFileStorageTest.deleteFailed');
+    }
+  }
+
+  formatSize(bytes: number): string {
+    if (bytes < 1024) {
+      return `${bytes} B`;
+    }
+    if (bytes < 1024 * 1024) {
+      return `${(bytes / 1024).toFixed(1)} KB`;
+    }
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+}

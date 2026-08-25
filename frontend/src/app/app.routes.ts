@@ -114,6 +114,15 @@ export const routes: Routes = [
       import('./pages/admin-users/admin-users.component').then((m) => m.AdminUsersComponent)
   },
   {
+    path: 'admin/file-storage-test',
+    canActivate: [authAvailabilityGuard, serviceStopGuard, authGuard],
+    data: { roles: ['admin'] },
+    loadComponent: () =>
+      import('./pages/admin-file-storage-test/admin-file-storage-test.component').then(
+        (m) => m.AdminFileStorageTestComponent
+      )
+  },
+  {
     path: '404',
     loadComponent: () => import('./pages/not-found/not-found.component').then((m) => m.NotFoundComponent)
   },

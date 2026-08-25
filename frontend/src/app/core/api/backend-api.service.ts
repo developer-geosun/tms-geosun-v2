@@ -56,6 +56,10 @@ export class BackendApiService {
     return this.build('/admin/users');
   }
 
+  get adminStoredFiles(): string {
+    return this.build('/admin/stored-files');
+  }
+
   /** Cost preview/calculations — вкладені під admin route requests. */
   get adminFreightCostCalculations(): string {
     return this.adminRouteRequests;

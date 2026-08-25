@@ -533,6 +533,31 @@
         "ADMIN": "ADMIN"
       }
     },
+    "adminFileStorageTest": {
+      "title": "File storage test",
+      "subtitle": "ADMIN-only sandbox (not for business documents). Any file up to 10 MB.",
+      "storageType": "Storage type",
+      "refresh": "Refresh",
+      "upload": "Upload",
+      "uploading": "Uploading...",
+      "loading": "Loading list...",
+      "loadFailed": "Failed to load file list",
+      "empty": "No files yet",
+      "filename": "Filename",
+      "contentType": "MIME",
+      "size": "Size",
+      "storageKey": "Key",
+      "createdAt": "Created",
+      "actions": "Actions",
+      "download": "Download",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this file from storage?",
+      "uploadSuccess": "File uploaded",
+      "uploadFailed": "Failed to upload file",
+      "downloadFailed": "Failed to download file",
+      "deleteSuccess": "File deleted",
+      "deleteFailed": "Failed to delete file"
+    },
     "adminCountryReference": {
       "title": "Country reference (Europe)",
       "refresh": "Refresh",
@@ -669,7 +694,8 @@
     "adminCountryReference": "Countries",
     "adminFreightNumericScenarios": "Scenarios",
     "adminTollTariffSets": "Toll tariffs",
-    "adminUsers": "Users"
+    "adminUsers": "Users",
+    "adminFileStorageTest": "Files (test)"
   },
   "auth": {
     "register": "Sign up",

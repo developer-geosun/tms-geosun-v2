@@ -7,6 +7,11 @@ backend/.env
 frontend/.env
 frontend/src/assets/app-config.local.js
 
+# Локальні завантаження файлів (app.storage.type=local)
+data/uploads/
+backend/data/uploads/
+backend/target/test-uploads/
+
 # Локальна конфігурація clasp (скопіюйте з .clasp.json.example і додайте scriptId)
 backend/.clasp.json
 

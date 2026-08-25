@@ -1,0 +1,134 @@
+<div class="page admin-file-storage-test">
+  <header class="page-header">
+    <div>
+      <h1>{{ 'pages.adminFileStorageTest.title' | translate }}</h1>
+      <p class="subtitle">{{ 'pages.adminFileStorageTest.subtitle' | translate }}</p>
+      <p class="storage-type">
+        {{ 'pages.adminFileStorageTest.storageType' | translate }}:
+        <strong>{{ storageType() }}</strong>
+      </p>
+    </div>
+    <div class="header-actions">
+      <button mat-stroked-button type="button" (click)="reload()" [disabled]="isLoading()">
+        <mat-icon>refresh</mat-icon>
+        {{ 'pages.adminFileStorageTest.refresh' | translate }}
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="isUploading()"
+        (click)="fileInput.click()"
+      >
+        <mat-icon>upload_file</mat-icon>
+        {{
+          (isUploading()
+            ? 'pages.adminFileStorageTest.uploading'
+            : 'pages.adminFileStorageTest.upload'
+          ) | translate
+        }}
+      </button>
+      <input
+        #fileInput
+        type="file"
+        class="file-input"
+        (change)="onFileSelected($event)"
+      />
+    </div>
+  </header>
+
+  @if (actionSuccess()) {
+    <p class="banner banner--success">{{ actionSuccess()! | translate }}</p>
+  }
+  @if (actionError()) {
+    <p class="banner banner--error">{{ actionError()! | translate }}</p>
+  }
+  @if (loadError()) {
+    <p class="banner banner--error">{{ loadError()! | translate }}</p>
+  }
+
+  <mat-card>
+    @if (isLoading()) {
+      <p>{{ 'pages.adminFileStorageTest.loading' | translate }}</p>
+    } @else if (files().length === 0) {
+      <p>{{ 'pages.adminFileStorageTest.empty' | translate }}</p>
+    } @else {
+      <div class="table-shell">
+        <table mat-table [dataSource]="pagedFiles()">
+          <ng-container matColumnDef="originalFilename">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminFileStorageTest.filename' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">{{ row.originalFilename }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="contentType">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminFileStorageTest.contentType' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">{{ row.contentType }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="sizeBytes">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminFileStorageTest.size' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">{{ formatSize(row.sizeBytes) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="storageKey">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminFileStorageTest.storageKey' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row" [matTooltip]="row.storageKey">
+              {{ row.storageKey }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminFileStorageTest.createdAt' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">{{ row.createdAt | date: 'medium' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminFileStorageTest.actions' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <button
+                mat-icon-button
+                type="button"
+                [matTooltip]="'pages.adminFileStorageTest.download' | translate"
+                (click)="download(row)"
+              >
+                <mat-icon>download</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                type="button"
+                color="warn"
+                [matTooltip]="'pages.adminFileStorageTest.delete' | translate"
+                (click)="confirmDelete(row)"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="files().length"
+        [pageIndex]="pageIndex()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPage($event)"
+      />
+    }
+  </mat-card>
+</div>

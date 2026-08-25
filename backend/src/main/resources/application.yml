@@ -17,6 +17,10 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
   mail:
     host: ${SMTP_HOST:localhost}
     port: ${SMTP_PORT:1025}
@@ -98,3 +102,14 @@ app:
     base-url: ${NBU_API_BASE_URL:https://bank.gov.ua/NBUStatService/v1/statdirectory}
     timeout-millis: ${NBU_API_TIMEOUT_MILLIS:10000}
     max-lookback-days: ${NBU_MAX_LOOKBACK_DAYS:14}
+  storage:
+    type: ${APP_STORAGE_TYPE:local}
+    local:
+      base-path: ${APP_STORAGE_LOCAL_BASE_PATH:./data/uploads}
+    s3:
+      endpoint: ${APP_STORAGE_S3_ENDPOINT:}
+      region: ${APP_STORAGE_S3_REGION:us-east-1}
+      bucket: ${APP_STORAGE_S3_BUCKET:tms-uploads}
+      access-key: ${APP_STORAGE_S3_ACCESS_KEY:}
+      secret-key: ${APP_STORAGE_S3_SECRET_KEY:}
+      path-style-access: ${APP_STORAGE_S3_PATH_STYLE:true}

@@ -19,6 +19,10 @@ app:
       secret: test-jwt-secret-must-be-at-least-32-bytes-long!!
     super-admin:
       password: test-super-admin-password
+  storage:
+    type: local
+    local:
+      base-path: ./target/test-uploads
 
 management:
   health:
