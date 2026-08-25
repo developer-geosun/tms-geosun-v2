@@ -26,6 +26,54 @@
     align-items: center;
   }
 
+  .drop-zone {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0.35rem 0.85rem;
+    border: 1px dashed color-mix(in srgb, var(--mat-sys-outline, #79747e) 80%, transparent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--mat-sys-surface-variant, #e7e0ec) 35%, transparent);
+    color: color-mix(in srgb, var(--mat-sys-on-surface, #1c1b1f) 75%, transparent);
+    cursor: pointer;
+    user-select: none;
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease,
+      color 0.15s ease;
+
+    mat-icon {
+      flex-shrink: 0;
+    }
+
+    span {
+      font-size: 0.875rem;
+      line-height: 1.25;
+      white-space: nowrap;
+    }
+
+    &:hover:not(.drop-zone--disabled),
+    &:focus-visible {
+      outline: none;
+      border-color: var(--mat-sys-primary, #1967d2);
+      color: var(--mat-sys-on-surface, #1c1b1f);
+    }
+
+    &--active {
+      border-color: var(--mat-sys-primary, #1967d2);
+      border-style: solid;
+      background: color-mix(in srgb, var(--mat-sys-primary, #1967d2) 12%, transparent);
+      color: var(--mat-sys-on-surface, #1c1b1f);
+    }
+
+    &--disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+  }
+
   .file-input {
     display: none;
   }
@@ -87,6 +135,16 @@
   @include bp.handset {
     .page-header {
       flex-direction: column;
+    }
+
+    .drop-zone {
+      width: 100%;
+      justify-content: center;
+
+      span {
+        white-space: normal;
+        text-align: center;
+      }
     }
   }
 }

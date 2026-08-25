@@ -63,9 +63,12 @@ export class AdminFileStorageTestComponent implements OnInit {
 
   readonly isLoading = signal(false);
   readonly isUploading = signal(false);
+  readonly isDragOver = signal(false);
   readonly loadError = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
   readonly actionSuccess = signal<string | null>(null);
+  /** Лічильник dragenter/dragleave, щоб не блимало при наведенні на дочірні елементи. */
+  private dragDepth = 0;
   readonly storageType = signal<string>('-');
   readonly files = signal<StoredFileContractDto[]>([]);
   readonly pageIndex = signal(0);
@@ -192,6 +195,55 @@ export class AdminFileStorageTestComponent implements OnInit {
       return;
     }
     void this.upload(file);
+  }
+
+  onDragEnter(event: DragEvent): void {
+    event.preventDefault();
+    if (this.isUploading() || !this.hasFilePayload(event)) {
+      return;
+    }
+    this.dragDepth += 1;
+    this.isDragOver.set(true);
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = this.isUploading() ? 'none' : 'copy';
+    }
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    if (this.isUploading() || !this.hasFilePayload(event)) {
+      return;
+    }
+    this.dragDepth = Math.max(0, this.dragDepth - 1);
+    if (this.dragDepth === 0) {
+      this.isDragOver.set(false);
+    }
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.dragDepth = 0;
+    this.isDragOver.set(false);
+    if (this.isUploading()) {
+      return;
+    }
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) {
+      return;
+    }
+    void this.upload(file);
+  }
+
+  private hasFilePayload(event: DragEvent): boolean {
+    const types = event.dataTransfer?.types;
+    if (!types) {
+      return false;
+    }
+    return Array.from(types).includes('Files');
   }
 
   async upload(file: File): Promise<void> {

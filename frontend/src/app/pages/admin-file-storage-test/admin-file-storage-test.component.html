@@ -28,6 +28,25 @@
           ) | translate
         }}
       </button>
+      <div
+        class="drop-zone"
+        role="button"
+        tabindex="0"
+        [class.drop-zone--active]="isDragOver()"
+        [class.drop-zone--disabled]="isUploading()"
+        [attr.aria-disabled]="isUploading()"
+        [attr.aria-label]="'pages.adminFileStorageTest.dropZoneHint' | translate"
+        (dragenter)="onDragEnter($event)"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)"
+        (click)="!isUploading() && fileInput.click()"
+        (keydown.enter)="!isUploading() && fileInput.click()"
+        (keydown.space)="$event.preventDefault(); !isUploading() && fileInput.click()"
+      >
+        <mat-icon aria-hidden="true">cloud_upload</mat-icon>
+        <span>{{ 'pages.adminFileStorageTest.dropZoneHint' | translate }}</span>
+      </div>
       <input
         #fileInput
         type="file"
