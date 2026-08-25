@@ -23,7 +23,7 @@
 ## Основные сущности
 
 - **User**: пользователь системы.
-- **Role**: роль пользователя (`admin`, `manager`, `user`) для RBAC.
+- **Role**: роль пользователя (`admin`, `manager`, `driver`, `user`) для RBAC.
 - **Session/Token**: access/refresh контекст для авторизации запросов.
 - **Route**: сохраненный snapshot маршрута (polyline, точки, метаданные).
 - **RouteRequest**: заявка на перевозку, связанная с сохраненным маршрутом.
@@ -58,7 +58,7 @@
 ### Поведение auth и RBAC
 
 - Пароли валидируются по email/password, backend хранит password hash и роли.
-- Защищенные endpoint-ы проверяют `access token` и роли (`admin`, `manager`, `user`).
+- Защищенные endpoint-ы проверяют `access token` и роли (`admin`, `manager`, `driver`, `user`).
 - Frontend автоматически выполняет одноразовый refresh при `401` через HTTP interceptor.
 - При неуспешном refresh frontend очищает auth state и редиректит на `/login`.
 

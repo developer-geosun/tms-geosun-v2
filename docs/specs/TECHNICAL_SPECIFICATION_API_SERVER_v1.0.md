@@ -24,7 +24,7 @@
 - `id` (UUID, PK)
 - `email` (string, обязательное, уникальное, формат email)
 - `passwordHash` (string, обязательное; хранить только в виде хеша)
-- `role` (enum: `USER`, `MANAGER`, `EMPLOYEE`, `ADMIN`)
+- `role` (enum: `USER`, `MANAGER`, `DRIVER`, `ADMIN`)
 - `isActive` (boolean, default `true`)
 - `isDeleted` (boolean, default `false`; признак мягкого удаления)
 - `deletedAt` (timestamp, nullable)
@@ -60,7 +60,7 @@
 - Защищенные endpoints: `POST /auth/logout`, `GET /auth/me`, `DELETE /users/{id}`, внутренние API
 - Доступ по ролям:
   - `USER`: доступ к собственному профилю
-  - `EMPLOYEE`: базовый доступ к внутренним endpoints (на следующем этапе)
+  - `DRIVER`: базовый доступ к внутренним endpoints (на следующем этапе)
   - `MANAGER`: расширенный доступ к управленческим endpoints (на следующем этапе)
   - `ADMIN`: полный доступ к административным endpoint
 - `DELETE /users/{id}`: только роль `ADMIN`; иначе `403 Forbidden` (`code`: `FORBIDDEN`)
@@ -85,7 +85,7 @@
 - Использование refresh token обязательно для обновления access token
 - Хранение пароля только в виде `BCrypt` хеша (без plaintext)
 - Защита приватных endpoints через Spring Security
-- Ролевая модель: `USER`, `MANAGER`, `EMPLOYEE`, `ADMIN` (в MVP можно ограничиться `USER` и `EMPLOYEE`)
+- Ролевая модель: `USER`, `MANAGER`, `DRIVER`, `ADMIN` (в MVP можно ограничиться `USER` и `DRIVER`)
 - Защита от SQL injection/XSS за счет стандартных практик Spring/JPA
 - Для пользователей с `isDeleted=true` доступ к auth-flow запрещен: `login`, `refresh`, `me` возвращают `403 Forbidden`
 - Проверка `isDeleted` выполняется на каждом защищенном запросе; даже при валидном access token ответ должен быть `403 Forbidden`

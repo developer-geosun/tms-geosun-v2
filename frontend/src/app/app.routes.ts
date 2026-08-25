@@ -37,7 +37,7 @@ export const routes: Routes = [
   {
     path: 'main',
     canActivate: [authAvailabilityGuard, serviceStopGuard, authGuard],
-    data: { roles: ['admin', 'manager', 'employee', 'user'] },
+    data: { roles: ['admin', 'manager', 'driver', 'user'] },
     loadComponent: () => import('./pages/main/main.component').then((m) => m.MainComponent)
   },
   {

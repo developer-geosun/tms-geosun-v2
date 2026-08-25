@@ -77,7 +77,7 @@ export class ToolbarComponent {
       route: '/main',
       labelKey: 'navigation.main',
       icon: 'home',
-      roles: ['admin', 'manager', 'employee', 'user'] as const
+      roles: ['admin', 'manager', 'driver', 'user'] as const
     },
     {
       route: '/route-builder',

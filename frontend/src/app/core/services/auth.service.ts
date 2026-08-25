@@ -247,7 +247,7 @@ function isApiErrorEnvelope_(value: unknown): value is ApiErrorEnvelope {
 
 function normalizeRole_(role: string): UserRole {
   const normalized = role.trim().toLowerCase();
-  if (normalized === 'admin' || normalized === 'manager' || normalized === 'employee' || normalized === 'user') {
+  if (normalized === 'admin' || normalized === 'manager' || normalized === 'driver' || normalized === 'user') {
     return normalized;
   }
   return 'user';
