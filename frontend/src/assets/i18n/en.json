@@ -543,6 +543,7 @@
       "loading": "Loading list...",
       "loadFailed": "Failed to load file list",
       "empty": "No files yet",
+      "preview": "Preview",
       "filename": "Filename",
       "contentType": "MIME",
       "size": "Size",

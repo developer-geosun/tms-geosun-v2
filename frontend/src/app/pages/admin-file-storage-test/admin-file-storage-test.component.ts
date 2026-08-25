@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
+  effect,
   inject,
   OnInit,
   signal
@@ -44,8 +46,13 @@ export class AdminFileStorageTestComponent implements OnInit {
   private readonly filesApi = inject(StoredFilesApiService);
   private readonly layout = inject(LayoutService);
   private readonly dialog = inject(MatDialog);
+  private readonly destroyRef = inject(DestroyRef);
+
+  /** Версія завантаження прев’ю — щоб ігнорувати застарілі відповіді після reload. */
+  private previewLoadEpoch = 0;
 
   readonly displayedColumns = [
+    'preview',
     'originalFilename',
     'contentType',
     'sizeBytes',
@@ -63,6 +70,8 @@ export class AdminFileStorageTestComponent implements OnInit {
   readonly files = signal<StoredFileContractDto[]>([]);
   readonly pageIndex = signal(0);
   readonly pageSize = signal(AdminFileStorageTestComponent.DESKTOP_PAGE_SIZE);
+  /** blob: URL мініатюр за id файлу. */
+  readonly previewUrls = signal<ReadonlyMap<string, string>>(new Map());
 
   readonly pagedFiles = computed(() => {
     const all = this.files();
@@ -72,6 +81,15 @@ export class AdminFileStorageTestComponent implements OnInit {
 
   readonly pageSizeOptions = [5, 10, 25, 50];
 
+  constructor() {
+    this.destroyRef.onDestroy(() => this.revokeAllPreviews());
+
+    effect(() => {
+      const rows = this.pagedFiles();
+      void this.ensureImagePreviews(rows);
+    });
+  }
+
   ngOnInit(): void {
     if (this.layout.isHandset()) {
       this.pageSize.set(5);
@@ -79,9 +97,18 @@ export class AdminFileStorageTestComponent implements OnInit {
     void this.reload();
   }
 
+  isImage(row: StoredFileContractDto): boolean {
+    return (row.contentType ?? '').toLowerCase().startsWith('image/');
+  }
+
+  previewUrl(id: string): string | null {
+    return this.previewUrls().get(id) ?? null;
+  }
+
   async reload(): Promise<void> {
     this.isLoading.set(true);
     this.loadError.set(null);
+    this.revokeAllPreviews();
     try {
       const [info, list] = await Promise.all([
         this.filesApi.storageInfo(),
@@ -98,6 +125,58 @@ export class AdminFileStorageTestComponent implements OnInit {
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  private async ensureImagePreviews(rows: StoredFileContractDto[]): Promise<void> {
+    const images = rows.filter((row) => this.isImage(row));
+    const existing = this.previewUrls();
+    const missing = images.filter((row) => !existing.has(row.id));
+    if (missing.length === 0) {
+      return;
+    }
+
+    const epoch = this.previewLoadEpoch;
+    const loaded = new Map<string, string>();
+    await Promise.all(
+      missing.map(async (row) => {
+        try {
+          const blob = await this.filesApi.downloadBlob(row.id);
+          const url = URL.createObjectURL(blob);
+          if (epoch !== this.previewLoadEpoch) {
+            URL.revokeObjectURL(url);
+            return;
+          }
+          loaded.set(row.id, url);
+        } catch {
+          // Прев’ю опційне — помилку завантаження не показуємо в банері.
+        }
+      })
+    );
+
+    if (epoch !== this.previewLoadEpoch || loaded.size === 0) {
+      for (const url of loaded.values()) {
+        URL.revokeObjectURL(url);
+      }
+      return;
+    }
+
+    const next = new Map(this.previewUrls());
+    for (const [id, url] of loaded) {
+      const previous = next.get(id);
+      if (previous) {
+        URL.revokeObjectURL(previous);
+      }
+      next.set(id, url);
+    }
+    this.previewUrls.set(next);
+  }
+
+  private revokeAllPreviews(): void {
+    this.previewLoadEpoch += 1;
+    for (const url of this.previewUrls().values()) {
+      URL.revokeObjectURL(url);
+    }
+    this.previewUrls.set(new Map());
   }
 
   onPage(event: PageEvent): void {

@@ -55,6 +55,29 @@
     } @else {
       <div class="table-shell">
         <table mat-table [dataSource]="pagedFiles()">
+          <ng-container matColumnDef="preview">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminFileStorageTest.preview' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row" class="preview-cell">
+              @if (isImage(row) && previewUrl(row.id); as url) {
+                <img
+                  class="file-preview"
+                  [src]="url"
+                  [alt]="row.originalFilename"
+                />
+              } @else if (isImage(row)) {
+                <span class="file-preview file-preview--placeholder" aria-hidden="true">
+                  <mat-icon>image</mat-icon>
+                </span>
+              } @else {
+                <span class="file-preview file-preview--placeholder" aria-hidden="true">
+                  <mat-icon>insert_drive_file</mat-icon>
+                </span>
+              }
+            </td>
+          </ng-container>
+
           <ng-container matColumnDef="originalFilename">
             <th mat-header-cell *matHeaderCellDef>
               {{ 'pages.adminFileStorageTest.filename' | translate }}
