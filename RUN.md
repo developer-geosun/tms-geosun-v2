@@ -1,6 +1,6 @@
 # Запуск проекта
 
-Этот файл описывает основные варианты запуска `tms-geosun-v1`.
+Этот файл описывает основные варианты запуска `tms-geosun-v2`.
 
 ## Требования
 
@@ -11,11 +11,70 @@
 - MySQL `8` (для локального запуска backend без Docker)
 - Docker Desktop + Docker Compose (для запуска всего стека в контейнерах)
 
+## Хранение файлов (`local` | `s3`)
+
+Backend хранит бинарники через `app.storage.type` (env `APP_STORAGE_TYPE`). Метаданные — в таблице `stored_files` (Flyway `V30`).
+
+| Режим | `APP_STORAGE_TYPE` | Где лежат файлы | Когда использовать |
+| --- | --- | --- | --- |
+| Локальный диск | `local` (по умолчанию) | каталог `APP_STORAGE_LOCAL_BASE_PATH` | обычная разработка |
+| S3 / MinIO | `s3` | bucket `APP_STORAGE_S3_BUCKET` | проверка object storage / ближе к прод |
+
+### Переменные в корневом `.env`
+
+```bash
+# local | s3
+APP_STORAGE_TYPE=local
+
+# Режим local:
+# - локальный mvn: ./data/uploads (относительно cwd backend)
+# - Docker Compose: всегда /data/uploads (named volume backend_uploads; значение из .env не используется)
+APP_STORAGE_LOCAL_BASE_PATH=./data/uploads
+
+# Режим s3 (MinIO в compose или внешний S3)
+APP_STORAGE_S3_ENDPOINT=http://minio:9000
+APP_STORAGE_S3_REGION=us-east-1
+APP_STORAGE_S3_BUCKET=tms-uploads
+APP_STORAGE_S3_ACCESS_KEY=minioadmin
+APP_STORAGE_S3_SECRET_KEY=minioadmin
+APP_STORAGE_S3_PATH_STYLE=true
+
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
+MINIO_API_PORT=9000
+MINIO_CONSOLE_PORT=9001
+```
+
+Для локального `mvn spring-boot:run` без Docker:
+
+- `APP_STORAGE_TYPE=local`
+- `APP_STORAGE_LOCAL_BASE_PATH=./data/uploads` (создаётся автоматически; каталог в `.gitignore`)
+
+Для S3 через MinIO в Compose:
+
+```bash
+APP_STORAGE_TYPE=s3
+APP_STORAGE_S3_ENDPOINT=http://minio:9000
+APP_STORAGE_S3_ACCESS_KEY=minioadmin
+APP_STORAGE_S3_SECRET_KEY=minioadmin
+```
+
+Затем поднимите MinIO вместе с backend (bucket создаёт сервис `minio-init`):
+
+```bash
+docker compose up --build mysql mailhog minio minio-init backend
+```
+
+> Смена `APP_STORAGE_TYPE` на уже заполненной БД **не** переносит файлы автоматически — нужны те же `storage_key` в новом хранилище.
+
+Тестовая ADMIN-страница: `http://localhost:4200/admin/file-storage-test`  
+Спека: [`docs/specs/file-storage.md`](docs/specs/file-storage.md)
+
 ## Публикация: frontend на GitHub Pages, API через ngrok или статический IP
 
 Архитектура для публичного доступа:
 
-- **Frontend** — статика на GitHub Pages (`https://developer-geosun.github.io/tms-geosun-v1/`).
+- **Frontend** — статика на GitHub Pages (`https://developer-geosun.github.io/tms-geosun-v2/`).
 - **Backend** — локально (Docker), наружу по выбору: **ngrok** или **статический IP** провайдера (без проксирования UI).
 
 Режим задаётся в корневом `.env`:
@@ -51,8 +110,9 @@ PUBLIC_ACCESS_MODE=static-ip
 PUBLIC_API_URL=http://178.136.237.7:8080
 # COMPOSE_PROFILES не задавать (или оставить пустым) — сервис ngrok не стартует
 CORS_ALLOWED_ORIGIN_PATTERNS=https://developer-geosun.github.io
-EMAIL_VERIFICATION_LINK_BASE=https://developer-geosun.github.io/tms-geosun-v1/verify-email
-PASSWORD_RESET_LINK_BASE=https://developer-geosun.github.io/tms-geosun-v1/reset-password
+EMAIL_VERIFICATION_LINK_BASE=https://developer-geosun.github.io/tms-geosun-v2/verify-email
+PASSWORD_RESET_LINK_BASE=https://developer-geosun.github.io/tms-geosun-v2/reset-password
+APP_STORAGE_TYPE=local
 ```
 
 На роутере пробросьте TCP-порт `8080` (или ваш `SERVER_PORT`) на ПК, где крутится Docker.
@@ -78,8 +138,9 @@ NGROK_AUTHTOKEN=<ваш_ngrok_authtoken>
 NGROK_DOMAIN=<ваш_домен_из_ngrok>
 PUBLIC_API_URL=https://<NGROK_DOMAIN>
 CORS_ALLOWED_ORIGIN_PATTERNS=https://developer-geosun.github.io
-EMAIL_VERIFICATION_LINK_BASE=https://developer-geosun.github.io/tms-geosun-v1/verify-email
-PASSWORD_RESET_LINK_BASE=https://developer-geosun.github.io/tms-geosun-v1/reset-password
+EMAIL_VERIFICATION_LINK_BASE=https://developer-geosun.github.io/tms-geosun-v2/verify-email
+PASSWORD_RESET_LINK_BASE=https://developer-geosun.github.io/tms-geosun-v2/reset-password
+APP_STORAGE_TYPE=local
 ```
 
 Запуск API с публичным туннелем:
@@ -100,6 +161,12 @@ docker compose up --build mysql mailhog backend
 
 ### 1) Backend
 
+Нужен MySQL 8 (локально или только контейнер БД):
+
+```bash
+docker compose up -d mysql mailhog
+```
+
 Из корня проекта:
 
 ```bash
@@ -108,8 +175,10 @@ mvn spring-boot:run
 ```
 
 Перед запуском убедитесь, что:
-- MySQL 8 запущен;
-- переменные окружения из `backend/.env.example` настроены.
+
+- MySQL доступен (из Docker порт хоста обычно `3307` → см. `MYSQL_HOST_PORT` и `DB_URL` в `backend/.env.example` / `application.yml`);
+- переменные из `backend/.env.example` и при необходимости корневого `.env` настроены;
+- для файлов: `APP_STORAGE_TYPE=local`, каталог `./data/uploads` (относительно cwd backend).
 
 ### 2) Frontend
 
@@ -123,7 +192,7 @@ npm start
 
 Перед `npm start` в корневом `.env` задайте `HERE_API_KEY=<ваш_ключ_here>` — ключ будет автоматически подставлен в локальный `frontend/src/assets/app-config.local.js` (файл игнорируется git).
 
-Frontend будет доступен по адресу: `http://localhost:4200`.
+Frontend: `http://localhost:4200`.
 
 ## Вариант 2: запуск всего стека через Docker Compose
 
@@ -137,6 +206,9 @@ cp .env.example .env
 - Для dev-сборки frontend в Docker укажите `FRONTEND_BUILD_CONFIGURATION=development` (в этом режиме будут видны dev-значения из `environment.ts`).
 - Для страницы расчета через HERE укажите `HERE_API_KEY=<ваш_ключ_here>`.
 - Для выбора источника расчёта пробега по странам укажите `COUNTRY_BREAKDOWN_PROVIDER=here|geojson` (для режима без HERE — `geojson`).
+- Для хранилища файлов:
+  - **local (по умолчанию):** `APP_STORAGE_TYPE=local` — volume `backend_uploads`
+  - **MinIO/S3:** `APP_STORAGE_TYPE=s3` и параметры `APP_STORAGE_S3_*` / `MINIO_*` (поднять `minio` + `minio-init`)
 - Для публичного API выберите режим в `.env` (`PUBLIC_ACCESS_MODE=static-ip` или `ngrok`):
   - **static-ip:** `PUBLIC_API_URL=http://178.136.237.7:8080`, без `COMPOSE_PROFILES`; на роутере — проброс порта `8080`
   - **ngrok:** `COMPOSE_PROFILES=ngrok`, `NGROK_AUTHTOKEN`, `NGROK_DOMAIN`, `PUBLIC_API_URL=https://<NGROK_DOMAIN>`
@@ -145,7 +217,11 @@ cp .env.example .env
 2. Запуск контейнеров (из корня проекта):
 
 ```bash
+# Базовый стек (хранилище local)
 docker compose up --build
+
+# С MinIO (хранилище s3) — явно добавьте сервисы:
+# docker compose up --build mysql mailhog minio minio-init backend frontend gateway
 ```
 
 3. Остановка и удаление контейнеров:
@@ -153,6 +229,8 @@ docker compose up --build
 ```bash
 docker compose down
 ```
+
+Данные MySQL, uploads и MinIO сохраняются в named volumes (`mysql_data`, `backend_uploads`, `minio_data`), пока не выполнить `docker compose down -v`.
 
 ### Быстрый dev-цикл frontend (hot reload в Docker)
 
@@ -189,6 +267,7 @@ docker compose --profile dev down --remove-orphans
 ```
 
 Примечания:
+
 - `frontend` — это production preview (build + nginx), подходит для проверки итоговой сборки.
 - `frontend-dev` — это режим разработки (ng serve), подходит для быстрых правок и тестирования.
 - В Docker dev-режиме API проксируется через `frontend/proxy.docker.conf.json` на `http://backend:8080`.
@@ -201,6 +280,12 @@ docker compose --profile dev down --remove-orphans
 
 ```bash
 docker compose --profile dev up -d --build mysql mailhog backend frontend-dev
+```
+
+С MinIO (s3):
+
+```bash
+docker compose --profile dev up -d --build mysql mailhog minio minio-init backend frontend-dev
 ```
 
 С публичным API через ngrok в dev:
@@ -249,6 +334,12 @@ docker compose up --build mysql mailhog backend
 docker compose --profile ngrok up --build mysql mailhog backend ngrok
 ```
 
+Backend + MinIO (проверка `APP_STORAGE_TYPE=s3`):
+
+```bash
+docker compose up --build mysql mailhog minio minio-init backend
+```
+
 Полная остановка dev-профиля (без "Network ... Resource is still in use"):
 
 ```bash
@@ -264,10 +355,14 @@ docker compose up --build mysql mailhog backend frontend gateway
 ## Полезные URL после запуска
 
 - Frontend (локально): `http://localhost:4200`
-- Frontend (GitHub Pages): `https://developer-geosun.github.io/tms-geosun-v1/`
+- Frontend (GitHub Pages): `https://developer-geosun.github.io/tms-geosun-v2/`
 - Backend health: `http://localhost:8080/actuator/health`
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - Gateway (единый локальный вход): `http://localhost:8081`
+- MailHog UI: `http://localhost:8025`
+- MinIO API: `http://localhost:9000`
+- MinIO Console: `http://localhost:9001` (логин/пароль из `MINIO_ROOT_*`)
+- Тест хранилища файлов (ADMIN): `http://localhost:4200/admin/file-storage-test`
 - ngrok Inspector: `http://localhost:4040` (только при профиле `ngrok`)
 - Public API health (static-ip): `http://178.136.237.7:8080/actuator/health`
 - Public API health (ngrok): `https://<NGROK_DOMAIN>/actuator/health`
@@ -280,3 +375,5 @@ docker compose up --build mysql mailhog backend frontend gateway
 - `POST /api/v1/auth/refresh`
 - `POST /api/v1/auth/logout`
 - `GET /api/v1/auth/me`
+
+Тест файлов (только ADMIN): `/api/v1/admin/stored-files`
