@@ -533,6 +533,31 @@
         "ADMIN": "ADMIN"
       }
     },
+    "adminFileStorageTest": {
+      "title": "Тест хранилища файлов",
+      "subtitle": "Служебная страница для ADMIN (не для бизнес-документов). Любой файл до 10 МБ.",
+      "storageType": "Тип хранилища",
+      "refresh": "Обновить",
+      "upload": "Загрузить",
+      "uploading": "Загрузка...",
+      "loading": "Загрузка списка...",
+      "loadFailed": "Не удалось загрузить список файлов",
+      "empty": "Файлов ещё нет",
+      "filename": "Имя файла",
+      "contentType": "MIME",
+      "size": "Размер",
+      "storageKey": "Ключ",
+      "createdAt": "Создано",
+      "actions": "Действия",
+      "download": "Скачать",
+      "delete": "Удалить",
+      "deleteConfirm": "Удалить файл из хранилища?",
+      "uploadSuccess": "Файл загружен",
+      "uploadFailed": "Не удалось загрузить файл",
+      "downloadFailed": "Не удалось скачать файл",
+      "deleteSuccess": "Файл удалён",
+      "deleteFailed": "Не удалось удалить файл"
+    },
     "adminCountryReference": {
       "title": "Справочник стран (Европа)",
       "refresh": "Обновить",
@@ -669,7 +694,8 @@
     "adminCountryReference": "Страны",
     "adminFreightNumericScenarios": "Сценарии",
     "adminTollTariffSets": "Платные дороги",
-    "adminUsers": "Пользователи"
+    "adminUsers": "Пользователи",
+    "adminFileStorageTest": "Файлы (тест)"
   },
   "auth": {
     "register": "Регистрация",

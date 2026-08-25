@@ -533,6 +533,31 @@
         "ADMIN": "ADMIN"
       }
     },
+    "adminFileStorageTest": {
+      "title": "Тест сховища файлів",
+      "subtitle": "Службова сторінка для ADMIN (не для бізнес-документів). Будь-який файл до 10 МБ.",
+      "storageType": "Тип сховища",
+      "refresh": "Оновити",
+      "upload": "Завантажити",
+      "uploading": "Завантаження...",
+      "loading": "Завантаження списку...",
+      "loadFailed": "Не вдалося завантажити список файлів",
+      "empty": "Файлів ще немає",
+      "filename": "Ім'я файлу",
+      "contentType": "MIME",
+      "size": "Розмір",
+      "storageKey": "Ключ",
+      "createdAt": "Створено",
+      "actions": "Дії",
+      "download": "Завантажити",
+      "delete": "Видалити",
+      "deleteConfirm": "Видалити файл зі сховища?",
+      "uploadSuccess": "Файл завантажено",
+      "uploadFailed": "Не вдалося завантажити файл",
+      "downloadFailed": "Не вдалося скачати файл",
+      "deleteSuccess": "Файл видалено",
+      "deleteFailed": "Не вдалося видалити файл"
+    },
     "adminCountryReference": {
       "title": "Довідник країн (Європа)",
       "refresh": "Оновити",
@@ -669,7 +694,8 @@
     "adminCountryReference": "Країни",
     "adminFreightNumericScenarios": "Сценарії",
     "adminTollTariffSets": "Платні дороги",
-    "adminUsers": "Користувачі"
+    "adminUsers": "Користувачі",
+    "adminFileStorageTest": "Файли (тест)"
   },
   "auth": {
     "register": "Реєстрація",
