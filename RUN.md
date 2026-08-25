@@ -134,7 +134,7 @@ cp .env.example .env
 ```
 
 - Для production-сборки frontend оставьте `FRONTEND_BUILD_CONFIGURATION=production`.
-- Для dev-сборки frontend в Docker укажите `FRONTEND_BUILD_CONFIGURATION=development` (в этом режиме будут видны dev-значения из `environment.ts`, включая автозаполнение тестового логина).
+- Для dev-сборки frontend в Docker укажите `FRONTEND_BUILD_CONFIGURATION=development` (в этом режиме будут видны dev-значения из `environment.ts`).
 - Для страницы расчета через HERE укажите `HERE_API_KEY=<ваш_ключ_here>`.
 - Для выбора источника расчёта пробега по странам укажите `COUNTRY_BREAKDOWN_PROVIDER=here|geojson` (для режима без HERE — `geojson`).
 - Для публичного API выберите режим в `.env` (`PUBLIC_ACCESS_MODE=static-ip` или `ngrok`):

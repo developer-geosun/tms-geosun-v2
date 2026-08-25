@@ -10,7 +10,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../core/services';
 import { TranslateModule } from '@ngx-translate/core';
-import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -42,8 +41,8 @@ export class LoginComponent {
   readonly isPasswordVisible = signal(false);
 
   readonly form = this.formBuilder.nonNullable.group({
-    email: [environment.production ? '' : environment.testLogin.email, [Validators.required, Validators.email]],
-    password: [environment.production ? '' : environment.testLogin.password, [Validators.required, Validators.minLength(8)]]
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', [Validators.required, Validators.minLength(8)]]
   });
 
   submit(): void {

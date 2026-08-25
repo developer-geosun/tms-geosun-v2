@@ -4,10 +4,6 @@ export const environment = {
   apiUrl: '',
   hereApiKey: '',
   appName: 'Transport Management System by GeoSun',
-  version: '1.0.0',
-  testLogin: {
-    email: 'test@test.ua',
-    password: 'q1234567'
-  }
+  version: '1.0.0'
 };
 
