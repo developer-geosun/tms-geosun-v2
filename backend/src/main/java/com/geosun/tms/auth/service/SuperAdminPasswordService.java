@@ -27,8 +27,7 @@ public class SuperAdminPasswordService {
   public void requireValid(String password) {
     if (!StringUtils.hasText(password)) {
       throw ApiException.badRequest(
-          "SUPER_ADMIN_PASSWORD_REQUIRED",
-          "Super-admin password is required for this operation");
+          "SUPER_ADMIN_PASSWORD_REQUIRED", "Super-admin password is required for this operation");
     }
     verify(new VerifySuperAdminPasswordRequest(password));
   }
@@ -46,8 +45,7 @@ public class SuperAdminPasswordService {
     byte[] expected = configured.getBytes(StandardCharsets.UTF_8);
     byte[] actual = request.password().getBytes(StandardCharsets.UTF_8);
     if (!MessageDigest.isEqual(expected, actual)) {
-      throw ApiException.forbidden(
-          "INVALID_SUPER_ADMIN_PASSWORD", "Invalid super-admin password");
+      throw ApiException.forbidden("INVALID_SUPER_ADMIN_PASSWORD", "Invalid super-admin password");
     }
 
     return new OperationSuccessResponse(true, "Super-admin password verified");

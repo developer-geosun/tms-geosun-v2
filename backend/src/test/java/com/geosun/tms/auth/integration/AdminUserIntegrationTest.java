@@ -290,8 +290,7 @@ class AdminUserIntegrationTest {
                 .header("Authorization", "Bearer " + session.access())
                 .contentType(jsonContentType())
                 .content(
-                    toJson(
-                        new UpdateUserRoleRequest(Role.MANAGER, "test-super-admin-password"))))
+                    toJson(new UpdateUserRoleRequest(Role.MANAGER, "test-super-admin-password"))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.role").value("MANAGER"));
   }
