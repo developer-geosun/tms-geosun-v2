@@ -65,14 +65,18 @@ public class AdminUserController {
     return adminUserService.getById(id);
   }
 
-  @Operation(summary = "Update user role")
+  @Operation(
+      summary = "Update user role",
+      description =
+          "Demoting ADMIN to another role requires superAdminPassword (SUPER_ADMIN_PASSWORD).")
   @SecurityRequirement(name = OpenApiConfig.BEARER_SCHEME)
   @PatchMapping("/{id}/role")
   public UserAdminDto updateRole(
       @AuthenticationPrincipal UserPrincipal principal,
       @PathVariable("id") @NonNull String id,
       @Valid @RequestBody UpdateUserRoleRequest body) {
-    return adminUserService.updateRole(principal.getUserId(), id, body.role());
+    return adminUserService.updateRole(
+        principal.getUserId(), id, body.role(), body.superAdminPassword());
   }
 
   @Operation(summary = "Activate or deactivate user")

@@ -109,7 +109,7 @@ class AdminUserIntegrationTest {
             patch("/api/v1/admin/users/" + target.getId() + "/role")
                 .header("Authorization", "Bearer " + adminSession.access())
                 .contentType(jsonContentType())
-                .content(toJson(new UpdateUserRoleRequest(Role.MANAGER))))
+                .content(toJson(new UpdateUserRoleRequest(Role.MANAGER, null))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.role").value("MANAGER"));
 
@@ -216,7 +216,7 @@ class AdminUserIntegrationTest {
             patch("/api/v1/admin/users/" + admin.getId() + "/role")
                 .header("Authorization", "Bearer " + adminSession.access())
                 .contentType(jsonContentType())
-                .content(toJson(new UpdateUserRoleRequest(Role.USER))))
+                .content(toJson(new UpdateUserRoleRequest(Role.USER, null))))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("SELF_OPERATION_FORBIDDEN"));
 
@@ -243,7 +243,8 @@ class AdminUserIntegrationTest {
     String otherActorId = Objects.requireNonNull(UUID.randomUUID().toString());
     String soleAdminId = Objects.requireNonNull(soleAdmin.getId());
 
-    assertThatThrownBy(() -> adminUserService.updateRole(otherActorId, soleAdminId, Role.MANAGER))
+    assertThatThrownBy(
+            () -> adminUserService.updateRole(otherActorId, soleAdminId, Role.MANAGER, null))
         .isInstanceOf(ApiException.class)
         .extracting(ex -> ((ApiException) ex).getCode())
         .isEqualTo("LAST_ADMIN_PROTECTED");
@@ -257,6 +258,42 @@ class AdminUserIntegrationTest {
         .isInstanceOf(ApiException.class)
         .extracting(ex -> ((ApiException) ex).getCode())
         .isEqualTo("LAST_ADMIN_PROTECTED");
+  }
+
+  @Test
+  void admin_demoteAdmin_requiresSuperAdminPassword() throws Exception {
+    User actor = saveUser("actor-demote@example.com", "Admin123!", Role.ADMIN);
+    User targetAdmin = saveUser("target-demote@example.com", "Secret123", Role.ADMIN);
+    Session session = login(actor.getEmail(), "Admin123!");
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/users/" + targetAdmin.getId() + "/role")
+                .header("Authorization", "Bearer " + session.access())
+                .contentType(jsonContentType())
+                .content(toJson(new UpdateUserRoleRequest(Role.MANAGER, null))))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("SUPER_ADMIN_PASSWORD_REQUIRED"));
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/users/" + targetAdmin.getId() + "/role")
+                .header("Authorization", "Bearer " + session.access())
+                .contentType(jsonContentType())
+                .content(toJson(new UpdateUserRoleRequest(Role.MANAGER, "wrong-password"))))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("INVALID_SUPER_ADMIN_PASSWORD"));
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/users/" + targetAdmin.getId() + "/role")
+                .header("Authorization", "Bearer " + session.access())
+                .contentType(jsonContentType())
+                .content(
+                    toJson(
+                        new UpdateUserRoleRequest(Role.MANAGER, "test-super-admin-password"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.role").value("MANAGER"));
   }
 
   private User saveUser(String email, String password, Role role) {

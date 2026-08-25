@@ -31,11 +31,15 @@ public class AdminUserService {
 
   private final UserRepository userRepository;
   private final RefreshTokenRepository refreshTokenRepository;
+  private final SuperAdminPasswordService superAdminPasswordService;
 
   public AdminUserService(
-      UserRepository userRepository, RefreshTokenRepository refreshTokenRepository) {
+      UserRepository userRepository,
+      RefreshTokenRepository refreshTokenRepository,
+      SuperAdminPasswordService superAdminPasswordService) {
     this.userRepository = userRepository;
     this.refreshTokenRepository = refreshTokenRepository;
+    this.superAdminPasswordService = superAdminPasswordService;
   }
 
   @Transactional(readOnly = true)
@@ -64,7 +68,10 @@ public class AdminUserService {
 
   @Transactional
   public UserAdminDto updateRole(
-      @NonNull String actorUserId, @NonNull String rawId, @NonNull Role newRole) {
+      @NonNull String actorUserId,
+      @NonNull String rawId,
+      @NonNull Role newRole,
+      String superAdminPassword) {
     User user = requireUser(rawId);
     assertNotSelf(actorUserId, user.getId());
     assertNotDeleted(user);
@@ -73,6 +80,8 @@ public class AdminUserService {
     }
     if (user.getRole() == Role.ADMIN && newRole != Role.ADMIN) {
       assertNotLastActiveAdmin(user);
+      // Зняття ролі ADMIN — лише після коректного пароля суперадміна
+      superAdminPasswordService.requireValid(superAdminPassword);
     }
     user.setRole(newRole);
     refreshTokenRepository.revokeAllActiveByUserId(user.getId(), Instant.now());

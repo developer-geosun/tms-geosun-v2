@@ -9,6 +9,13 @@
       "cancel": "Скасувати",
       "confirm": "Підтвердити"
     },
+    "superAdminPasswordDialog": {
+      "title": "Пароль суперадміна",
+      "password": "Пароль",
+      "passwordRequired": "Введіть пароль",
+      "cancel": "Скасувати",
+      "confirm": "Підтвердити"
+    },
     "paginator": {
       "itemsPerPage": "Записів на сторінку:",
       "nextPage": "Наступна сторінка",
@@ -498,6 +505,7 @@
       "delete": "Видалити",
       "restore": "Відновити",
       "roleChangeConfirm": "Змінити роль користувача?",
+      "roleDemoteAdminConfirm": "Зняття ролі ADMIN потребує пароль суперадміна. Введіть його, щоб продовжити.",
       "deactivateConfirm": "Деактивувати користувача? Сесії буде відкликано.",
       "deleteConfirm": "М'яко видалити користувача? Сесії буде відкликано.",
       "restoreConfirm": "Відновити видаленого користувача? Акаунт знову стане активним.",
@@ -515,6 +523,9 @@
       "selfOperationForbidden": "Операція над власним акаунтом заборонена",
       "lastAdminProtected": "Не можна змінити останнього активного ADMIN",
       "userDeleted": "Користувача вже видалено",
+      "superAdminPasswordRequired": "Для зняття ролі ADMIN потрібен пароль суперадміна",
+      "invalidSuperAdminPassword": "Невірний пароль суперадміна",
+      "superAdminPasswordNotConfigured": "Пароль суперадміна не налаштовано на сервері",
       "roles": {
         "USER": "USER",
         "MANAGER": "MANAGER",

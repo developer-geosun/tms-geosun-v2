@@ -25,6 +25,8 @@ export interface AdminUserListParams {
 
 export interface UpdateUserRoleContractRequest {
   role: AdminUserRole;
+  /** Обов'язковий при зміні ролі з ADMIN на іншу. */
+  superAdminPassword?: string;
 }
 
 export interface UpdateUserActiveContractRequest {

@@ -9,6 +9,13 @@
       "cancel": "Отмена",
       "confirm": "Подтвердить"
     },
+    "superAdminPasswordDialog": {
+      "title": "Пароль суперадмина",
+      "password": "Пароль",
+      "passwordRequired": "Введите пароль",
+      "cancel": "Отмена",
+      "confirm": "Подтвердить"
+    },
     "paginator": {
       "itemsPerPage": "Записей на странице:",
       "nextPage": "Следующая страница",
@@ -498,6 +505,7 @@
       "delete": "Удалить",
       "restore": "Восстановить",
       "roleChangeConfirm": "Изменить роль пользователя?",
+      "roleDemoteAdminConfirm": "Снятие роли ADMIN требует пароль суперадмина. Введите его, чтобы продолжить.",
       "deactivateConfirm": "Деактивировать пользователя? Сессии будут отозваны.",
       "deleteConfirm": "Мягко удалить пользователя? Сессии будут отозваны.",
       "restoreConfirm": "Восстановить удалённого пользователя? Аккаунт снова станет активным.",
@@ -515,6 +523,9 @@
       "selfOperationForbidden": "Операция над собственным аккаунтом запрещена",
       "lastAdminProtected": "Нельзя изменить последнего активного ADMIN",
       "userDeleted": "Пользователь уже удалён",
+      "superAdminPasswordRequired": "Для снятия роли ADMIN нужен пароль суперадмина",
+      "invalidSuperAdminPassword": "Неверный пароль суперадмина",
+      "superAdminPasswordNotConfigured": "Пароль суперадмина не настроен на сервере",
       "roles": {
         "USER": "USER",
         "MANAGER": "MANAGER",

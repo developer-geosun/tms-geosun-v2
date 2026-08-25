@@ -30,6 +30,7 @@ import {
 import { LayoutService } from '../../core/layout';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { SuperAdminPasswordDialogComponent } from '../../shared/components/super-admin-password-dialog/super-admin-password-dialog.component';
 import { getHandsetFriendlyDialogConfig } from '../../shared/utils/handset-friendly-dialog-config';
 import {
   FilterUsersDialogComponent,
@@ -249,13 +250,30 @@ export class AdminUsersComponent implements AfterViewInit {
     if (this.isCurrentUser(row) || row.deleted || row.role === role) {
       return;
     }
-    const confirmed = await this.openConfirmDialog('pages.adminUsers.roleChangeConfirm');
-    if (!confirmed) {
-      await this.reload();
-      return;
+
+    let superAdminPassword: string | undefined;
+    const demotingAdmin = row.role === 'ADMIN' && role !== 'ADMIN';
+    if (demotingAdmin) {
+      superAdminPassword = await this.openSuperAdminPasswordDialog(
+        'pages.adminUsers.roleDemoteAdminConfirm'
+      );
+      if (!superAdminPassword) {
+        await this.reload();
+        return;
+      }
+    } else {
+      const confirmed = await this.openConfirmDialog('pages.adminUsers.roleChangeConfirm');
+      if (!confirmed) {
+        await this.reload();
+        return;
+      }
     }
+
     await this.runAction(row.id, async () => {
-      await this.usersApi.updateRole(row.id, { role });
+      await this.usersApi.updateRole(row.id, {
+        role,
+        ...(superAdminPassword ? { superAdminPassword } : {})
+      });
       this.actionSuccess.set('pages.adminUsers.roleUpdated');
     }, 'pages.adminUsers.roleUpdateFailed');
   }
@@ -359,6 +377,15 @@ export class AdminUsersComponent implements AfterViewInit {
     if (code === 'EMAIL_ALREADY_EXISTS') {
       return 'pages.adminUsers.emailAlreadyExists';
     }
+    if (code === 'SUPER_ADMIN_PASSWORD_REQUIRED') {
+      return 'pages.adminUsers.superAdminPasswordRequired';
+    }
+    if (code === 'INVALID_SUPER_ADMIN_PASSWORD') {
+      return 'pages.adminUsers.invalidSuperAdminPassword';
+    }
+    if (code === 'SUPER_ADMIN_PASSWORD_NOT_CONFIGURED') {
+      return 'pages.adminUsers.superAdminPasswordNotConfigured';
+    }
     return fallback;
   }
 
@@ -370,5 +397,18 @@ export class AdminUsersComponent implements AfterViewInit {
       })
     );
     return firstValueFrom(ref.afterClosed()).then((result) => Boolean(result));
+  }
+
+  private openSuperAdminPasswordDialog(messageKey: string): Promise<string | undefined> {
+    const ref = this.dialog.open(
+      SuperAdminPasswordDialogComponent,
+      getHandsetFriendlyDialogConfig({
+        width: 'min(420px, calc(100vw - 24px))',
+        data: { messageKey }
+      })
+    );
+    return firstValueFrom(ref.afterClosed()).then((result) =>
+      typeof result === 'string' && result.trim() ? result : undefined
+    );
   }
 }

@@ -9,6 +9,13 @@
       "cancel": "Cancel",
       "confirm": "Confirm"
     },
+    "superAdminPasswordDialog": {
+      "title": "Super-admin password",
+      "password": "Password",
+      "passwordRequired": "Password is required",
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
     "paginator": {
       "itemsPerPage": "Items per page:",
       "nextPage": "Next page",
@@ -498,6 +505,7 @@
       "delete": "Delete",
       "restore": "Restore",
       "roleChangeConfirm": "Change this user's role?",
+      "roleDemoteAdminConfirm": "Demoting an ADMIN requires the super-admin password. Enter it to continue.",
       "deactivateConfirm": "Deactivate this user? Sessions will be revoked.",
       "deleteConfirm": "Soft-delete this user? Sessions will be revoked.",
       "restoreConfirm": "Restore this deleted user? The account will become active again.",
@@ -515,6 +523,9 @@
       "selfOperationForbidden": "Operation on your own account is forbidden",
       "lastAdminProtected": "Cannot modify the last active ADMIN",
       "userDeleted": "User is already deleted",
+      "superAdminPasswordRequired": "Super-admin password is required to demote ADMIN",
+      "invalidSuperAdminPassword": "Invalid super-admin password",
+      "superAdminPasswordNotConfigured": "Super-admin password is not configured on the server",
       "roles": {
         "USER": "USER",
         "MANAGER": "MANAGER",
