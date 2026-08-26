@@ -664,7 +664,7 @@
       "documentValidTo": "Valid to",
       "documentTypeNotAllowed": "This document type is not allowed for the vehicle",
       "documentTypes": {
-        "THIRD_PARTY_LIABILITY": "Third-party liability insurance",
+        "THIRD_PARTY_LIABILITY": "Third-party liability",
         "GREEN_CARD": "Green Card",
         "TECHNICAL_INSPECTION": "Technical inspection",
         "WHITE_CERTIFICATE": "White certificate",

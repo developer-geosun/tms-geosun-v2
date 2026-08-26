@@ -664,7 +664,7 @@
       "documentValidTo": "Дата окончания",
       "documentTypeNotAllowed": "Этот тип документа недоступен для ТС",
       "documentTypes": {
-        "THIRD_PARTY_LIABILITY": "ОСАГО (ответственность перед третьими лицами)",
+        "THIRD_PARTY_LIABILITY": "ОСАГО",
         "GREEN_CARD": "Зелёная карта",
         "TECHNICAL_INSPECTION": "Техосмотр",
         "WHITE_CERTIFICATE": "Белый сертификат",

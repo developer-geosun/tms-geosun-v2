@@ -141,7 +141,41 @@
         } @else {
           @for (side of scanSides; track side) {
             <div class="vehicle-form-dialog__scan-row">
-              <div>
+              <button
+                type="button"
+                class="vehicle-form-dialog__scan-thumb"
+                [class.vehicle-form-dialog__scan-thumb--missing]="!hasScan(side)"
+                [class.vehicle-form-dialog__scan-thumb--busy]="scanBusy()"
+                [matTooltip]="
+                  (side === 'front'
+                    ? 'pages.adminVehicles.scanFront'
+                    : 'pages.adminVehicles.scanBack'
+                  ) | translate
+                "
+                [attr.aria-label]="
+                  (side === 'front'
+                    ? 'pages.adminVehicles.scanFront'
+                    : 'pages.adminVehicles.scanBack'
+                  ) | translate
+                "
+                (click)="openScanViewer(side)"
+              >
+                @if (hasScan(side) && isScanImage(scanFile(side))) {
+                  @if (scanPreviewUrl(side); as url) {
+                    <img [src]="url" alt="" />
+                  } @else {
+                    <mat-icon aria-hidden="true">image</mat-icon>
+                  }
+                } @else if (hasScan(side) && isScanPdf(scanFile(side))) {
+                  <mat-icon aria-hidden="true">picture_as_pdf</mat-icon>
+                } @else if (hasScan(side)) {
+                  <mat-icon aria-hidden="true">insert_drive_file</mat-icon>
+                } @else {
+                  <mat-icon aria-hidden="true">add_photo_alternate</mat-icon>
+                }
+              </button>
+
+              <div class="vehicle-form-dialog__scan-meta">
                 <strong>
                   {{
                     (side === 'front'
@@ -152,40 +186,27 @@
                 </strong>
                 <p>
                   {{
-                    (side === 'front'
-                      ? vehicle()?.scanFront?.originalFilename
-                      : vehicle()?.scanBack?.originalFilename
-                    ) || ('pages.adminVehicles.scanEmpty' | translate)
+                    scanFile(side)?.originalFilename ||
+                      ('pages.adminVehicles.scanEmpty' | translate)
                   }}
                 </p>
-              </div>
-              <div class="vehicle-form-dialog__scan-actions">
-                @if (
-                  (side === 'front' && vehicle()?.scanFront) ||
-                  (side === 'back' && vehicle()?.scanBack)
-                ) {
-                  <button mat-stroked-button type="button" (click)="openScan(side)">
-                    {{ 'pages.adminVehicles.scanOpen' | translate }}
-                  </button>
-                }
-                @if (!isDeleted()) {
-                  <button
-                    mat-stroked-button
-                    type="button"
-                    [disabled]="scanBusy()"
-                    (click)="side === 'front' ? frontInput.click() : backInput.click()"
-                  >
-                    {{ 'pages.adminVehicles.scanUpload' | translate }}
-                  </button>
-                  @if (
-                    (side === 'front' && vehicle()?.scanFront) ||
-                    (side === 'back' && vehicle()?.scanBack)
-                  ) {
-                    <button mat-button color="warn" type="button" (click)="deleteScan(side)">
-                      {{ 'pages.adminVehicles.scanDelete' | translate }}
+                <div class="vehicle-form-dialog__scan-actions">
+                  @if (!isDeleted()) {
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      [disabled]="scanBusy()"
+                      (click)="side === 'front' ? frontInput.click() : backInput.click()"
+                    >
+                      {{ 'pages.adminVehicles.scanUpload' | translate }}
                     </button>
+                    @if (hasScan(side)) {
+                      <button mat-button color="warn" type="button" (click)="deleteScan(side)">
+                        {{ 'pages.adminVehicles.scanDelete' | translate }}
+                      </button>
+                    }
                   }
-                }
+                </div>
               </div>
             </div>
           }
@@ -225,12 +246,12 @@
         } @else {
           <mat-accordion multi>
             @for (group of documentGroups(); track group.documentType) {
-              <mat-expansion-panel>
-                <mat-expansion-panel-header>
-                  <mat-panel-title>
-                    {{ documentTypeKey(group.documentType) | translate }}
-                  </mat-panel-title>
-                  <mat-panel-description>
+              <mat-expansion-panel class="vehicle-form-dialog__doc-panel">
+                <mat-expansion-panel-header class="vehicle-form-dialog__doc-header">
+                  <div class="vehicle-form-dialog__doc-header-row">
+                    <span class="vehicle-form-dialog__doc-title">
+                      {{ documentTypeKey(group.documentType) | translate }}
+                    </span>
                     <span
                       class="vehicle-form-dialog__status"
                       [class.vehicle-form-dialog__status--valid]="group.status === 'VALID'"
@@ -240,7 +261,7 @@
                     >
                       {{ documentStatusKey(group.status) | translate }}
                     </span>
-                  </mat-panel-description>
+                  </div>
                 </mat-expansion-panel-header>
 
                 @if (group.current; as current) {

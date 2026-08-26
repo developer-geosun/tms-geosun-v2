@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnDestroy,
   computed,
   inject,
   signal
@@ -21,13 +22,16 @@ import {
 } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatStepperModule } from '@angular/material/stepper';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
 import {
   RegistrationScanSideContract,
+  StoredFileContractDto,
   VehicleContractDto,
   VehicleDocumentGroupContractDto,
   VehicleDocumentStatusContract,
@@ -36,11 +40,16 @@ import {
   VehiclesApiService
 } from '../../core/api';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { getHandsetFriendlyDialogConfig } from '../../shared/utils/handset-friendly-dialog-config';
 import {
   sanitizeUaPlateInput,
   UA_PLATE_MAX_LENGTH,
   UA_PLATE_PATTERN
 } from './vehicle-plate.util';
+import {
+  VehicleScanViewerDialogComponent,
+  VehicleScanViewerDialogResult
+} from './vehicle-scan-viewer-dialog.component';
 import { showVehicleSnack } from './vehicle-snackbar';
 import { sanitizeVinInput, VIN_MAX_LENGTH, VIN_PATTERN } from './vehicle-vin.util';
 
@@ -63,10 +72,12 @@ export interface VehicleFormDialogData {
     MatDialogModule,
     MatExpansionModule,
     MatFormFieldModule,
+    MatIconModule,
     MatInputModule,
     MatSelectModule,
     MatSnackBarModule,
-    MatStepperModule
+    MatStepperModule,
+    MatTooltipModule
   ],
   providers: [
     provideNativeDateAdapter({
@@ -81,7 +92,7 @@ export interface VehicleFormDialogData {
   styleUrl: './vehicle-form-dialog.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class VehicleFormDialogComponent {
+export class VehicleFormDialogComponent implements OnDestroy {
   private readonly data = inject<VehicleFormDialogData>(MAT_DIALOG_DATA);
   private readonly dialogRef = inject(MatDialogRef<VehicleFormDialogComponent, boolean>);
   private readonly formBuilder = inject(FormBuilder);
@@ -101,6 +112,9 @@ export class VehicleFormDialogComponent {
   readonly documentBusy = signal(false);
   readonly scanBusy = signal(false);
   readonly saving = signal(false);
+  /** blob: URL мініатюр сканів за стороною. */
+  readonly scanPreviewUrls = signal<ReadonlyMap<RegistrationScanSideContract, string>>(new Map());
+  private previewLoadEpoch = 0;
   /** Активний крок: 0 — дані, 1 — скани, 2 — документи. */
   readonly stepIndex = signal(0);
   /** Тип документа, для якого відкрита форма додавання версії. */
@@ -180,7 +194,12 @@ export class VehicleFormDialogComponent {
         this.form.disable();
       }
       void this.reloadDocuments();
+      void this.reloadScanPreviews();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.revokeAllScanPreviews();
   }
 
   close(): void {
@@ -189,6 +208,9 @@ export class VehicleFormDialogComponent {
 
   onStepChange(index: number): void {
     this.stepIndex.set(index);
+    if (index === 1 && this.vehicle()?.id) {
+      void this.reloadScanPreviews();
+    }
     if (index === 2 && this.vehicle()?.id) {
       void this.reloadDocuments();
     }
@@ -307,6 +329,7 @@ export class VehicleFormDialogComponent {
       this.changed.set(true);
       this.notify('pages.adminVehicles.scanUploadSuccess');
       this.vehicle.set(await this.vehiclesApi.getById(id));
+      await this.reloadScanPreviews();
     } catch (err) {
       this.notify(this.mapError(err, 'pages.adminVehicles.scanUploadFailed'), 'error');
     } finally {
@@ -314,17 +337,37 @@ export class VehicleFormDialogComponent {
     }
   }
 
-  async openScan(side: RegistrationScanSideContract): Promise<void> {
+  async openScanViewer(side: RegistrationScanSideContract): Promise<void> {
     const row = this.vehicle();
     if (!row) {
       return;
     }
-    try {
-      const blob = await this.vehiclesApi.downloadScanBlob(row.id, side);
-      this.openBlob(blob);
-    } catch {
-      this.notify('pages.adminVehicles.scanOpenFailed', 'error');
+    const ref = this.dialog.open(
+      VehicleScanViewerDialogComponent,
+      getHandsetFriendlyDialogConfig({
+        width: 'min(96vw, 1100px)',
+        height: 'min(96vh, 900px)',
+        maxWidth: '100vw',
+        maxHeight: '100vh',
+        panelClass: 'vehicle-scan-viewer-dialog-shell',
+        data: {
+          vehicleId: row.id,
+          side,
+          plateNumber: row.plateNumber,
+          vehicleDeleted: row.deleted,
+          file: this.scanFile(side)
+        }
+      })
+    );
+    const result = (await firstValueFrom(
+      ref.afterClosed()
+    )) as VehicleScanViewerDialogResult | undefined;
+    if (!result?.changed) {
+      return;
     }
+    this.changed.set(true);
+    this.vehicle.set(await this.vehiclesApi.getById(row.id));
+    await this.reloadScanPreviews();
   }
 
   async deleteScan(side: RegistrationScanSideContract): Promise<void> {
@@ -347,9 +390,35 @@ export class VehicleFormDialogComponent {
       this.changed.set(true);
       this.notify('pages.adminVehicles.scanDeleteSuccess');
       this.vehicle.set(await this.vehiclesApi.getById(row.id));
+      await this.reloadScanPreviews();
     } catch {
       this.notify('pages.adminVehicles.scanDeleteFailed', 'error');
     }
+  }
+
+  scanFile(side: RegistrationScanSideContract): StoredFileContractDto | null {
+    const row = this.vehicle();
+    if (!row) {
+      return null;
+    }
+    return side === 'front' ? row.scanFront : row.scanBack;
+  }
+
+  hasScan(side: RegistrationScanSideContract): boolean {
+    return this.scanFile(side) != null;
+  }
+
+  isScanImage(file: StoredFileContractDto | null): boolean {
+    const mime = (file?.contentType || '').toLowerCase();
+    return mime === 'image/jpeg' || mime === 'image/png' || mime.startsWith('image/');
+  }
+
+  isScanPdf(file: StoredFileContractDto | null): boolean {
+    return (file?.contentType || '').toLowerCase() === 'application/pdf';
+  }
+
+  scanPreviewUrl(side: RegistrationScanSideContract): string | null {
+    return this.scanPreviewUrls().get(side) ?? null;
   }
 
   startAddDocument(type: VehicleDocumentTypeContract): void {
@@ -477,6 +546,50 @@ export class VehicleFormDialogComponent {
     } finally {
       this.documentsLoading.set(false);
     }
+  }
+
+  private async reloadScanPreviews(): Promise<void> {
+    const row = this.vehicle();
+    this.revokeAllScanPreviews();
+    if (!row?.id) {
+      return;
+    }
+    const epoch = ++this.previewLoadEpoch;
+    const loaded = new Map<RegistrationScanSideContract, string>();
+    await Promise.all(
+      this.scanSides.map(async (side) => {
+        const file = side === 'front' ? row.scanFront : row.scanBack;
+        if (!file || !this.isScanImage(file)) {
+          return;
+        }
+        try {
+          const blob = await this.vehiclesApi.downloadScanBlob(row.id, side);
+          const url = URL.createObjectURL(blob);
+          if (epoch !== this.previewLoadEpoch) {
+            URL.revokeObjectURL(url);
+            return;
+          }
+          loaded.set(side, url);
+        } catch {
+          // Прев’ю опційне.
+        }
+      })
+    );
+    if (epoch !== this.previewLoadEpoch) {
+      for (const url of loaded.values()) {
+        URL.revokeObjectURL(url);
+      }
+      return;
+    }
+    this.scanPreviewUrls.set(loaded);
+  }
+
+  private revokeAllScanPreviews(): void {
+    this.previewLoadEpoch++;
+    for (const url of this.scanPreviewUrls().values()) {
+      URL.revokeObjectURL(url);
+    }
+    this.scanPreviewUrls.set(new Map());
   }
 
   private patchForm(row: VehicleContractDto): void {
