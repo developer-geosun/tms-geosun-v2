@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.core.io.Resource;
 import org.springframework.lang.NonNull;
@@ -52,9 +53,8 @@ public class StoredFileService {
 
   @Transactional(readOnly = true)
   public StoredFile requireById(@NonNull String id) {
-    return repository
-        .findById(id)
-        .orElseThrow(() -> ApiException.notFound("Stored file not found"));
+    return Objects.requireNonNull(
+        repository.findById(id).orElseThrow(() -> ApiException.notFound("Stored file not found")));
   }
 
   @Transactional(readOnly = true)

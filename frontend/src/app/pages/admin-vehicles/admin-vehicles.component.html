@@ -1,0 +1,256 @@
+<section class="admin-vehicles">
+  <header class="admin-vehicles__header">
+    <h1>{{ 'pages.adminVehicles.title' | translate }}</h1>
+    <div class="admin-vehicles__actions">
+      <mat-button-toggle-group
+        [value]="listView()"
+        (change)="onViewChange($event.value)"
+      >
+        <mat-button-toggle value="active">
+          {{ 'pages.adminVehicles.viewActive' | translate }}
+        </mat-button-toggle>
+        <mat-button-toggle value="all">
+          {{ 'pages.adminVehicles.viewAll' | translate }}
+        </mat-button-toggle>
+        <mat-button-toggle value="deleted">
+          {{ 'pages.adminVehicles.viewDeleted' | translate }}
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+      <button mat-stroked-button type="button" (click)="reload()">
+        {{ 'pages.adminVehicles.refresh' | translate }}
+      </button>
+      <button mat-flat-button color="primary" type="button" (click)="startCreate()">
+        {{ 'pages.adminVehicles.create' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (isLoading() || loadError() || actionError() || actionSuccess()) {
+    <div class="admin-vehicles__messages">
+      @if (isLoading()) {
+        <p>{{ 'pages.adminVehicles.loading' | translate }}</p>
+      } @else if (loadError()) {
+        <p class="admin-vehicles__error">{{ loadError() | translate }}</p>
+      }
+      @if (actionError()) {
+        <p class="admin-vehicles__error">{{ actionError() | translate }}</p>
+      }
+      @if (actionSuccess()) {
+        <p class="admin-vehicles__success">{{ actionSuccess() | translate }}</p>
+      }
+    </div>
+  }
+
+  <div class="admin-vehicles__layout">
+    <div class="admin-vehicles__table-panel">
+      <div class="table-shell">
+        <table mat-table [dataSource]="pagedVehicles()">
+          <ng-container matColumnDef="plateNumber">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminVehicles.plateNumber' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">{{ row.plateNumber }}</td>
+          </ng-container>
+          <ng-container matColumnDef="makeModel">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminVehicles.makeModel' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">{{ row.make }} {{ row.model }}</td>
+          </ng-container>
+          <ng-container matColumnDef="vehicleType">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminVehicles.vehicleType' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">
+              {{ typeLabelKey(row.vehicleType) | translate }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="owner">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminVehicles.owner' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row" class="admin-vehicles__ellipsis" [matTooltip]="row.owner">
+              {{ row.owner }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminVehicles.status' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">
+              {{
+                (row.deleted
+                  ? 'pages.adminVehicles.statusDeleted'
+                  : 'pages.adminVehicles.statusActive'
+                ) | translate
+              }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let row">
+              <button mat-button type="button" (click)="startEdit(row)">
+                {{ 'pages.adminVehicles.edit' | translate }}
+              </button>
+              @if (!row.deleted) {
+                <button mat-button color="warn" type="button" (click)="softDelete(row)">
+                  {{ 'pages.adminVehicles.delete' | translate }}
+                </button>
+              } @else {
+                <button mat-button type="button" (click)="restore(row)">
+                  {{ 'pages.adminVehicles.restore' | translate }}
+                </button>
+              }
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+      <mat-paginator
+        [length]="vehicles().length"
+        [pageIndex]="pageIndex()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPage($event)"
+      />
+    </div>
+
+    <aside class="admin-vehicles__form-panel">
+      <h2>
+        {{
+          (editingId()
+            ? 'pages.adminVehicles.editTitle'
+            : 'pages.adminVehicles.createTitle'
+          ) | translate
+        }}
+      </h2>
+
+      <form [formGroup]="form" (ngSubmit)="save()" class="admin-vehicles__form">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.plateNumber' | translate }}</mat-label>
+          <input matInput formControlName="plateNumber" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.vin' | translate }}</mat-label>
+          <input matInput formControlName="vin" maxlength="17" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.make' | translate }}</mat-label>
+          <input matInput formControlName="make" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.model' | translate }}</mat-label>
+          <input matInput formControlName="model" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.manufactureYear' | translate }}</mat-label>
+          <input matInput type="number" formControlName="manufactureYear" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.owner' | translate }}</mat-label>
+          <input matInput formControlName="owner" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.registrationSeries' | translate }}</mat-label>
+          <input matInput formControlName="registrationSeries" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.registrationNumber' | translate }}</mat-label>
+          <input matInput formControlName="registrationNumber" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.vehicleType' | translate }}</mat-label>
+          <mat-select formControlName="vehicleType">
+            @for (type of vehicleTypeOptions; track type) {
+              <mat-option [value]="type">{{ typeLabelKey(type) | translate }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (!selected()?.deleted) {
+          <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">
+            {{ 'pages.adminVehicles.save' | translate }}
+          </button>
+        }
+      </form>
+
+      <div class="admin-vehicles__scans">
+        <h3>{{ 'pages.adminVehicles.scansTitle' | translate }}</h3>
+        @if (!editingId()) {
+          <p class="admin-vehicles__hint">{{ 'pages.adminVehicles.scansAfterCreate' | translate }}</p>
+        } @else {
+          @for (side of scanSides; track side) {
+            <div class="admin-vehicles__scan-row">
+              <div>
+                <strong>
+                  {{
+                    (side === 'front'
+                      ? 'pages.adminVehicles.scanFront'
+                      : 'pages.adminVehicles.scanBack'
+                    ) | translate
+                  }}
+                </strong>
+                <p>
+                  {{
+                    (side === 'front'
+                      ? selected()?.scanFront?.originalFilename
+                      : selected()?.scanBack?.originalFilename
+                    ) || ('pages.adminVehicles.scanEmpty' | translate)
+                  }}
+                </p>
+              </div>
+              <div class="admin-vehicles__scan-actions">
+                @if (
+                  (side === 'front' && selected()?.scanFront) ||
+                  (side === 'back' && selected()?.scanBack)
+                ) {
+                  <button mat-stroked-button type="button" (click)="openScan(side)">
+                    {{ 'pages.adminVehicles.scanOpen' | translate }}
+                  </button>
+                }
+                @if (!selected()?.deleted) {
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    [disabled]="scanBusy()"
+                    (click)="side === 'front' ? frontInput.click() : backInput.click()"
+                  >
+                    {{ 'pages.adminVehicles.scanUpload' | translate }}
+                  </button>
+                  @if (
+                    (side === 'front' && selected()?.scanFront) ||
+                    (side === 'back' && selected()?.scanBack)
+                  ) {
+                    <button
+                      mat-button
+                      color="warn"
+                      type="button"
+                      (click)="deleteScan(side)"
+                    >
+                      {{ 'pages.adminVehicles.scanDelete' | translate }}
+                    </button>
+                  }
+                }
+              </div>
+            </div>
+          }
+          <input
+            #frontInput
+            type="file"
+            class="admin-vehicles__file-input"
+            accept="image/jpeg,image/png,application/pdf"
+            (change)="onScanSelected('front', $event)"
+          />
+          <input
+            #backInput
+            type="file"
+            class="admin-vehicles__file-input"
+            accept="image/jpeg,image/png,application/pdf"
+            (change)="onScanSelected('back', $event)"
+          />
+        }
+      </div>
+    </aside>
+  </div>
+</section>

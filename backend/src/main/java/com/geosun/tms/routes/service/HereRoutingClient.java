@@ -10,9 +10,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.ResponseEntity;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
@@ -106,7 +106,9 @@ public class HereRoutingClient {
 
   private static List<RoutePoint> sortedPoints(Route route) {
     return route.getPoints().stream()
-        .sorted(Comparator.comparing((@NonNull RoutePoint point) -> point.getPointOrder()))
+        .sorted(
+            Comparator.comparing(
+                (RoutePoint point) -> Objects.requireNonNull(point.getPointOrder())))
         .toList();
   }
 

@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Comparator;
 import java.util.List;
-import org.springframework.lang.NonNull;
+import java.util.Objects;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -121,7 +121,9 @@ public class FreightCostCalculationSummaryBuilder {
     }
     List<RoutePoint> points =
         route.getPoints().stream()
-            .sorted(Comparator.comparing((@NonNull RoutePoint point) -> point.getPointOrder()))
+            .sorted(
+                Comparator.comparing(
+                    (RoutePoint point) -> Objects.requireNonNull(point.getPointOrder())))
             .toList();
     sb.append("--- Точки маршруту ---\n");
     if (startPoint != null) {

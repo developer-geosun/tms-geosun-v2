@@ -12,6 +12,7 @@ import com.geosun.tms.freight.cost.dto.response.FreightNumericScenarioDto;
 import com.geosun.tms.freight.cost.repository.FreightCostCalculationRepository;
 import com.geosun.tms.freight.cost.repository.FreightNumericScenarioRepository;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -95,25 +96,16 @@ public class FreightNumericScenarioService {
 
   @NonNull
   public FreightNumericScenario loadScenario(String id) {
-    if (id == null) {
-      throw new NullPointerException("scenarioId");
-    }
     FreightNumericScenario scenario =
         scenarioRepository
-            .findById(id)
+            .findById(Objects.requireNonNull(id, "scenarioId"))
             .orElseThrow(() -> ApiException.notFound("Numeric scenario not found"));
-    if (scenario == null) {
-      throw new NullPointerException("scenario");
-    }
-    return scenario;
+    return Objects.requireNonNull(scenario);
   }
 
   private User loadUser(String userId) {
-    if (userId == null) {
-      throw new NullPointerException("userId");
-    }
     return userRepository
-        .findById(userId)
+        .findById(Objects.requireNonNull(userId, "userId"))
         .orElseThrow(() -> ApiException.notFound("User not found"));
   }
 

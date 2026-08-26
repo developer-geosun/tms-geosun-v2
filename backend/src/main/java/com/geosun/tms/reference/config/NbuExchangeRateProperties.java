@@ -1,5 +1,6 @@
 package com.geosun.tms.reference.config;
 
+import java.util.Objects;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.lang.NonNull;
 
@@ -35,9 +36,6 @@ public class NbuExchangeRateProperties {
 
   @NonNull
   public String exchangeRatesPath() {
-    if (baseUrl == null) {
-      throw new NullPointerException("baseUrl");
-    }
-    return baseUrl + "/exchange";
+    return Objects.requireNonNull(baseUrl, "baseUrl") + "/exchange";
   }
 }

@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -309,20 +310,14 @@ public class FreightCostPreviewService {
   }
 
   private RouteRequest loadRouteRequest(Long requestId) {
-    if (requestId == null) {
-      throw new NullPointerException("requestId");
-    }
     return routeRequestRepository
-        .findById(requestId)
+        .findById(Objects.requireNonNull(requestId, "requestId"))
         .orElseThrow(() -> ApiException.notFound("Route request not found"));
   }
 
   private User loadUser(String userId) {
-    if (userId == null) {
-      throw new NullPointerException("userId");
-    }
     return userRepository
-        .findById(userId)
+        .findById(Objects.requireNonNull(userId, "userId"))
         .orElseThrow(() -> ApiException.notFound("User not found"));
   }
 

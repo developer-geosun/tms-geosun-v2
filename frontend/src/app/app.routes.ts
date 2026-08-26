@@ -123,6 +123,15 @@ export const routes: Routes = [
       )
   },
   {
+    path: 'admin/vehicles',
+    canActivate: [authAvailabilityGuard, serviceStopGuard, authGuard],
+    data: { roles: ['admin', 'manager'] },
+    loadComponent: () =>
+      import('./pages/admin-vehicles/admin-vehicles.component').then(
+        (m) => m.AdminVehiclesComponent
+      )
+  },
+  {
     path: '404',
     loadComponent: () => import('./pages/not-found/not-found.component').then((m) => m.NotFoundComponent)
   },

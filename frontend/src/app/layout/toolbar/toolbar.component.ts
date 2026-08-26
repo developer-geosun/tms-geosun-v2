@@ -123,6 +123,11 @@ export class ToolbarComponent {
       roles: ['admin', 'manager'] as const
     },
     {
+      route: '/admin/vehicles',
+      labelKey: 'navigation.adminVehicles',
+      roles: ['admin', 'manager'] as const
+    },
+    {
       route: '/admin/users',
       labelKey: 'navigation.adminUsers',
       roles: ['admin'] as const

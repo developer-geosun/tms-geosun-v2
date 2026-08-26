@@ -17,6 +17,7 @@ import com.geosun.tms.freight.cost.repository.FreightNumericScenarioRepository;
 import com.geosun.tms.freight.cost.repository.TollTariffSetRepository;
 import com.geosun.tms.reference.service.CountryReferenceService;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -157,21 +158,15 @@ public class TollTariffSetService {
   }
 
   public TollTariffSet loadSet(String id) {
-    if (id == null) {
-      throw new NullPointerException("setId");
-    }
     return tollTariffSetRepository
-        .findById(id)
+        .findById(Objects.requireNonNull(id, "setId"))
         .orElseThrow(() -> ApiException.notFound("Toll tariff set not found"));
   }
 
   private CountryTollRule loadRule(String setId, String ruleId) {
-    if (ruleId == null) {
-      throw new NullPointerException("ruleId");
-    }
     CountryTollRule rule =
         countryTollRuleRepository
-            .findById(ruleId)
+            .findById(Objects.requireNonNull(ruleId, "ruleId"))
             .orElseThrow(() -> ApiException.notFound("Country toll rule not found"));
     if (!rule.getTollTariffSet().getId().equals(setId)) {
       throw ApiException.notFound("Country toll rule not found in set");
@@ -180,11 +175,8 @@ public class TollTariffSetService {
   }
 
   private User loadUser(String userId) {
-    if (userId == null) {
-      throw new NullPointerException("userId");
-    }
     return userRepository
-        .findById(userId)
+        .findById(Objects.requireNonNull(userId, "userId"))
         .orElseThrow(() -> ApiException.notFound("User not found"));
   }
 

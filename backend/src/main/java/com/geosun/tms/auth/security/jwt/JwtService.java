@@ -10,6 +10,7 @@ import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Optional;
 import javax.crypto.SecretKey;
 import org.springframework.stereotype.Component;
@@ -83,7 +84,9 @@ public class JwtService {
       }
       Instant iat = claims.getIssuedAt() != null ? claims.getIssuedAt().toInstant() : null;
       Instant exp = claims.getExpiration() != null ? claims.getExpiration().toInstant() : null;
-      return Optional.of(new JwtAccessClaims(sub, sessionId, iat, exp));
+      return Optional.of(
+          new JwtAccessClaims(
+              Objects.requireNonNull(sub), Objects.requireNonNull(sessionId), iat, exp));
     } catch (JwtException | IllegalArgumentException e) {
       return Optional.empty();
     }

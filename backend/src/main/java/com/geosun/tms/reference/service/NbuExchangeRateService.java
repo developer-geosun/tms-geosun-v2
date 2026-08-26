@@ -59,7 +59,7 @@ public class NbuExchangeRateService {
       NbuRateDto dto = upsertRate(currency, snapshot, rateDate, fetchedAt);
       saved.add(dto);
     }
-    saved.sort(Comparator.comparing(NbuExchangeRateService::nbuRateDtoCurrencyCode));
+    saved.sort(Comparator.comparing(dto -> nbuRateDtoCurrencyCode(Objects.requireNonNull(dto))));
     return new SyncNbuRatesResponse(rateDate, fetchedAt, saved.size(), saved);
   }
 
@@ -107,13 +107,14 @@ public class NbuExchangeRateService {
     }
     Instant fetchedAt =
         stored.stream()
-            .map(NbuExchangeRateService::nbuRateFetchedAt)
+            .map(rate -> nbuRateFetchedAt(Objects.requireNonNull(rate)))
             .max(Comparator.naturalOrder())
             .orElse(Instant.now());
     List<NbuRateDto> rates =
         stored.stream()
-            .map(this::toDto)
-            .sorted(Comparator.comparing(NbuExchangeRateService::nbuRateDtoCurrencyCode))
+            .map(entity -> toDto(Objects.requireNonNull(entity)))
+            .sorted(
+                Comparator.comparing(dto -> nbuRateDtoCurrencyCode(Objects.requireNonNull(dto))))
             .toList();
     return new NbuRatesSnapshotDto(rateDate, fetchedAt, rates);
   }
@@ -154,35 +155,23 @@ public class NbuExchangeRateService {
 
   private static Set<String> activeCurrencyCodes(List<Currency> currencies) {
     return currencies.stream()
-        .map(NbuExchangeRateService::currencyCode)
+        .map(currency -> currencyCode(Objects.requireNonNull(currency)))
         .collect(Collectors.toSet());
   }
 
   @NonNull
   private static String currencyCode(@NonNull Currency currency) {
-    String code = currency.getCode();
-    if (code == null) {
-      throw new NullPointerException("currencyCode");
-    }
-    return code;
+    return Objects.requireNonNull(currency.getCode(), "currencyCode");
   }
 
   @NonNull
   private static String nbuRateDtoCurrencyCode(@NonNull NbuRateDto dto) {
-    String code = dto.currencyCode();
-    if (code == null) {
-      throw new NullPointerException("currencyCode");
-    }
-    return code;
+    return Objects.requireNonNull(dto.currencyCode(), "currencyCode");
   }
 
   @NonNull
   private static Instant nbuRateFetchedAt(@NonNull CurrencyNbuRate rate) {
-    Instant fetchedAt = rate.getFetchedAt();
-    if (fetchedAt == null) {
-      throw new NullPointerException("fetchedAt");
-    }
-    return fetchedAt;
+    return Objects.requireNonNull(rate.getFetchedAt(), "fetchedAt");
   }
 
   private NbuRateDto toDto(@NonNull CurrencyNbuRate entity) {

@@ -18,4 +18,6 @@ export * from './users-admin-api.service';
 export * from './users-admin-contracts.model';
 export * from './stored-files-api.service';
 export * from './stored-files-contracts.model';
+export * from './vehicles-api.service';
+export * from './vehicles-contracts.model';
 

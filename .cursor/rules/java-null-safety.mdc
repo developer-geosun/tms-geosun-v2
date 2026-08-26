@@ -1,0 +1,76 @@
+---
+description: Java/Spring null-safety — без Eclipse warnings «Null type safety» (@NonNull)
+globs:
+  - backend/src/main/java/**/*.java
+  - backend/src/test/java/**/*.java
+alwaysApply: false
+---
+
+# Java null-safety (Eclipse / Spring `@NonNull`)
+
+IDE (Eclipse JDT null analysis) предупреждает: *Null type safety: The expression of type 'T' needs unchecked conversion to conform to '@NonNull T'* (code 16778128), когда значение **без** `@NonNull` передаётся в параметр/возвращаемый тип с `@NonNull`.
+
+Используй **`org.springframework.lang.NonNull`** (и при необходимости `Nullable`), не `jakarta.annotation.Nonnull`, если в файле уже Spring-стиль.
+
+## Контроллеры → сервисы
+
+Если сервисный метод объявлен как `foo(@NonNull String id)`, то:
+
+```java
+// ❌ BAD — PathVariable/RequestParam без контракта → warning при вызове сервиса
+@GetMapping("/{id}")
+public Dto get(@PathVariable String id) {
+  return service.getById(id);
+}
+
+// ✅ GOOD — пометь вход, который гарантированно есть после резолва Spring MVC
+@GetMapping("/{id}")
+public Dto get(@PathVariable("id") @NonNull String id) {
+  return service.getById(id);
+}
+```
+
+То же для `@RequestBody`, `@RequestPart`, `@AuthenticationPrincipal`, когда значение сразу уходит в `@NonNull`-API.
+
+## Значения, которые реально могут быть null
+
+Геттеры JPA/DTO, `Optional` unwrap, `principal.getUserId()`, `MultipartFile` metadata:
+
+```java
+// ✅ GOOD
+String userId = Objects.requireNonNull(principal.getUserId());
+storedFileService.open(Objects.requireNonNull(id));
+```
+
+Не ставь `@NonNull` на параметр, если null допустим — используй `@Nullable` или явную проверку.
+
+## Контракт сервисов
+
+- Параметры, которые метод не принимает как null — **`@NonNull`**.
+- Не-null результат — **`@NonNull` на методе** (как в существующих `require*` / mapper helper).
+- Приватные хелперы, которые кормят `@NonNull`-API, тоже аннотируй (`@NonNull` на входе и/или возврате).
+
+## Comparator / method references
+
+Eclipse часто не принимает «уже проверенный» null и method-reference в `@NonNull`-хелпер:
+
+```java
+// ❌ BAD
+.sorted(Comparator.comparing((@NonNull RoutePoint p) -> p.getPointOrder()))
+.map(This::helperTakingNonNull)
+
+ // ✅ GOOD
+.sorted(Comparator.comparing(p -> Objects.requireNonNull(p.getPointOrder())))
+.map(x -> helperTakingNonNull(Objects.requireNonNull(x)))
+return Objects.requireNonNull(value); // для @NonNull return после if (value == null)
+```
+
+После `if (id == null) throw ...` всё равно передавай `Objects.requireNonNull(id)` в `repository.findById(@NonNull …)`.
+
+## Чеклист перед сдачей Java-изменения
+
+1. Нет новых warnings 16778128 в затронутых файлах.
+2. Controllers: path/body/part/principal → `@NonNull`, если дальше `@NonNull` service.
+3. Nullable runtime values → `Objects.requireNonNull(...)` (или ранняя валидация/`ApiException`), не «тихий» cast.
+4. Не ослабляй `@NonNull` на сервисе ради тишины IDE — усиливай аннотации на границе MVC.
+

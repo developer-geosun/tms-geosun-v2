@@ -29,8 +29,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,7 +80,9 @@ public class RouteService implements RouteContractsFacade {
     route.setPoints(
         new ArrayList<>(
             request.points().stream()
-                .sorted(Comparator.comparing((@NonNull RoutePointRequest point) -> point.order()))
+                .sorted(
+                    Comparator.comparing(
+                        (RoutePointRequest point) -> Objects.requireNonNull(point.order())))
                 .map((point) -> toEntityPoint(route, point))
                 .toList()));
 
@@ -156,7 +158,9 @@ public class RouteService implements RouteContractsFacade {
     // старі записи видаляються автоматично.
     List<RoutePoint> newPoints =
         request.points().stream()
-            .sorted(Comparator.comparing((@NonNull RoutePointRequest point) -> point.order()))
+            .sorted(
+                Comparator.comparing(
+                    (RoutePointRequest point) -> Objects.requireNonNull(point.order())))
             .map((point) -> toEntityPoint(route, point))
             .toList();
     route.getPoints().clear();
@@ -223,7 +227,9 @@ public class RouteService implements RouteContractsFacade {
     List<RoutePoint> copies = new ArrayList<>();
     for (RoutePoint p :
         source.getPoints().stream()
-            .sorted(Comparator.comparing((@NonNull RoutePoint point) -> point.getPointOrder()))
+            .sorted(
+                Comparator.comparing(
+                    (RoutePoint point) -> Objects.requireNonNull(point.getPointOrder())))
             .toList()) {
       RoutePoint c = new RoutePoint();
       c.setRoute(target);
@@ -307,7 +313,9 @@ public class RouteService implements RouteContractsFacade {
         route.getPoints() == null
             ? List.of()
             : route.getPoints().stream()
-                .sorted(Comparator.comparing((@NonNull RoutePoint point) -> point.getPointOrder()))
+                .sorted(
+                    Comparator.comparing(
+                        (RoutePoint point) -> Objects.requireNonNull(point.getPointOrder())))
                 .map(this::toPointDto)
                 .toList();
 
@@ -350,7 +358,9 @@ public class RouteService implements RouteContractsFacade {
   private static void validateOperations(List<RoutePointRequest> points) {
     List<RoutePointRequest> orderedRequests =
         points.stream()
-            .sorted(Comparator.comparing((@NonNull RoutePointRequest point) -> point.order()))
+            .sorted(
+                Comparator.comparing(
+                    (RoutePointRequest point) -> Objects.requireNonNull(point.order())))
             .toList();
     List<RoutePointWithOperations> ordered =
         orderedRequests.stream().map(RouteService::toValidationPoint).toList();

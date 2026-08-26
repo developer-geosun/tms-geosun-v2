@@ -19,6 +19,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -101,9 +102,7 @@ public class CountryBreakdownService {
 
   private List<CountryDistanceDto> toDto(List<RouteCountryDistance> items) {
     return items.stream()
-        .sorted(
-            Comparator.comparingInt(
-                (@NonNull RouteCountryDistance item) -> item.getAlongRouteOrder()))
+        .sorted(Comparator.comparingInt(item -> Objects.requireNonNull(item).getAlongRouteOrder()))
         .map(
             item ->
                 new CountryDistanceDto(
@@ -195,7 +194,9 @@ public class CountryBreakdownService {
     Map<String, long[]> grouped = new LinkedHashMap<>();
     List<RoutePoint> points =
         route.getPoints().stream()
-            .sorted(Comparator.comparing((@NonNull RoutePoint point) -> point.getPointOrder()))
+            .sorted(
+                Comparator.comparing(
+                    (RoutePoint point) -> Objects.requireNonNull(point.getPointOrder())))
             .toList();
     for (int i = 0; i < points.size(); i++) {
       RoutePoint from = points.get(i);
@@ -280,7 +281,9 @@ public class CountryBreakdownService {
             + route.getRoutingMode()
             + "|"
             + route.getPoints().stream()
-                .sorted(Comparator.comparing((@NonNull RoutePoint point) -> point.getPointOrder()))
+                .sorted(
+                    Comparator.comparing(
+                        (RoutePoint point) -> Objects.requireNonNull(point.getPointOrder())))
                 .map(point -> point.getLat() + "," + point.getLng())
                 .reduce((left, right) -> left + ";" + right)
                 .orElse("");

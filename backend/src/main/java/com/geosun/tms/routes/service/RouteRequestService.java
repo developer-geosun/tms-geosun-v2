@@ -152,7 +152,7 @@ public class RouteRequestService {
     }
     RouteRequest request =
         routeRequestRepository
-            .findById(requestId)
+            .findById(Objects.requireNonNull(requestId))
             .orElseThrow(() -> ApiException.notFound("Route request not found"));
     return toDto(request, true);
   }
@@ -166,7 +166,7 @@ public class RouteRequestService {
     }
     RouteRequest request =
         routeRequestRepository
-            .findById(requestId)
+            .findById(Objects.requireNonNull(requestId))
             .orElseThrow(() -> ApiException.notFound("Route request not found"));
 
     if (body != null && StringUtils.hasText(body.scenarioId())) {
@@ -238,7 +238,9 @@ public class RouteRequestService {
         route.getPoints() == null
             ? List.of()
             : route.getPoints().stream()
-                .sorted(Comparator.comparing((@NonNull RoutePoint point) -> point.getPointOrder()))
+                .sorted(
+                    Comparator.comparing(
+                        (RoutePoint point) -> Objects.requireNonNull(point.getPointOrder())))
                 .map(
                     point ->
                         new RoutePointDto(

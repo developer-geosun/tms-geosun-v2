@@ -1,0 +1,84 @@
+@use 'breakpoints' as bp;
+
+.admin-vehicles {
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  &__messages {
+    margin-bottom: 1rem;
+  }
+
+  &__error {
+    color: var(--mat-sys-error, #b3261e);
+  }
+
+  &__success {
+    color: var(--mat-sys-primary, #1967d2);
+  }
+
+  &__layout {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
+  }
+
+  &__ellipsis {
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__form {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  &__scans {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  }
+
+  &__hint {
+    opacity: 0.8;
+  }
+
+  &__scan-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+
+  &__scan-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  &__file-input {
+    display: none;
+  }
+
+  @include bp.handset {
+    &__layout {
+      grid-template-columns: 1fr;
+    }
+  }
+}
