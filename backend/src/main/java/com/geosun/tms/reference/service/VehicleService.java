@@ -30,9 +30,9 @@ import org.springframework.util.StringUtils;
 public class VehicleService {
 
   private static final Pattern VIN_PATTERN = Pattern.compile("^[A-HJ-NPR-Z0-9]{17}$");
-  /** Стандартний UA-номер: 2 літери + 4 цифри + 2 літери (латиниця після нормалізації). */
-  private static final Pattern PLATE_PATTERN =
-      Pattern.compile("^[ABCEHIKMOPTX]{2}\\d{4}[ABCEHIKMOPTX]{2}$");
+
+  /** Стандартний UA-номер: 2 літери + 4 цифри + 2 літери (латиниця A–Z після нормалізації). */
+  private static final Pattern PLATE_PATTERN = Pattern.compile("^[A-Z]{2}\\d{4}[A-Z]{2}$");
 
   private final VehicleRepository vehicleRepository;
   private final VehicleRegistrationScanRepository scanRepository;
@@ -270,8 +270,7 @@ public class VehicleService {
     String normalized = sb.toString();
     if (!PLATE_PATTERN.matcher(normalized).matches()) {
       throw ApiException.badRequest(
-          "VALIDATION_ERROR",
-          "plateNumber must be UA format LL####LL with letters A,B,C,E,H,I,K,M,O,P,T,X");
+          "VALIDATION_ERROR", "plateNumber must be UA format LL####LL with Latin letters A-Z");
     }
     return normalized;
   }
@@ -282,15 +281,29 @@ public class VehicleService {
       case 'A', 'А' -> 'A';
       case 'B', 'В' -> 'B';
       case 'C', 'С' -> 'C';
+      case 'D', 'Д' -> 'D';
       case 'E', 'Е' -> 'E';
+      case 'F', 'Ф' -> 'F';
+      case 'G' -> 'G';
       case 'H', 'Н' -> 'H';
       case 'I', 'І' -> 'I';
+      case 'J' -> 'J';
       case 'K', 'К' -> 'K';
+      case 'L', 'Л' -> 'L';
       case 'M', 'М' -> 'M';
+      case 'N' -> 'N';
       case 'O', 'О' -> 'O';
       case 'P', 'Р' -> 'P';
+      case 'Q' -> 'Q';
+      case 'R' -> 'R';
+      case 'S' -> 'S';
       case 'T', 'Т' -> 'T';
+      case 'U', 'У' -> 'U';
+      case 'V' -> 'V';
+      case 'W' -> 'W';
       case 'X', 'Х' -> 'X';
+      case 'Y' -> 'Y';
+      case 'Z' -> 'Z';
       case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> ch;
       default -> 0;
     };

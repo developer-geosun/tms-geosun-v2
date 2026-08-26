@@ -1,13 +1,22 @@
 @use 'breakpoints' as bp;
 
 .admin-vehicles {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0.75rem;
+
   &__header {
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
     align-items: flex-start;
     justify-content: space-between;
-    margin-bottom: 1rem;
+
+    h1 {
+      margin: 0;
+      font-size: var(--page-title-size, clamp(1.1rem, 2.5vw, 1.5rem));
+    }
   }
 
   &__actions {
@@ -15,70 +24,424 @@
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: center;
+
+    /* Однакова висота + вертикальне центрування тексту. */
+    --admin-vehicles-action-height: 40px;
+
+    > button.mat-mdc-button-base {
+      height: var(--admin-vehicles-action-height);
+      min-height: var(--admin-vehicles-action-height);
+      padding-block: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.25;
+
+      .mdc-button__label {
+        display: inline-flex;
+        align-items: center;
+        line-height: 1.25;
+      }
+    }
+
+    > .mat-button-toggle-group {
+      height: var(--admin-vehicles-action-height);
+      min-height: var(--admin-vehicles-action-height);
+      display: inline-flex;
+      align-items: stretch;
+    }
+
+    .mat-button-toggle {
+      height: 100%;
+      display: flex;
+      align-items: stretch;
+    }
+
+    .mat-button-toggle-button {
+      height: 100% !important;
+      min-height: 0 !important;
+      padding: 0 !important;
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+
+    .mat-button-toggle-label-content {
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      line-height: 1.25;
+      height: auto !important;
+      padding: 0 0.75rem !important;
+    }
+
+    mat-icon {
+      display: inline-flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem !important;
+      width: 1.35rem !important;
+      height: 1.35rem !important;
+      line-height: 1;
+      margin: 0;
+    }
+
+    /* Іконкові toggle без тексту — компактніші. */
+    > .mat-button-toggle-group.admin-vehicles__display-toggle {
+      .mat-button-toggle-label-content {
+        padding: 0 0.65rem !important;
+      }
+    }
+
+    /* Іконкова кнопка (оновлення) — як сегмент toggle зліва. */
+    > button.admin-vehicles__icon-action {
+      min-width: var(--admin-vehicles-action-height);
+      width: auto;
+      padding-inline: 0.65rem;
+      border-radius: 4px;
+
+      mat-icon {
+        margin: 0;
+      }
+    }
   }
 
   &__messages {
-    margin-bottom: 1rem;
+    margin-bottom: 0.25rem;
   }
 
   &__error {
     color: var(--mat-sys-error, #b3261e);
   }
 
-  &__success {
-    color: var(--mat-sys-primary, #1967d2);
+  &__empty {
+    margin: 1rem 0;
+    opacity: 0.8;
   }
 
-  &__layout {
-    display: grid;
-    gap: 1.25rem;
-    grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
+  &__table-scroll {
+    min-width: 0;
+  }
+
+  &__table {
+    width: 100%;
+    min-width: 1100px;
+    font-family: inherit;
+    font-size: 0.875rem;
+  }
+
+  &__plate {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  &__vin {
+    white-space: nowrap;
   }
 
   &__ellipsis {
-    max-width: 10rem;
+    max-width: 12rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  &__form {
+  &__scans-cell {
+    padding-top: 0.45rem;
+    padding-bottom: 0.45rem;
+  }
+
+  &__scan-thumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  &__status {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+
+    &--active {
+      background: color-mix(in srgb, var(--mat-sys-primary, #1967d2) 16%, transparent);
+      color: var(--mat-sys-primary, #1967d2);
+    }
+
+    &--deleted {
+      background: var(--mat-sys-error-container, #f9dedc);
+      color: var(--mat-sys-on-error-container, #8c1d18);
+    }
+  }
+
+  &__actions-cell {
+    white-space: nowrap;
+
+    button {
+      vertical-align: middle;
+    }
+  }
+
+  &__row--deleted {
+    opacity: 0.72;
+  }
+
+  &__cards {
     display: grid;
-    gap: 0.25rem;
-  }
-
-  &__scans {
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-    border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent);
-  }
-
-  &__hint {
-    opacity: 0.8;
-  }
-
-  &__scan-row {
-    display: flex;
-    flex-wrap: wrap;
     gap: 0.75rem;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
+    grid-template-columns: 1fr;
   }
 
-  &__scan-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
+  mat-paginator {
+    align-self: stretch;
   }
 
-  &__file-input {
-    display: none;
+  @include bp.tablet-up {
+    &__cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @include bp.desktop {
+    &__cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 
   @include bp.handset {
-    &__layout {
-      grid-template-columns: 1fr;
+    &__header {
+      flex-direction: column;
+      align-items: stretch;
     }
+
+    &__actions {
+      width: 100%;
+
+      > * {
+        flex: 1 1 auto;
+      }
+    }
+  }
+}
+
+.vehicle-card {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
+  font-family: inherit;
+  font-size: 0.875rem;
+
+  &--deleted {
+    opacity: 0.72;
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.85rem 1rem 0.35rem;
+  }
+
+  &__title-block {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  &__plate {
+    font-weight: 600;
+    font-size: inherit;
+    line-height: 1.3;
+  }
+
+  &__make-model {
+    margin-top: 0.15rem;
+    font-size: inherit;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__badge {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    padding: 0.2rem 0.45rem;
+    border-radius: 999px;
+
+    &--active {
+      background: color-mix(in srgb, var(--mat-sys-primary, #1967d2) 16%, transparent);
+      color: var(--mat-sys-primary, #1967d2);
+    }
+
+    &--deleted {
+      background: var(--mat-sys-error-container);
+      color: var(--mat-sys-on-error-container);
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    padding: 0.25rem 1rem 0.5rem !important;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+
+  &__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__value {
+    font-size: inherit;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  &__scans {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  &__scan-thumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  &__actions {
+    padding: 0 0.5rem 0.65rem !important;
+    margin: 0;
+    gap: 0.15rem;
+  }
+}
+
+.vehicle-action--edit,
+.vehicle-action--restore {
+  --mdc-icon-button-icon-color: var(--mat-sys-on-secondary-container);
+  --mat-icon-button-icon-color: var(--mat-sys-on-secondary-container);
+  background-color: var(--mat-sys-secondary-container) !important;
+  color: var(--mat-sys-on-secondary-container) !important;
+
+  mat-icon {
+    color: inherit;
+  }
+
+  &:hover {
+    --mdc-icon-button-icon-color: var(--mat-sys-on-secondary);
+    --mat-icon-button-icon-color: var(--mat-sys-on-secondary);
+    --mat-icon-button-state-layer-color: transparent;
+    --mdc-icon-button-hover-state-layer-opacity: 0;
+    background-color: var(--mat-sys-secondary) !important;
+    color: var(--mat-sys-on-secondary) !important;
+
+    mat-icon {
+      color: var(--mat-sys-on-secondary) !important;
+    }
+  }
+}
+
+.vehicle-action--danger {
+  --mdc-icon-button-icon-color: var(--mat-sys-error, #b3261e);
+  --mat-icon-button-icon-color: var(--mat-sys-error, #b3261e);
+  background-color: color-mix(in srgb, var(--mat-sys-error, #b3261e) 16%, transparent) !important;
+  color: var(--mat-sys-error, #b3261e) !important;
+
+  mat-icon {
+    color: inherit;
+  }
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--mat-sys-error, #b3261e) 28%, transparent) !important;
+  }
+}
+
+.scan-thumb {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  border: 1px dashed transparent;
+  border-radius: 4px;
+  outline: 1px solid var(--mat-sys-outline-variant, #cac4d0);
+  outline-offset: -1px;
+  background: color-mix(in srgb, var(--mat-sys-on-surface, #1c1b1f) 6%, transparent);
+  color: var(--mat-sys-on-surface-variant, #666);
+  cursor: pointer;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    outline-color 0.15s ease;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+  }
+
+  mat-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 1.5rem;
+    pointer-events: none;
+  }
+
+  &--missing {
+    color: var(--mat-sys-error, #b3261e);
+    opacity: 0.85;
+  }
+
+  &--drag-over {
+    border-color: var(--mat-sys-primary, #1967d2);
+    outline-color: var(--mat-sys-primary, #1967d2);
+    background: color-mix(in srgb, var(--mat-sys-primary, #1967d2) 14%, transparent);
+    cursor: copy;
+  }
+
+  &--busy {
+    cursor: wait;
+    opacity: 0.7;
+  }
+
+  &:hover,
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary, #1967d2);
+    outline-offset: 1px;
+  }
+}
+
+@include bp.handset {
+  .vehicle-card__row {
+    grid-template-columns: 1fr;
   }
 }

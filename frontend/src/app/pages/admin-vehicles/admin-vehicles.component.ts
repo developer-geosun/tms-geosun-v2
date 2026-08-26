@@ -1,27 +1,27 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnDestroy,
   computed,
   effect,
   inject,
   signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
 import {
   RegistrationScanSideContract,
+  StoredFileContractDto,
   VehicleContractDto,
   VehicleListViewContract,
   VehicleTypeContract,
@@ -29,28 +29,29 @@ import {
 } from '../../core/api';
 import { LayoutService } from '../../core/layout';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { getHandsetFriendlyDialogConfig } from '../../shared/utils/handset-friendly-dialog-config';
+import { VehicleFormDialogComponent } from './vehicle-form-dialog.component';
 import {
-  sanitizeUaPlateInput,
-  UA_PLATE_MAX_LENGTH,
-  UA_PLATE_PATTERN
-} from './vehicle-plate.util';
-import { sanitizeVinInput, VIN_MAX_LENGTH, VIN_PATTERN } from './vehicle-vin.util';
+  VehicleScanViewerDialogComponent,
+  VehicleScanViewerDialogResult
+} from './vehicle-scan-viewer-dialog.component';
+import { showVehicleSnack } from './vehicle-snackbar';
+
+type VehiclesDisplayMode = 'table' | 'cards';
 
 @Component({
   selector: 'app-admin-vehicles',
   standalone: true,
   imports: [
     CommonModule,
-    ReactiveFormsModule,
     TranslateModule,
     MatButtonModule,
     MatButtonToggleModule,
+    MatCardModule,
     MatDialogModule,
-    MatFormFieldModule,
     MatIconModule,
-    MatInputModule,
     MatPaginatorModule,
-    MatSelectModule,
+    MatSnackBarModule,
     MatTableModule,
     MatTooltipModule
   ],
@@ -58,24 +59,26 @@ import { sanitizeVinInput, VIN_MAX_LENGTH, VIN_PATTERN } from './vehicle-vin.uti
   styleUrl: './admin-vehicles.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AdminVehiclesComponent {
+export class AdminVehiclesComponent implements OnDestroy {
   private static readonly DESKTOP_PAGE_SIZE = 10;
   private static readonly HANDSET_PAGE_SIZE = 5;
 
   private readonly vehiclesApi = inject(VehiclesApiService);
-  private readonly formBuilder = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
   private readonly layout = inject(LayoutService);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly translate = inject(TranslateService);
 
-  readonly vehicleTypeOptions: VehicleTypeContract[] = ['SEMI_TRACTOR', 'SEMI_TRAILER'];
-  readonly scanSides: RegistrationScanSideContract[] = ['front', 'back'];
-  readonly plateMaxLength = UA_PLATE_MAX_LENGTH;
-  readonly vinMaxLength = VIN_MAX_LENGTH;
+  readonly isHandset = this.layout.isHandset;
   readonly displayedColumns = [
     'plateNumber',
     'makeModel',
+    'vin',
+    'manufactureYear',
     'vehicleType',
     'owner',
+    'registration',
+    'scans',
     'status',
     'actions'
   ];
@@ -83,41 +86,58 @@ export class AdminVehiclesComponent {
 
   readonly isLoading = signal(false);
   readonly loadError = signal('');
-  readonly actionError = signal('');
-  readonly actionSuccess = signal('');
-  readonly vehicles = signal<VehicleContractDto[]>([]);
-  readonly listView = signal<VehicleListViewContract>('active');
-  readonly editingId = signal<string | null>(null);
-  readonly selected = signal<VehicleContractDto | null>(null);
+  /** Повний список з API (view=all) для лічильників і клієнтського фільтра. */
+  readonly allVehicles = signal<VehicleContractDto[]>([]);
+  readonly listView = signal<VehicleListViewContract>('all');
   readonly pageIndex = signal(0);
   readonly pageSize = signal(AdminVehiclesComponent.DESKTOP_PAGE_SIZE);
-  readonly scanBusy = signal(false);
+  /** Ручний вибір на desktop; на handset завжди картки. */
+  readonly preferredDisplayMode = signal<VehiclesDisplayMode>('table');
+  /** blob: URL мініатюр сканів за ключем vehicleId:side. */
+  readonly scanPreviewUrls = signal<ReadonlyMap<string, string>>(new Map());
+  /** Ключ прев’ю під час drag-over (vehicleId:side). */
+  readonly scanDragOverKey = signal<string | null>(null);
+  /** Ключ прев’ю під час upload з DnD. */
+  readonly scanUploadBusyKey = signal<string | null>(null);
+  readonly scanSides: RegistrationScanSideContract[] = ['front', 'back'];
+  private previewLoadEpoch = 0;
+  private scanDragDepth = 0;
+  private scanDragActiveKey: string | null = null;
 
-  readonly pagedVehicles = computed(() => {
-    const all = this.vehicles();
-    const start = this.pageIndex() * this.pageSize();
-    return all.slice(start, start + this.pageSize());
+  private static readonly ALLOWED_SCAN_MIME = new Set([
+    'image/jpeg',
+    'image/png',
+    'application/pdf'
+  ]);
+
+  readonly displayMode = computed<VehiclesDisplayMode>(() =>
+    this.isHandset() ? 'cards' : this.preferredDisplayMode()
+  );
+
+  readonly countAll = computed(() => this.allVehicles().length);
+  readonly countActive = computed(
+    () => this.allVehicles().filter((v) => !v.deleted).length
+  );
+  readonly countDeleted = computed(
+    () => this.allVehicles().filter((v) => v.deleted).length
+  );
+
+  readonly vehicles = computed(() => {
+    const all = this.allVehicles();
+    switch (this.listView()) {
+      case 'active':
+        return all.filter((v) => !v.deleted);
+      case 'deleted':
+        return all.filter((v) => v.deleted);
+      default:
+        return all;
+    }
   });
 
-  readonly form = this.formBuilder.nonNullable.group({
-    plateNumber: [
-      '',
-      [Validators.required, Validators.pattern(UA_PLATE_PATTERN), Validators.maxLength(UA_PLATE_MAX_LENGTH)]
-    ],
-    vin: [
-      '',
-      [Validators.required, Validators.pattern(VIN_PATTERN), Validators.maxLength(VIN_MAX_LENGTH)]
-    ],
-    make: ['', [Validators.required, Validators.maxLength(64)]],
-    model: ['', [Validators.required, Validators.maxLength(64)]],
-    manufactureYear: [
-      null as unknown as number,
-      [Validators.required, Validators.min(1950), Validators.max(new Date().getFullYear() + 1)]
-    ],
-    owner: ['', [Validators.required, Validators.maxLength(255)]],
-    registrationSeries: ['', [Validators.required, Validators.maxLength(16)]],
-    registrationNumber: ['', [Validators.required, Validators.maxLength(32)]],
-    vehicleType: ['SEMI_TRACTOR' as VehicleTypeContract, Validators.required]
+  readonly pagedVehicles = computed(() => {
+    const filtered = this.vehicles();
+    const start = this.pageIndex() * this.pageSize();
+    return filtered.slice(start, start + this.pageSize());
   });
 
   constructor() {
@@ -129,39 +149,48 @@ export class AdminVehiclesComponent {
           AdminVehiclesComponent.HANDSET_PAGE_SIZE
         )
       );
+      this.clampPageIndex();
+    });
+    effect(() => {
+      const rows = this.pagedVehicles();
+      void this.ensureScanPreviews(rows);
     });
     void this.reload();
+  }
+
+  ngOnDestroy(): void {
+    this.revokeAllPreviews();
   }
 
   async reload(): Promise<void> {
     this.isLoading.set(true);
     this.loadError.set('');
+    this.revokeAllPreviews();
     try {
-      const list = await this.vehiclesApi.list(this.listView());
-      this.vehicles.set(list);
-      const selectedId = this.selected()?.id;
-      if (selectedId) {
-        const refreshed = list.find((v) => v.id === selectedId) ?? null;
-        this.selected.set(refreshed);
-        if (refreshed && !refreshed.deleted) {
-          this.patchForm(refreshed);
-        }
-      }
-      const maxPage = Math.max(0, Math.ceil(list.length / this.pageSize()) - 1);
-      if (this.pageIndex() > maxPage) {
-        this.pageIndex.set(maxPage);
-      }
+      const list = await this.vehiclesApi.list('all');
+      this.allVehicles.set(list);
+      this.clampPageIndex();
     } catch {
       this.loadError.set('pages.adminVehicles.loadFailed');
+      this.notify('pages.adminVehicles.loadFailed', 'error');
     } finally {
       this.isLoading.set(false);
     }
   }
 
-  onViewChange(view: VehicleListViewContract): void {
+  onViewChange(view: VehicleListViewContract | undefined): void {
+    if (!view) {
+      return;
+    }
     this.listView.set(view);
     this.pageIndex.set(0);
-    void this.reload();
+  }
+
+  onDisplayModeChange(mode: VehiclesDisplayMode | undefined): void {
+    if (!mode) {
+      return;
+    }
+    this.preferredDisplayMode.set(mode);
   }
 
   onPage(event: PageEvent): void {
@@ -169,108 +198,19 @@ export class AdminVehiclesComponent {
     this.pageSize.set(event.pageSize);
   }
 
-  onPlateNumberInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const sanitized = sanitizeUaPlateInput(input.value);
-    if (input.value !== sanitized) {
-      input.value = sanitized;
+  private clampPageIndex(): void {
+    const maxPage = Math.max(0, Math.ceil(this.vehicles().length / this.pageSize()) - 1);
+    if (this.pageIndex() > maxPage) {
+      this.pageIndex.set(maxPage);
     }
-    this.form.controls.plateNumber.setValue(sanitized, { emitEvent: false });
-    this.form.controls.plateNumber.markAsDirty();
   }
 
-  onVinInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const sanitized = sanitizeVinInput(input.value);
-    if (input.value !== sanitized) {
-      input.value = sanitized;
-    }
-    this.form.controls.vin.setValue(sanitized, { emitEvent: false });
-    this.form.controls.vin.markAsDirty();
+  async openCreate(): Promise<void> {
+    await this.openFormDialog(null);
   }
 
-  onMakeInput(event: Event): void {
-    this.applyUppercaseInput('make', event);
-  }
-
-  onModelInput(event: Event): void {
-    this.applyUppercaseInput('model', event);
-  }
-
-  onRegistrationSeriesInput(event: Event): void {
-    this.applyUppercaseInput('registrationSeries', event);
-  }
-
-  onRegistrationNumberInput(event: Event): void {
-    this.applyUppercaseInput('registrationNumber', event);
-  }
-
-  startCreate(): void {
-    this.editingId.set(null);
-    this.selected.set(null);
-    this.form.reset({
-      plateNumber: '',
-      vin: '',
-      make: '',
-      model: '',
-      manufactureYear: null as unknown as number,
-      owner: '',
-      registrationSeries: '',
-      registrationNumber: '',
-      vehicleType: 'SEMI_TRACTOR'
-    });
-    this.form.enable();
-    this.actionError.set('');
-    this.actionSuccess.set('');
-  }
-
-  startEdit(row: VehicleContractDto): void {
-    this.editingId.set(row.id);
-    this.selected.set(row);
-    this.patchForm(row);
-    if (row.deleted) {
-      this.form.disable();
-    } else {
-      this.form.enable();
-    }
-    this.actionError.set('');
-    this.actionSuccess.set('');
-  }
-
-  async save(): Promise<void> {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    const raw = this.form.getRawValue();
-    const payload = {
-      plateNumber: sanitizeUaPlateInput(raw.plateNumber),
-      vin: sanitizeVinInput(raw.vin),
-      make: raw.make.trim().toLocaleUpperCase('uk-UA'),
-      model: raw.model.trim().toLocaleUpperCase('uk-UA'),
-      manufactureYear: Number(raw.manufactureYear),
-      owner: raw.owner.trim(),
-      registrationSeries: raw.registrationSeries.trim().toLocaleUpperCase('uk-UA'),
-      registrationNumber: raw.registrationNumber.trim().toLocaleUpperCase('uk-UA'),
-      vehicleType: raw.vehicleType
-    };
-    this.actionError.set('');
-    this.actionSuccess.set('');
-    try {
-      const id = this.editingId();
-      const saved = id
-        ? await this.vehiclesApi.update(id, payload)
-        : await this.vehiclesApi.create(payload);
-      this.actionSuccess.set(
-        id ? 'pages.adminVehicles.updateSuccess' : 'pages.adminVehicles.createSuccess'
-      );
-      this.editingId.set(saved.id);
-      this.selected.set(saved);
-      this.patchForm(saved);
-      await this.reload();
-    } catch (err) {
-      this.actionError.set(this.mapError(err, 'pages.adminVehicles.saveFailed'));
-    }
+  async openEdit(row: VehicleContractDto): Promise<void> {
+    await this.openFormDialog(row);
   }
 
   async softDelete(row: VehicleContractDto): Promise<void> {
@@ -286,13 +226,10 @@ export class AdminVehiclesComponent {
     }
     try {
       await this.vehiclesApi.softDelete(row.id);
-      this.actionSuccess.set('pages.adminVehicles.deleteSuccess');
-      if (this.editingId() === row.id) {
-        this.startCreate();
-      }
+      this.notify('pages.adminVehicles.deleteSuccess');
       await this.reload();
     } catch {
-      this.actionError.set('pages.adminVehicles.deleteFailed');
+      this.notify('pages.adminVehicles.deleteFailed', 'error');
     }
   }
 
@@ -308,83 +245,11 @@ export class AdminVehiclesComponent {
       return;
     }
     try {
-      const restored = await this.vehiclesApi.restore(row.id);
-      this.actionSuccess.set('pages.adminVehicles.restoreSuccess');
-      this.startEdit(restored);
+      await this.vehiclesApi.restore(row.id);
+      this.notify('pages.adminVehicles.restoreSuccess');
       await this.reload();
     } catch (err) {
-      this.actionError.set(this.mapError(err, 'pages.adminVehicles.restoreFailed'));
-    }
-  }
-
-  onScanSelected(side: RegistrationScanSideContract, event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file) {
-      return;
-    }
-    void this.uploadScan(side, file);
-  }
-
-  async uploadScan(side: RegistrationScanSideContract, file: File): Promise<void> {
-    const id = this.selected()?.id;
-    if (!id || this.selected()?.deleted) {
-      return;
-    }
-    this.scanBusy.set(true);
-    this.actionError.set('');
-    try {
-      await this.vehiclesApi.uploadScan(id, side, file);
-      this.actionSuccess.set('pages.adminVehicles.scanUploadSuccess');
-      const refreshed = await this.vehiclesApi.getById(id);
-      this.selected.set(refreshed);
-      await this.reload();
-    } catch (err) {
-      this.actionError.set(this.mapError(err, 'pages.adminVehicles.scanUploadFailed'));
-    } finally {
-      this.scanBusy.set(false);
-    }
-  }
-
-  async openScan(side: RegistrationScanSideContract): Promise<void> {
-    const row = this.selected();
-    if (!row) {
-      return;
-    }
-    try {
-      const blob = await this.vehiclesApi.downloadScanBlob(row.id, side);
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank', 'noopener');
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch {
-      this.actionError.set('pages.adminVehicles.scanOpenFailed');
-    }
-  }
-
-  async deleteScan(side: RegistrationScanSideContract): Promise<void> {
-    const row = this.selected();
-    if (!row || row.deleted) {
-      return;
-    }
-    const ok = await firstValueFrom(
-      this.dialog
-        .open(ConfirmDialogComponent, {
-          data: { messageKey: 'pages.adminVehicles.scanDeleteConfirm' }
-        })
-        .afterClosed()
-    );
-    if (!ok) {
-      return;
-    }
-    try {
-      await this.vehiclesApi.deleteScan(row.id, side);
-      this.actionSuccess.set('pages.adminVehicles.scanDeleteSuccess');
-      const refreshed = await this.vehiclesApi.getById(row.id);
-      this.selected.set(refreshed);
-      await this.reload();
-    } catch {
-      this.actionError.set('pages.adminVehicles.scanDeleteFailed');
+      this.notify(this.mapError(err, 'pages.adminVehicles.restoreFailed'), 'error');
     }
   }
 
@@ -392,18 +257,353 @@ export class AdminVehiclesComponent {
     return `pages.adminVehicles.types.${type}`;
   }
 
-  private patchForm(row: VehicleContractDto): void {
-    this.form.patchValue({
-      plateNumber: sanitizeUaPlateInput(row.plateNumber),
-      vin: sanitizeVinInput(row.vin),
-      make: row.make.toLocaleUpperCase('uk-UA'),
-      model: row.model.toLocaleUpperCase('uk-UA'),
-      manufactureYear: row.manufactureYear,
-      owner: row.owner,
-      registrationSeries: row.registrationSeries.toLocaleUpperCase('uk-UA'),
-      registrationNumber: row.registrationNumber.toLocaleUpperCase('uk-UA'),
-      vehicleType: row.vehicleType
-    });
+  registrationLabel(row: VehicleContractDto): string {
+    return `${row.registrationSeries} ${row.registrationNumber}`.trim();
+  }
+
+  hasScan(row: VehicleContractDto, side: RegistrationScanSideContract): boolean {
+    return this.scanFile(row, side) != null;
+  }
+
+  scanSideLabelKey(side: RegistrationScanSideContract): string {
+    return side === 'front'
+      ? 'pages.adminVehicles.scanFront'
+      : 'pages.adminVehicles.scanBack';
+  }
+
+  scanFile(row: VehicleContractDto, side: RegistrationScanSideContract): StoredFileContractDto | null {
+    return side === 'front' ? row.scanFront : row.scanBack;
+  }
+
+  isScanImage(file: StoredFileContractDto | null): boolean {
+    return (file?.contentType ?? '').toLowerCase().startsWith('image/');
+  }
+
+  isScanPdf(file: StoredFileContractDto | null): boolean {
+    return (file?.contentType ?? '').toLowerCase() === 'application/pdf';
+  }
+
+  scanPreviewUrl(row: VehicleContractDto, side: RegistrationScanSideContract): string | null {
+    return this.scanPreviewUrls().get(this.previewKey(row.id, side)) ?? null;
+  }
+
+  isScanDragOver(row: VehicleContractDto, side: RegistrationScanSideContract): boolean {
+    return this.scanDragOverKey() === this.previewKey(row.id, side);
+  }
+
+  isScanUploadBusy(row: VehicleContractDto, side: RegistrationScanSideContract): boolean {
+    return this.scanUploadBusyKey() === this.previewKey(row.id, side);
+  }
+
+  onScanDragEnter(
+    row: VehicleContractDto,
+    side: RegistrationScanSideContract,
+    event: DragEvent
+  ): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (row.deleted || this.scanUploadBusyKey() || !this.hasFilePayload(event)) {
+      return;
+    }
+    const key = this.previewKey(row.id, side);
+    if (this.scanDragActiveKey !== key) {
+      this.scanDragActiveKey = key;
+      this.scanDragDepth = 0;
+    }
+    this.scanDragDepth += 1;
+    this.scanDragOverKey.set(key);
+  }
+
+  onScanDragOver(
+    row: VehicleContractDto,
+    side: RegistrationScanSideContract,
+    event: DragEvent
+  ): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect =
+        row.deleted || this.scanUploadBusyKey() ? 'none' : 'copy';
+    }
+  }
+
+  onScanDragLeave(
+    row: VehicleContractDto,
+    side: RegistrationScanSideContract,
+    event: DragEvent
+  ): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const key = this.previewKey(row.id, side);
+    if (this.scanDragActiveKey !== key || !this.scanDragOverKey()) {
+      return;
+    }
+    this.scanDragDepth = Math.max(0, this.scanDragDepth - 1);
+    if (this.scanDragDepth === 0) {
+      this.scanDragOverKey.set(null);
+      this.scanDragActiveKey = null;
+    }
+  }
+
+  onScanDrop(
+    row: VehicleContractDto,
+    side: RegistrationScanSideContract,
+    event: DragEvent
+  ): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.scanDragDepth = 0;
+    this.scanDragOverKey.set(null);
+    this.scanDragActiveKey = null;
+    if (row.deleted || this.scanUploadBusyKey()) {
+      return;
+    }
+    const file = event.dataTransfer?.files?.[0];
+    if (!file) {
+      return;
+    }
+    void this.uploadScanFromList(row, side, file);
+  }
+
+  async openScanViewer(
+    row: VehicleContractDto,
+    side: RegistrationScanSideContract,
+    event?: Event
+  ): Promise<void> {
+    event?.stopPropagation();
+    const ref = this.dialog.open(
+      VehicleScanViewerDialogComponent,
+      getHandsetFriendlyDialogConfig({
+        width: 'min(96vw, 1100px)',
+        height: 'min(96vh, 900px)',
+        maxWidth: '100vw',
+        maxHeight: '100vh',
+        panelClass: 'vehicle-scan-viewer-dialog-shell',
+        data: {
+          vehicleId: row.id,
+          side,
+          plateNumber: row.plateNumber,
+          vehicleDeleted: row.deleted,
+          file: this.scanFile(row, side)
+        }
+      })
+    );
+    const result = (await firstValueFrom(
+      ref.afterClosed()
+    )) as VehicleScanViewerDialogResult | undefined;
+    if (!result?.changed) {
+      return;
+    }
+    this.applyScanChange(row.id, side, result.file);
+  }
+
+  private async uploadScanFromList(
+    row: VehicleContractDto,
+    side: RegistrationScanSideContract,
+    file: File
+  ): Promise<void> {
+    if (row.deleted || this.scanUploadBusyKey()) {
+      return;
+    }
+    if (!this.isAllowedScanFile(file)) {
+      this.notify('pages.adminVehicles.scanInvalidType', 'error');
+      return;
+    }
+    if (this.hasScan(row, side)) {
+      const ok = await firstValueFrom(
+        this.dialog
+          .open(ConfirmDialogComponent, {
+            data: { messageKey: 'pages.adminVehicles.scanReplaceConfirm' }
+          })
+          .afterClosed()
+      );
+      if (!ok) {
+        return;
+      }
+    }
+    const key = this.previewKey(row.id, side);
+    this.scanUploadBusyKey.set(key);
+    try {
+      const saved = await this.vehiclesApi.uploadScan(row.id, side, file);
+      this.applyScanChange(row.id, side, saved);
+      this.notify('pages.adminVehicles.scanUploadSuccess');
+    } catch {
+      this.notify('pages.adminVehicles.scanUploadFailed', 'error');
+    } finally {
+      this.scanUploadBusyKey.set(null);
+    }
+  }
+
+  private applyScanChange(
+    vehicleId: string,
+    side: RegistrationScanSideContract,
+    file: StoredFileContractDto | null
+  ): void {
+    this.patchVehicleScan(vehicleId, side, file);
+    this.dropPreview(vehicleId, side);
+    if (file && this.isScanImage(file)) {
+      const updated = this.allVehicles().find((v) => v.id === vehicleId);
+      if (updated) {
+        void this.ensureScanPreviews([updated]);
+      }
+    }
+  }
+
+  private isAllowedScanFile(file: File): boolean {
+    const mime = (file.type || '').toLowerCase();
+    if (AdminVehiclesComponent.ALLOWED_SCAN_MIME.has(mime)) {
+      return true;
+    }
+    const name = file.name.toLowerCase();
+    return (
+      name.endsWith('.jpg') ||
+      name.endsWith('.jpeg') ||
+      name.endsWith('.png') ||
+      name.endsWith('.pdf')
+    );
+  }
+
+  private hasFilePayload(event: DragEvent): boolean {
+    const types = event.dataTransfer?.types;
+    if (!types) {
+      return false;
+    }
+    return Array.from(types).includes('Files');
+  }
+
+  private patchVehicleScan(
+    vehicleId: string,
+    side: RegistrationScanSideContract,
+    file: StoredFileContractDto | null
+  ): void {
+    this.allVehicles.update((list) =>
+      list.map((vehicle) => {
+        if (vehicle.id !== vehicleId) {
+          return vehicle;
+        }
+        return side === 'front'
+          ? { ...vehicle, scanFront: file }
+          : { ...vehicle, scanBack: file };
+      })
+    );
+  }
+
+  private previewKey(vehicleId: string, side: RegistrationScanSideContract): string {
+    return `${vehicleId}:${side}`;
+  }
+
+  private async ensureScanPreviews(rows: VehicleContractDto[]): Promise<void> {
+    const tasks: {
+      vehicleId: string;
+      side: RegistrationScanSideContract;
+      file: StoredFileContractDto;
+    }[] = [];
+    for (const row of rows) {
+      if (row.scanFront && this.isScanImage(row.scanFront)) {
+        tasks.push({ vehicleId: row.id, side: 'front', file: row.scanFront });
+      }
+      if (row.scanBack && this.isScanImage(row.scanBack)) {
+        tasks.push({ vehicleId: row.id, side: 'back', file: row.scanBack });
+      }
+    }
+    const existing = this.scanPreviewUrls();
+    const missing = tasks.filter(
+      (task) => !existing.has(this.previewKey(task.vehicleId, task.side))
+    );
+    if (missing.length === 0) {
+      return;
+    }
+
+    const epoch = this.previewLoadEpoch;
+    const loaded = new Map<string, string>();
+    await Promise.all(
+      missing.map(async (task) => {
+        try {
+          const blob = await this.vehiclesApi.downloadScanBlob(task.vehicleId, task.side);
+          const url = URL.createObjectURL(blob);
+          if (epoch !== this.previewLoadEpoch) {
+            URL.revokeObjectURL(url);
+            return;
+          }
+          loaded.set(this.previewKey(task.vehicleId, task.side), url);
+        } catch {
+          // Прев’ю опційне.
+        }
+      })
+    );
+
+    if (epoch !== this.previewLoadEpoch || loaded.size === 0) {
+      for (const url of loaded.values()) {
+        URL.revokeObjectURL(url);
+      }
+      return;
+    }
+
+    const next = new Map(this.scanPreviewUrls());
+    for (const [key, url] of loaded) {
+      const previous = next.get(key);
+      if (previous) {
+        URL.revokeObjectURL(previous);
+      }
+      next.set(key, url);
+    }
+    this.scanPreviewUrls.set(next);
+  }
+
+  private dropPreview(vehicleId: string, side: RegistrationScanSideContract): void {
+    const key = this.previewKey(vehicleId, side);
+    const next = new Map(this.scanPreviewUrls());
+    const previous = next.get(key);
+    if (previous) {
+      URL.revokeObjectURL(previous);
+      next.delete(key);
+      this.scanPreviewUrls.set(next);
+    }
+  }
+
+  private revokeAllPreviews(): void {
+    this.previewLoadEpoch += 1;
+    for (const url of this.scanPreviewUrls().values()) {
+      URL.revokeObjectURL(url);
+    }
+    this.scanPreviewUrls.set(new Map());
+  }
+
+  private async openFormDialog(vehicle: VehicleContractDto | null): Promise<void> {
+    const ref = this.dialog.open(
+      VehicleFormDialogComponent,
+      getHandsetFriendlyDialogConfig({
+        width: 'min(560px, calc(100vw - 24px))',
+        maxHeight: 'min(92vh, 900px)',
+        data: {
+          vehicle,
+          makeOptions: this.uniqueMakes()
+        }
+      })
+    );
+    const changed = await firstValueFrom(ref.afterClosed());
+    if (changed) {
+      await this.reload();
+    }
+  }
+
+  /** Унікальні марки з усіх ТЗ (UPPERCASE, відсортовані). */
+  private uniqueMakes(): string[] {
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const vehicle of this.allVehicles()) {
+      const make = vehicle.make?.trim().toLocaleUpperCase('uk-UA') ?? '';
+      if (!make || seen.has(make)) {
+        continue;
+      }
+      seen.add(make);
+      result.push(make);
+    }
+    return result.sort((a, b) => a.localeCompare(b, 'uk'));
+  }
+
+  private notify(messageKey: string, kind: 'success' | 'error' = 'success'): void {
+    showVehicleSnack(this.snackBar, this.translate, messageKey, kind);
   }
 
   private mapError(err: unknown, fallback: string): string {
@@ -420,18 +620,5 @@ export class AdminVehiclesComponent {
       default:
         return fallback;
     }
-  }
-
-  private applyUppercaseInput(
-    controlName: 'make' | 'model' | 'registrationSeries' | 'registrationNumber',
-    event: Event
-  ): void {
-    const input = event.target as HTMLInputElement;
-    const upper = input.value.toLocaleUpperCase('uk-UA');
-    if (input.value !== upper) {
-      input.value = upper;
-    }
-    this.form.controls[controlName].setValue(upper, { emitEvent: false });
-    this.form.controls[controlName].markAsDirty();
   }
 }

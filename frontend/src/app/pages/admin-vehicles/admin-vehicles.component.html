@@ -4,285 +4,392 @@
     <div class="admin-vehicles__actions">
       <mat-button-toggle-group
         [value]="listView()"
+        hideSingleSelectionIndicator
         (change)="onViewChange($event.value)"
       >
-        <mat-button-toggle value="active">
-          {{ 'pages.adminVehicles.viewActive' | translate }}
-        </mat-button-toggle>
         <mat-button-toggle value="all">
-          {{ 'pages.adminVehicles.viewAll' | translate }}
+          {{ 'pages.adminVehicles.viewAll' | translate }} {{ countAll() }}
+        </mat-button-toggle>
+        <mat-button-toggle value="active">
+          {{ 'pages.adminVehicles.viewActive' | translate }} {{ countActive() }}
         </mat-button-toggle>
         <mat-button-toggle value="deleted">
-          {{ 'pages.adminVehicles.viewDeleted' | translate }}
+          {{ 'pages.adminVehicles.viewDeleted' | translate }} {{ countDeleted() }}
         </mat-button-toggle>
       </mat-button-toggle-group>
-      <button mat-stroked-button type="button" (click)="reload()">
-        {{ 'pages.adminVehicles.refresh' | translate }}
+
+      @if (!isHandset()) {
+        <mat-button-toggle-group
+          class="admin-vehicles__display-toggle"
+          [value]="preferredDisplayMode()"
+          hideSingleSelectionIndicator
+          (change)="onDisplayModeChange($event.value)"
+          [attr.aria-label]="'pages.adminVehicles.displayMode' | translate"
+        >
+          <mat-button-toggle
+            value="table"
+            [matTooltip]="'pages.adminVehicles.displayTable' | translate"
+            [attr.aria-label]="'pages.adminVehicles.displayTable' | translate"
+          >
+            <mat-icon aria-hidden="true">view_list</mat-icon>
+          </mat-button-toggle>
+          <mat-button-toggle
+            value="cards"
+            [matTooltip]="'pages.adminVehicles.displayCards' | translate"
+            [attr.aria-label]="'pages.adminVehicles.displayCards' | translate"
+          >
+            <mat-icon aria-hidden="true">view_module</mat-icon>
+          </mat-button-toggle>
+        </mat-button-toggle-group>
+      }
+
+      <button
+        mat-stroked-button
+        type="button"
+        class="admin-vehicles__icon-action"
+        [matTooltip]="'pages.adminVehicles.refresh' | translate"
+        [attr.aria-label]="'pages.adminVehicles.refresh' | translate"
+        (click)="reload()"
+      >
+        <mat-icon aria-hidden="true">refresh</mat-icon>
       </button>
-      <button mat-flat-button color="primary" type="button" (click)="startCreate()">
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        class="admin-vehicles__icon-action"
+        [matTooltip]="'pages.adminVehicles.create' | translate"
+        [attr.aria-label]="'pages.adminVehicles.create' | translate"
+        (click)="openCreate()"
+      >
         {{ 'pages.adminVehicles.create' | translate }}
       </button>
     </div>
   </header>
 
-  @if (isLoading() || loadError() || actionError() || actionSuccess()) {
+  @if (isLoading() || loadError()) {
     <div class="admin-vehicles__messages">
       @if (isLoading()) {
         <p>{{ 'pages.adminVehicles.loading' | translate }}</p>
       } @else if (loadError()) {
         <p class="admin-vehicles__error">{{ loadError() | translate }}</p>
       }
-      @if (actionError()) {
-        <p class="admin-vehicles__error">{{ actionError() | translate }}</p>
-      }
-      @if (actionSuccess()) {
-        <p class="admin-vehicles__success">{{ actionSuccess() | translate }}</p>
-      }
     </div>
   }
 
-  <div class="admin-vehicles__layout">
-    <div class="admin-vehicles__table-panel">
-      <div class="table-shell">
-        <table mat-table [dataSource]="pagedVehicles()">
-          <ng-container matColumnDef="plateNumber">
-            <th mat-header-cell *matHeaderCellDef>
-              {{ 'pages.adminVehicles.plateNumber' | translate }}
-            </th>
-            <td mat-cell *matCellDef="let row">{{ row.plateNumber }}</td>
-          </ng-container>
-          <ng-container matColumnDef="makeModel">
-            <th mat-header-cell *matHeaderCellDef>
-              {{ 'pages.adminVehicles.makeModel' | translate }}
-            </th>
-            <td mat-cell *matCellDef="let row">{{ row.make }} {{ row.model }}</td>
-          </ng-container>
-          <ng-container matColumnDef="vehicleType">
-            <th mat-header-cell *matHeaderCellDef>
-              {{ 'pages.adminVehicles.vehicleType' | translate }}
-            </th>
-            <td mat-cell *matCellDef="let row">
-              {{ typeLabelKey(row.vehicleType) | translate }}
-            </td>
-          </ng-container>
-          <ng-container matColumnDef="owner">
-            <th mat-header-cell *matHeaderCellDef>
-              {{ 'pages.adminVehicles.owner' | translate }}
-            </th>
-            <td mat-cell *matCellDef="let row" class="admin-vehicles__ellipsis" [matTooltip]="row.owner">
-              {{ row.owner }}
-            </td>
-          </ng-container>
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>
-              {{ 'pages.adminVehicles.status' | translate }}
-            </th>
-            <td mat-cell *matCellDef="let row">
+  @if (displayMode() === 'cards') {
+    <div class="admin-vehicles__cards">
+      @if (!isLoading() && vehicles().length === 0 && !loadError()) {
+        <p class="admin-vehicles__empty">{{ 'pages.adminVehicles.empty' | translate }}</p>
+      } @else {
+        @for (row of pagedVehicles(); track row.id) {
+          <mat-card
+            class="vehicle-card"
+            appearance="outlined"
+            [class.vehicle-card--deleted]="row.deleted"
+          >
+            <div class="vehicle-card__header">
+              <div class="vehicle-card__title-block">
+                <div class="vehicle-card__plate">{{ row.plateNumber }}</div>
+                <div class="vehicle-card__make-model">{{ row.make }} {{ row.model }}</div>
+              </div>
+              <span
+                class="vehicle-card__badge"
+                [class.vehicle-card__badge--deleted]="row.deleted"
+                [class.vehicle-card__badge--active]="!row.deleted"
+              >
+                {{
+                  (row.deleted
+                    ? 'pages.adminVehicles.statusDeleted'
+                    : 'pages.adminVehicles.statusActive'
+                  ) | translate
+                }}
+              </span>
+            </div>
+
+            <mat-card-content class="vehicle-card__content">
+              <div class="vehicle-card__row">
+                <div class="vehicle-card__field">
+                  <span class="vehicle-card__label">{{ 'pages.adminVehicles.vin' | translate }}</span>
+                  <span class="vehicle-card__value">{{ row.vin }}</span>
+                </div>
+                <div class="vehicle-card__field">
+                  <span class="vehicle-card__label">{{ 'pages.adminVehicles.manufactureYear' | translate }}</span>
+                  <span class="vehicle-card__value">{{ row.manufactureYear }}</span>
+                </div>
+              </div>
+
+              <div class="vehicle-card__row">
+                <div class="vehicle-card__field">
+                  <span class="vehicle-card__label">{{ 'pages.adminVehicles.vehicleType' | translate }}</span>
+                  <span class="vehicle-card__value">{{ typeLabelKey(row.vehicleType) | translate }}</span>
+                </div>
+                <div class="vehicle-card__field">
+                  <span class="vehicle-card__label">{{ 'pages.adminVehicles.registration' | translate }}</span>
+                  <span class="vehicle-card__value">{{ registrationLabel(row) }}</span>
+                </div>
+              </div>
+
+              <div class="vehicle-card__field">
+                <span class="vehicle-card__label">{{ 'pages.adminVehicles.owner' | translate }}</span>
+                <span class="vehicle-card__value">{{ row.owner }}</span>
+              </div>
+
+              <div class="vehicle-card__scans">
+                <span class="vehicle-card__label">{{ 'pages.adminVehicles.scans' | translate }}</span>
+                <div class="vehicle-card__scan-thumbs">
+                  @for (side of scanSides; track side) {
+                    <button
+                      type="button"
+                      class="scan-thumb"
+                      [class.scan-thumb--missing]="!hasScan(row, side)"
+                      [class.scan-thumb--drag-over]="isScanDragOver(row, side)"
+                      [class.scan-thumb--busy]="isScanUploadBusy(row, side)"
+                      [class.scan-thumb--droppable]="!row.deleted"
+                      [matTooltip]="
+                        (row.deleted
+                          ? scanSideLabelKey(side)
+                          : 'pages.adminVehicles.scanDropHint'
+                        ) | translate
+                      "
+                      [attr.aria-label]="scanSideLabelKey(side) | translate"
+                      (click)="openScanViewer(row, side, $event)"
+                      (dragenter)="onScanDragEnter(row, side, $event)"
+                      (dragover)="onScanDragOver(row, side, $event)"
+                      (dragleave)="onScanDragLeave(row, side, $event)"
+                      (drop)="onScanDrop(row, side, $event)"
+                    >
+                      @if (isScanUploadBusy(row, side)) {
+                        <mat-icon aria-hidden="true">hourglass_empty</mat-icon>
+                      } @else if (hasScan(row, side) && isScanImage(scanFile(row, side))) {
+                        @if (scanPreviewUrl(row, side); as url) {
+                          <img [src]="url" alt="" />
+                        } @else {
+                          <mat-icon aria-hidden="true">image</mat-icon>
+                        }
+                      } @else if (hasScan(row, side) && isScanPdf(scanFile(row, side))) {
+                        <mat-icon aria-hidden="true">picture_as_pdf</mat-icon>
+                      } @else if (hasScan(row, side)) {
+                        <mat-icon aria-hidden="true">insert_drive_file</mat-icon>
+                      } @else {
+                        <mat-icon aria-hidden="true">close</mat-icon>
+                      }
+                    </button>
+                  }
+                </div>
+              </div>
+            </mat-card-content>
+
+            <mat-card-actions class="vehicle-card__actions" align="end">
+              <button
+                mat-icon-button
+                type="button"
+                class="vehicle-action--edit"
+                [matTooltip]="'pages.adminVehicles.edit' | translate"
+                [attr.aria-label]="'pages.adminVehicles.edit' | translate"
+                (click)="openEdit(row)"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+              @if (!row.deleted) {
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="vehicle-action--danger"
+                  [matTooltip]="'pages.adminVehicles.delete' | translate"
+                  [attr.aria-label]="'pages.adminVehicles.delete' | translate"
+                  (click)="softDelete(row)"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              } @else {
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="vehicle-action--restore"
+                  [matTooltip]="'pages.adminVehicles.restore' | translate"
+                  [attr.aria-label]="'pages.adminVehicles.restore' | translate"
+                  (click)="restore(row)"
+                >
+                  <mat-icon>restore</mat-icon>
+                </button>
+              }
+            </mat-card-actions>
+          </mat-card>
+        }
+      }
+    </div>
+  } @else {
+    <div class="admin-vehicles__table-scroll table-shell">
+      <table mat-table [dataSource]="pagedVehicles()" class="admin-vehicles__table">
+        <ng-container matColumnDef="plateNumber">
+          <th mat-header-cell *matHeaderCellDef>
+            {{ 'pages.adminVehicles.plateNumber' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row" class="admin-vehicles__plate">{{ row.plateNumber }}</td>
+        </ng-container>
+        <ng-container matColumnDef="makeModel">
+          <th mat-header-cell *matHeaderCellDef>
+            {{ 'pages.adminVehicles.makeModel' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row">{{ row.make }} {{ row.model }}</td>
+        </ng-container>
+        <ng-container matColumnDef="vin">
+          <th mat-header-cell *matHeaderCellDef>
+            {{ 'pages.adminVehicles.vin' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row" class="admin-vehicles__vin">{{ row.vin }}</td>
+        </ng-container>
+        <ng-container matColumnDef="manufactureYear">
+          <th mat-header-cell *matHeaderCellDef>
+            {{ 'pages.adminVehicles.manufactureYear' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row">{{ row.manufactureYear }}</td>
+        </ng-container>
+        <ng-container matColumnDef="vehicleType">
+          <th mat-header-cell *matHeaderCellDef>
+            {{ 'pages.adminVehicles.vehicleType' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row">
+            {{ typeLabelKey(row.vehicleType) | translate }}
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="owner">
+          <th mat-header-cell *matHeaderCellDef>
+            {{ 'pages.adminVehicles.owner' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row" class="admin-vehicles__ellipsis" [matTooltip]="row.owner">
+            {{ row.owner }}
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="registration">
+          <th mat-header-cell *matHeaderCellDef>
+            {{ 'pages.adminVehicles.registration' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row">{{ registrationLabel(row) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="scans">
+          <th mat-header-cell *matHeaderCellDef>
+            {{ 'pages.adminVehicles.scans' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row" class="admin-vehicles__scans-cell">
+            <div class="admin-vehicles__scan-thumbs">
+              @for (side of scanSides; track side) {
+                <button
+                  type="button"
+                  class="scan-thumb"
+                  [class.scan-thumb--missing]="!hasScan(row, side)"
+                  [class.scan-thumb--drag-over]="isScanDragOver(row, side)"
+                  [class.scan-thumb--busy]="isScanUploadBusy(row, side)"
+                  [class.scan-thumb--droppable]="!row.deleted"
+                  [matTooltip]="
+                    (row.deleted
+                      ? scanSideLabelKey(side)
+                      : 'pages.adminVehicles.scanDropHint'
+                    ) | translate
+                  "
+                  [attr.aria-label]="scanSideLabelKey(side) | translate"
+                  (click)="openScanViewer(row, side, $event)"
+                  (dragenter)="onScanDragEnter(row, side, $event)"
+                  (dragover)="onScanDragOver(row, side, $event)"
+                  (dragleave)="onScanDragLeave(row, side, $event)"
+                  (drop)="onScanDrop(row, side, $event)"
+                >
+                  @if (isScanUploadBusy(row, side)) {
+                    <mat-icon aria-hidden="true">hourglass_empty</mat-icon>
+                  } @else if (hasScan(row, side) && isScanImage(scanFile(row, side))) {
+                    @if (scanPreviewUrl(row, side); as url) {
+                      <img [src]="url" alt="" />
+                    } @else {
+                      <mat-icon aria-hidden="true">image</mat-icon>
+                    }
+                  } @else if (hasScan(row, side) && isScanPdf(scanFile(row, side))) {
+                    <mat-icon aria-hidden="true">picture_as_pdf</mat-icon>
+                  } @else if (hasScan(row, side)) {
+                    <mat-icon aria-hidden="true">insert_drive_file</mat-icon>
+                  } @else {
+                    <mat-icon aria-hidden="true">close</mat-icon>
+                  }
+                </button>
+              }
+            </div>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>
+            {{ 'pages.adminVehicles.status' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row">
+            <span
+              class="admin-vehicles__status"
+              [class.admin-vehicles__status--deleted]="row.deleted"
+              [class.admin-vehicles__status--active]="!row.deleted"
+            >
               {{
                 (row.deleted
                   ? 'pages.adminVehicles.statusDeleted'
                   : 'pages.adminVehicles.statusActive'
                 ) | translate
               }}
-            </td>
-          </ng-container>
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef></th>
-            <td mat-cell *matCellDef="let row">
-              <button mat-button type="button" (click)="startEdit(row)">
-                {{ 'pages.adminVehicles.edit' | translate }}
+            </span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let row" class="admin-vehicles__actions-cell">
+            <button
+              mat-icon-button
+              type="button"
+              class="vehicle-action--edit"
+              [matTooltip]="'pages.adminVehicles.edit' | translate"
+              [attr.aria-label]="'pages.adminVehicles.edit' | translate"
+              (click)="openEdit(row)"
+            >
+              <mat-icon>edit</mat-icon>
+            </button>
+            @if (!row.deleted) {
+              <button
+                mat-icon-button
+                type="button"
+                class="vehicle-action--danger"
+                [matTooltip]="'pages.adminVehicles.delete' | translate"
+                [attr.aria-label]="'pages.adminVehicles.delete' | translate"
+                (click)="softDelete(row)"
+              >
+                <mat-icon>delete</mat-icon>
               </button>
-              @if (!row.deleted) {
-                <button mat-button color="warn" type="button" (click)="softDelete(row)">
-                  {{ 'pages.adminVehicles.delete' | translate }}
-                </button>
-              } @else {
-                <button mat-button type="button" (click)="restore(row)">
-                  {{ 'pages.adminVehicles.restore' | translate }}
-                </button>
-              }
-            </td>
-          </ng-container>
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-        </table>
-      </div>
-      <mat-paginator
-        [length]="vehicles().length"
-        [pageIndex]="pageIndex()"
-        [pageSize]="pageSize()"
-        [pageSizeOptions]="pageSizeOptions"
-        (page)="onPage($event)"
-      />
-    </div>
-
-    <aside class="admin-vehicles__form-panel">
-      <h2>
-        {{
-          (editingId()
-            ? 'pages.adminVehicles.editTitle'
-            : 'pages.adminVehicles.createTitle'
-          ) | translate
-        }}
-      </h2>
-
-      <form [formGroup]="form" (ngSubmit)="save()" class="admin-vehicles__form">
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'pages.adminVehicles.plateNumber' | translate }}</mat-label>
-          <input
-            matInput
-            formControlName="plateNumber"
-            [attr.maxlength]="plateMaxLength"
-            autocomplete="off"
-            (input)="onPlateNumberInput($event)"
-          />
-          @if (form.controls.plateNumber.touched && form.controls.plateNumber.hasError('pattern')) {
-            <mat-error>{{ 'pages.adminVehicles.plateInvalid' | translate }}</mat-error>
-          } @else if (form.controls.plateNumber.touched && form.controls.plateNumber.hasError('required')) {
-            <mat-error>{{ 'pages.adminVehicles.plateRequired' | translate }}</mat-error>
-          }
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'pages.adminVehicles.vin' | translate }}</mat-label>
-          <input
-            matInput
-            formControlName="vin"
-            [attr.maxlength]="vinMaxLength"
-            autocomplete="off"
-            (input)="onVinInput($event)"
-          />
-          @if (form.controls.vin.touched && form.controls.vin.hasError('pattern')) {
-            <mat-error>{{ 'pages.adminVehicles.vinInvalid' | translate }}</mat-error>
-          } @else if (form.controls.vin.touched && form.controls.vin.hasError('required')) {
-            <mat-error>{{ 'pages.adminVehicles.vinRequired' | translate }}</mat-error>
-          }
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'pages.adminVehicles.make' | translate }}</mat-label>
-          <input matInput formControlName="make" autocomplete="off" (input)="onMakeInput($event)" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'pages.adminVehicles.model' | translate }}</mat-label>
-          <input matInput formControlName="model" autocomplete="off" (input)="onModelInput($event)" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'pages.adminVehicles.manufactureYear' | translate }}</mat-label>
-          <input matInput type="number" formControlName="manufactureYear" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'pages.adminVehicles.owner' | translate }}</mat-label>
-          <input matInput formControlName="owner" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'pages.adminVehicles.registrationSeries' | translate }}</mat-label>
-          <input
-            matInput
-            formControlName="registrationSeries"
-            autocomplete="off"
-            (input)="onRegistrationSeriesInput($event)"
-          />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'pages.adminVehicles.registrationNumber' | translate }}</mat-label>
-          <input
-            matInput
-            formControlName="registrationNumber"
-            autocomplete="off"
-            (input)="onRegistrationNumberInput($event)"
-          />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>{{ 'pages.adminVehicles.vehicleType' | translate }}</mat-label>
-          <mat-select formControlName="vehicleType">
-            @for (type of vehicleTypeOptions; track type) {
-              <mat-option [value]="type">{{ typeLabelKey(type) | translate }}</mat-option>
+            } @else {
+              <button
+                mat-icon-button
+                type="button"
+                class="vehicle-action--restore"
+                [matTooltip]="'pages.adminVehicles.restore' | translate"
+                [attr.aria-label]="'pages.adminVehicles.restore' | translate"
+                (click)="restore(row)"
+              >
+                <mat-icon>restore</mat-icon>
+              </button>
             }
-          </mat-select>
-        </mat-form-field>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          [class.admin-vehicles__row--deleted]="row.deleted"
+        ></tr>
+      </table>
+      @if (!isLoading() && vehicles().length === 0 && !loadError()) {
+        <p class="admin-vehicles__empty">{{ 'pages.adminVehicles.empty' | translate }}</p>
+      }
+    </div>
+  }
 
-        @if (!selected()?.deleted) {
-          <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">
-            {{ 'pages.adminVehicles.save' | translate }}
-          </button>
-        }
-      </form>
-
-      <div class="admin-vehicles__scans">
-        <h3>{{ 'pages.adminVehicles.scansTitle' | translate }}</h3>
-        @if (!editingId()) {
-          <p class="admin-vehicles__hint">{{ 'pages.adminVehicles.scansAfterCreate' | translate }}</p>
-        } @else {
-          @for (side of scanSides; track side) {
-            <div class="admin-vehicles__scan-row">
-              <div>
-                <strong>
-                  {{
-                    (side === 'front'
-                      ? 'pages.adminVehicles.scanFront'
-                      : 'pages.adminVehicles.scanBack'
-                    ) | translate
-                  }}
-                </strong>
-                <p>
-                  {{
-                    (side === 'front'
-                      ? selected()?.scanFront?.originalFilename
-                      : selected()?.scanBack?.originalFilename
-                    ) || ('pages.adminVehicles.scanEmpty' | translate)
-                  }}
-                </p>
-              </div>
-              <div class="admin-vehicles__scan-actions">
-                @if (
-                  (side === 'front' && selected()?.scanFront) ||
-                  (side === 'back' && selected()?.scanBack)
-                ) {
-                  <button mat-stroked-button type="button" (click)="openScan(side)">
-                    {{ 'pages.adminVehicles.scanOpen' | translate }}
-                  </button>
-                }
-                @if (!selected()?.deleted) {
-                  <button
-                    mat-stroked-button
-                    type="button"
-                    [disabled]="scanBusy()"
-                    (click)="side === 'front' ? frontInput.click() : backInput.click()"
-                  >
-                    {{ 'pages.adminVehicles.scanUpload' | translate }}
-                  </button>
-                  @if (
-                    (side === 'front' && selected()?.scanFront) ||
-                    (side === 'back' && selected()?.scanBack)
-                  ) {
-                    <button
-                      mat-button
-                      color="warn"
-                      type="button"
-                      (click)="deleteScan(side)"
-                    >
-                      {{ 'pages.adminVehicles.scanDelete' | translate }}
-                    </button>
-                  }
-                }
-              </div>
-            </div>
-          }
-          <input
-            #frontInput
-            type="file"
-            class="admin-vehicles__file-input"
-            accept="image/jpeg,image/png,application/pdf"
-            (change)="onScanSelected('front', $event)"
-          />
-          <input
-            #backInput
-            type="file"
-            class="admin-vehicles__file-input"
-            accept="image/jpeg,image/png,application/pdf"
-            (change)="onScanSelected('back', $event)"
-          />
-        }
-      </div>
-    </aside>
-  </div>
+  <mat-paginator
+    [length]="vehicles().length"
+    [pageIndex]="pageIndex()"
+    [pageSize]="pageSize()"
+    [pageSizeOptions]="pageSizeOptions"
+    (page)="onPage($event)"
+  />
 </section>

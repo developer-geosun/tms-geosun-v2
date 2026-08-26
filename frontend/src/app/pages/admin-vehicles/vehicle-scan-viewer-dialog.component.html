@@ -1,0 +1,109 @@
+<div mat-dialog-title class="vehicle-scan-viewer__title-bar">
+  <h2 class="vehicle-scan-viewer__title">
+    {{ sideTitleKey | translate }}
+    <span class="vehicle-scan-viewer__plate">{{ plateNumber }}</span>
+  </h2>
+  <button
+    mat-icon-button
+    type="button"
+    class="vehicle-scan-viewer__close"
+    [disabled]="busy()"
+    [attr.aria-label]="'common.confirmDialog.cancel' | translate"
+    [matTooltip]="'common.confirmDialog.cancel' | translate"
+    (click)="close()"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content
+  class="vehicle-scan-viewer__content"
+  [class.vehicle-scan-viewer__content--drag-over]="isDragOver()"
+  [class.vehicle-scan-viewer__content--droppable]="!vehicleDeleted"
+  [attr.aria-label]="'pages.adminVehicles.scanDropHint' | translate"
+  (dragenter)="onDragEnter($event)"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave($event)"
+  (drop)="onDrop($event)"
+>
+  @if (isDragOver() && !vehicleDeleted) {
+    <div class="vehicle-scan-viewer__drop-overlay" aria-hidden="true">
+      <mat-icon>cloud_upload</mat-icon>
+      <span>{{ 'pages.adminVehicles.scanDropHint' | translate }}</span>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="vehicle-scan-viewer__loading">
+      <mat-spinner diameter="40" />
+    </div>
+  } @else if (file(); as current) {
+    @if (objectUrl(); as url) {
+      @if (isImage(current.contentType)) {
+        <img class="vehicle-scan-viewer__image" [src]="url" [alt]="current.originalFilename" />
+      } @else if (isPdf(current.contentType)) {
+        <iframe
+          class="vehicle-scan-viewer__pdf"
+          [src]="safePdfUrl()"
+          [title]="current.originalFilename"
+        ></iframe>
+      } @else {
+        <div class="vehicle-scan-viewer__fallback">
+          <mat-icon aria-hidden="true">insert_drive_file</mat-icon>
+          <p>{{ current.originalFilename }}</p>
+          <a mat-stroked-button [href]="url" target="_blank" rel="noopener">
+            {{ 'pages.adminVehicles.scanOpen' | translate }}
+          </a>
+        </div>
+      }
+    } @else {
+      <div class="vehicle-scan-viewer__fallback">
+        <mat-icon aria-hidden="true">broken_image</mat-icon>
+        <p>{{ 'pages.adminVehicles.scanOpenFailed' | translate }}</p>
+      </div>
+    }
+  } @else {
+    <div class="vehicle-scan-viewer__empty">
+      @if (vehicleDeleted) {
+        <mat-icon aria-hidden="true">close</mat-icon>
+        <p>{{ 'pages.adminVehicles.scanEmpty' | translate }}</p>
+      } @else {
+        <mat-icon aria-hidden="true">cloud_upload</mat-icon>
+        <p>{{ 'pages.adminVehicles.scanEmpty' | translate }}</p>
+        <p class="vehicle-scan-viewer__drop-hint">
+          {{ 'pages.adminVehicles.scanDropHint' | translate }}
+        </p>
+      }
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions class="vehicle-scan-viewer__actions" align="end">
+  <button mat-stroked-button type="button" (click)="close()" [disabled]="busy()">
+    {{ 'common.confirmDialog.cancel' | translate }}
+  </button>
+  @if (!vehicleDeleted) {
+    <button
+      mat-stroked-button
+      type="button"
+      color="warn"
+      (click)="deleteFile()"
+      [disabled]="busy() || !file()"
+    >
+      {{ 'pages.adminVehicles.scanDelete' | translate }}
+    </button>
+    <button mat-flat-button color="primary" type="button" (click)="triggerReplace()" [disabled]="busy()">
+      {{
+        (file() ? 'pages.adminVehicles.scanReplace' : 'pages.adminVehicles.scanUpload') | translate
+      }}
+    </button>
+  }
+</mat-dialog-actions>
+
+<input
+  #fileInput
+  type="file"
+  class="vehicle-scan-viewer__file-input"
+  accept="image/jpeg,image/png,application/pdf"
+  (change)="onFileSelected($event)"
+/>

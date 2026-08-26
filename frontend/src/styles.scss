@@ -83,70 +83,11 @@ mat-button-toggle.ru-button:not(.mat-button-toggle-checked):hover {
   }
 }
 
-// Приховуємо галочку в mat-button-toggle
-mat-button-toggle {
-  // Приховуємо всі іконки всередині toggle
-  mat-icon,
-  .mat-icon,
-  svg {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    width: 0 !important;
-    height: 0 !important;
-  }
-  
-  .mat-button-toggle-label-content,
-  .mat-button-toggle-button {
-    mat-icon,
-    .mat-icon,
-    svg {
-      display: none !important;
-      visibility: hidden !important;
-      opacity: 0 !important;
-      width: 0 !important;
-      height: 0 !important;
-    }
-    
-    // Приховуємо псевдоелементи
-    &::before,
-    &::after {
-      display: none !important;
-      content: none !important;
-    }
-  }
-  
-  // Специфічно для checked стану
-  &.mat-button-toggle-checked {
-    mat-icon,
-    .mat-icon,
-    svg {
-      display: none !important;
-      visibility: hidden !important;
-      opacity: 0 !important;
-      width: 0 !important;
-      height: 0 !important;
-    }
-    
-    .mat-button-toggle-label-content,
-    .mat-button-toggle-button {
-      mat-icon,
-      .mat-icon,
-      svg {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        width: 0 !important;
-        height: 0 !important;
-      }
-      
-      &::before,
-      &::after {
-        display: none !important;
-        content: none !important;
-      }
-    }
-  }
+// Лише індикатор вибору (галочка Material), не контентні mat-icon у toggle.
+.mat-button-toggle-checkbox-wrapper,
+.mat-mdc-button-toggle .mat-pseudo-checkbox,
+.mat-button-toggle .mat-pseudo-checkbox {
+  display: none !important;
 }
 
 mat-button-toggle .mat-button-toggle-button,
@@ -196,6 +137,25 @@ mat-button-toggle .mdc-button__label {
   line-height: 1.45;
 }
 
+/* Перегляд скана свідоцтва ТЗ: майже на весь екран. */
+.cdk-overlay-pane.vehicle-scan-viewer-dialog-shell {
+  .mat-mdc-dialog-container {
+    height: 100%;
+  }
+
+  .mat-mdc-dialog-container .mat-mdc-dialog-surface {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mat-mdc-dialog-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none !important;
+  }
+}
+
 /* Full-screen form-діалоги на handset (panelClass на `.cdk-overlay-pane`). */
 @include bp.handset {
   .cdk-overlay-pane.route-freight-request-dialog-shell,
@@ -229,4 +189,20 @@ mat-button-toggle .mdc-button__label {
 .routes-toolbar-bottom-sheet-panel .mat-mdc-bottom-sheet-container {
   padding: 0;
   max-height: min(90dvh, 900px);
+}
+
+/* Snackbar операцій довідника ТЗ (overlay поза :host). */
+.vehicle-snackbar.mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-color: var(--mat-sys-inverse-surface, #333);
+  --mdc-snackbar-supporting-text-color: var(--mat-sys-inverse-on-surface, #fff);
+}
+
+.vehicle-snackbar--success.mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-color: var(--mat-sys-primary, #1967d2);
+  --mdc-snackbar-supporting-text-color: var(--mat-sys-on-primary, #fff);
+}
+
+.vehicle-snackbar--error.mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-color: var(--mat-sys-error, #b3261e);
+  --mdc-snackbar-supporting-text-color: var(--mat-sys-on-error, #fff);
 }
