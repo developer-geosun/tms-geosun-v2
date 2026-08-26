@@ -664,7 +664,7 @@
       "documentValidTo": "Дата закінчення",
       "documentTypeNotAllowed": "Цей тип документа недоступний для ТЗ",
       "documentTypes": {
-        "THIRD_PARTY_LIABILITY": "ОСЦПВ (відповідальність перед третіми особами)",
+        "THIRD_PARTY_LIABILITY": "ОСЦПВ",
         "GREEN_CARD": "Зелена карта",
         "TECHNICAL_INSPECTION": "Технічний огляд",
         "WHITE_CERTIFICATE": "Білий сертифікат",
