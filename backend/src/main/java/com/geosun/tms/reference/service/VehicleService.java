@@ -30,6 +30,9 @@ import org.springframework.util.StringUtils;
 public class VehicleService {
 
   private static final Pattern VIN_PATTERN = Pattern.compile("^[A-HJ-NPR-Z0-9]{17}$");
+  /** Стандартний UA-номер: 2 літери + 4 цифри + 2 літери (латиниця після нормалізації). */
+  private static final Pattern PLATE_PATTERN =
+      Pattern.compile("^[ABCEHIKMOPTX]{2}\\d{4}[ABCEHIKMOPTX]{2}$");
 
   private final VehicleRepository vehicleRepository;
   private final VehicleRegistrationScanRepository scanRepository;
@@ -150,14 +153,14 @@ public class VehicleService {
       String registrationSeries,
       String registrationNumber,
       VehicleType vehicleType) {
-    vehicle.setPlateNumber(requireTrimmed(plateNumber, "plateNumber"));
+    vehicle.setPlateNumber(normalizePlateNumber(plateNumber));
     vehicle.setVin(normalizeVin(vin));
-    vehicle.setMake(requireTrimmed(make, "make"));
-    vehicle.setModel(requireTrimmed(model, "model"));
+    vehicle.setMake(normalizeUpperText(make, "make"));
+    vehicle.setModel(normalizeUpperText(model, "model"));
     vehicle.setManufactureYear(validateYear(manufactureYear));
     vehicle.setOwner(requireTrimmed(owner, "owner"));
-    vehicle.setRegistrationSeries(requireTrimmed(registrationSeries, "registrationSeries"));
-    vehicle.setRegistrationNumber(requireTrimmed(registrationNumber, "registrationNumber"));
+    vehicle.setRegistrationSeries(normalizeUpperText(registrationSeries, "registrationSeries"));
+    vehicle.setRegistrationNumber(normalizeUpperText(registrationNumber, "registrationNumber"));
     if (vehicleType == null) {
       throw ApiException.badRequest("VALIDATION_ERROR", "vehicleType is required");
     }
@@ -241,13 +244,86 @@ public class VehicleService {
     return value.trim();
   }
 
+  /** Trim + UPPERCASE (для марки/моделі). */
+  private static String normalizeUpperText(String value, String field) {
+    return requireTrimmed(value, field).toUpperCase(Locale.ROOT);
+  }
+
+  /**
+   * Нормалізація держномера UA: UPPERCASE, без пробілів/зайвих символів, кирилиця → латиниця,
+   * формат LL####LL.
+   */
+  private static String normalizePlateNumber(String plateNumber) {
+    if (!StringUtils.hasText(plateNumber)) {
+      throw ApiException.badRequest("VALIDATION_ERROR", "plateNumber is required");
+    }
+    StringBuilder sb = new StringBuilder(8);
+    for (int i = 0; i < plateNumber.length(); i++) {
+      char mapped = mapUaPlateChar(Character.toUpperCase(plateNumber.charAt(i)));
+      if (mapped != 0) {
+        sb.append(mapped);
+        if (sb.length() == 8) {
+          break;
+        }
+      }
+    }
+    String normalized = sb.toString();
+    if (!PLATE_PATTERN.matcher(normalized).matches()) {
+      throw ApiException.badRequest(
+          "VALIDATION_ERROR",
+          "plateNumber must be UA format LL####LL with letters A,B,C,E,H,I,K,M,O,P,T,X");
+    }
+    return normalized;
+  }
+
+  /** Дозволений символ → латиниця/цифра; інакше 0. */
+  private static char mapUaPlateChar(char ch) {
+    return switch (ch) {
+      case 'A', 'А' -> 'A';
+      case 'B', 'В' -> 'B';
+      case 'C', 'С' -> 'C';
+      case 'E', 'Е' -> 'E';
+      case 'H', 'Н' -> 'H';
+      case 'I', 'І' -> 'I';
+      case 'K', 'К' -> 'K';
+      case 'M', 'М' -> 'M';
+      case 'O', 'О' -> 'O';
+      case 'P', 'Р' -> 'P';
+      case 'T', 'Т' -> 'T';
+      case 'X', 'Х' -> 'X';
+      case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> ch;
+      default -> 0;
+    };
+  }
+
   private static String normalizeVin(String vin) {
-    String normalized = requireTrimmed(vin, "vin").toUpperCase(Locale.ROOT);
+    if (!StringUtils.hasText(vin)) {
+      throw ApiException.badRequest("VALIDATION_ERROR", "vin is required");
+    }
+    StringBuilder sb = new StringBuilder(17);
+    for (int i = 0; i < vin.length(); i++) {
+      char ch = Character.toUpperCase(vin.charAt(i));
+      if (isAllowedVinChar(ch)) {
+        sb.append(ch);
+        if (sb.length() == 17) {
+          break;
+        }
+      }
+    }
+    String normalized = sb.toString();
     if (!VIN_PATTERN.matcher(normalized).matches()) {
       throw ApiException.badRequest(
           "VALIDATION_ERROR", "VIN must be 17 characters without I, O, Q");
     }
     return normalized;
+  }
+
+  private static boolean isAllowedVinChar(char ch) {
+    return (ch >= 'A' && ch <= 'H')
+        || (ch >= 'J' && ch <= 'N')
+        || ch == 'P'
+        || (ch >= 'R' && ch <= 'Z')
+        || (ch >= '0' && ch <= '9');
   }
 
   private static short validateYear(Short year) {

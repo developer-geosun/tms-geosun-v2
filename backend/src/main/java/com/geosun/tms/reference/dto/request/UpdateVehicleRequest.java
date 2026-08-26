@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Size;
 
 public record UpdateVehicleRequest(
     @NotBlank @Size(max = 32) String plateNumber,
-    @NotBlank @Size(min = 17, max = 17) String vin,
+    @NotBlank @Size(max = 32) String vin,
     @NotBlank @Size(max = 64) String make,
     @NotBlank @Size(max = 64) String model,
     @NotNull @Min(1950) @Max(2100) Short manufactureYear,

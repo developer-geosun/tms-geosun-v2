@@ -174,6 +174,98 @@ class AdminVehicleIntegrationTest {
         .andExpect(jsonPath("$.manufactureYear").value(2021));
   }
 
+  @Test
+  void manager_rejectsInvalidPlate_andNormalizesSpacedCyrillicPlate() throws Exception {
+    User manager = saveUser("manager-veh-plate@example.com", "Secret123", Role.MANAGER);
+    String token = login(Objects.requireNonNull(manager.getEmail()), "Secret123");
+
+    CreateVehicleRequest invalid =
+        new CreateVehicleRequest(
+            "AA12",
+            "WVWZZZ1JZYW000002",
+            "Volvo",
+            "FH16",
+            (short) 2020,
+            "ТОВ Тест",
+            "АВС",
+            "654321",
+            VehicleType.SEMI_TRACTOR);
+    mockMvc
+        .perform(
+            post(ReferenceApiPaths.ADMIN_VEHICLES_BASE)
+                .header("Authorization", "Bearer " + token)
+                .contentType(jsonContentType())
+                .content(toJson(invalid)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+
+    CreateVehicleRequest spacedCyrillic =
+        new CreateVehicleRequest(
+            "АА 1234 ВВ",
+            "WVWZZZ1JZYW000003",
+            "Volvo",
+            "FH16",
+            (short) 2020,
+            "ТОВ Тест",
+            "АВС",
+            "654322",
+            VehicleType.SEMI_TRACTOR);
+    mockMvc
+        .perform(
+            post(ReferenceApiPaths.ADMIN_VEHICLES_BASE)
+                .header("Authorization", "Bearer " + token)
+                .contentType(jsonContentType())
+                .content(toJson(spacedCyrillic)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.plateNumber").value("AA1234BB"));
+  }
+
+  @Test
+  void manager_rejectsInvalidVin_andNormalizesSpacedVin() throws Exception {
+    User manager = saveUser("manager-veh-vin@example.com", "Secret123", Role.MANAGER);
+    String token = login(Objects.requireNonNull(manager.getEmail()), "Secret123");
+
+    CreateVehicleRequest invalid =
+        new CreateVehicleRequest(
+            "BC1234DE",
+            "SHORT",
+            "Volvo",
+            "FH16",
+            (short) 2020,
+            "ТОВ Тест",
+            "АВС",
+            "111111",
+            VehicleType.SEMI_TRACTOR);
+    mockMvc
+        .perform(
+            post(ReferenceApiPaths.ADMIN_VEHICLES_BASE)
+                .header("Authorization", "Bearer " + token)
+                .contentType(jsonContentType())
+                .content(toJson(invalid)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+
+    CreateVehicleRequest spaced =
+        new CreateVehicleRequest(
+            "BC1234EF",
+            "WVW ZZZ1JZY W000004",
+            "Volvo",
+            "FH16",
+            (short) 2020,
+            "ТОВ Тест",
+            "АВС",
+            "111112",
+            VehicleType.SEMI_TRACTOR);
+    mockMvc
+        .perform(
+            post(ReferenceApiPaths.ADMIN_VEHICLES_BASE)
+                .header("Authorization", "Bearer " + token)
+                .contentType(jsonContentType())
+                .content(toJson(spaced)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.vin").value("WVWZZZ1JZYW000004"));
+  }
+
   @NonNull
   private static MediaType jsonContentType() {
     return Objects.requireNonNull(MediaType.APPLICATION_JSON);

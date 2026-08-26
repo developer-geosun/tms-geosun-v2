@@ -29,6 +29,12 @@ import {
 } from '../../core/api';
 import { LayoutService } from '../../core/layout';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import {
+  sanitizeUaPlateInput,
+  UA_PLATE_MAX_LENGTH,
+  UA_PLATE_PATTERN
+} from './vehicle-plate.util';
+import { sanitizeVinInput, VIN_MAX_LENGTH, VIN_PATTERN } from './vehicle-vin.util';
 
 @Component({
   selector: 'app-admin-vehicles',
@@ -63,6 +69,8 @@ export class AdminVehiclesComponent {
 
   readonly vehicleTypeOptions: VehicleTypeContract[] = ['SEMI_TRACTOR', 'SEMI_TRAILER'];
   readonly scanSides: RegistrationScanSideContract[] = ['front', 'back'];
+  readonly plateMaxLength = UA_PLATE_MAX_LENGTH;
+  readonly vinMaxLength = VIN_MAX_LENGTH;
   readonly displayedColumns = [
     'plateNumber',
     'makeModel',
@@ -92,12 +100,18 @@ export class AdminVehiclesComponent {
   });
 
   readonly form = this.formBuilder.nonNullable.group({
-    plateNumber: ['', [Validators.required, Validators.maxLength(32)]],
-    vin: ['', [Validators.required, Validators.minLength(17), Validators.maxLength(17)]],
+    plateNumber: [
+      '',
+      [Validators.required, Validators.pattern(UA_PLATE_PATTERN), Validators.maxLength(UA_PLATE_MAX_LENGTH)]
+    ],
+    vin: [
+      '',
+      [Validators.required, Validators.pattern(VIN_PATTERN), Validators.maxLength(VIN_MAX_LENGTH)]
+    ],
     make: ['', [Validators.required, Validators.maxLength(64)]],
     model: ['', [Validators.required, Validators.maxLength(64)]],
     manufactureYear: [
-      new Date().getFullYear(),
+      null as unknown as number,
       [Validators.required, Validators.min(1950), Validators.max(new Date().getFullYear() + 1)]
     ],
     owner: ['', [Validators.required, Validators.maxLength(255)]],
@@ -155,6 +169,42 @@ export class AdminVehiclesComponent {
     this.pageSize.set(event.pageSize);
   }
 
+  onPlateNumberInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const sanitized = sanitizeUaPlateInput(input.value);
+    if (input.value !== sanitized) {
+      input.value = sanitized;
+    }
+    this.form.controls.plateNumber.setValue(sanitized, { emitEvent: false });
+    this.form.controls.plateNumber.markAsDirty();
+  }
+
+  onVinInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const sanitized = sanitizeVinInput(input.value);
+    if (input.value !== sanitized) {
+      input.value = sanitized;
+    }
+    this.form.controls.vin.setValue(sanitized, { emitEvent: false });
+    this.form.controls.vin.markAsDirty();
+  }
+
+  onMakeInput(event: Event): void {
+    this.applyUppercaseInput('make', event);
+  }
+
+  onModelInput(event: Event): void {
+    this.applyUppercaseInput('model', event);
+  }
+
+  onRegistrationSeriesInput(event: Event): void {
+    this.applyUppercaseInput('registrationSeries', event);
+  }
+
+  onRegistrationNumberInput(event: Event): void {
+    this.applyUppercaseInput('registrationNumber', event);
+  }
+
   startCreate(): void {
     this.editingId.set(null);
     this.selected.set(null);
@@ -163,7 +213,7 @@ export class AdminVehiclesComponent {
       vin: '',
       make: '',
       model: '',
-      manufactureYear: new Date().getFullYear(),
+      manufactureYear: null as unknown as number,
       owner: '',
       registrationSeries: '',
       registrationNumber: '',
@@ -194,14 +244,14 @@ export class AdminVehiclesComponent {
     }
     const raw = this.form.getRawValue();
     const payload = {
-      plateNumber: raw.plateNumber.trim(),
-      vin: raw.vin.trim().toUpperCase(),
-      make: raw.make.trim(),
-      model: raw.model.trim(),
+      plateNumber: sanitizeUaPlateInput(raw.plateNumber),
+      vin: sanitizeVinInput(raw.vin),
+      make: raw.make.trim().toLocaleUpperCase('uk-UA'),
+      model: raw.model.trim().toLocaleUpperCase('uk-UA'),
       manufactureYear: Number(raw.manufactureYear),
       owner: raw.owner.trim(),
-      registrationSeries: raw.registrationSeries.trim(),
-      registrationNumber: raw.registrationNumber.trim(),
+      registrationSeries: raw.registrationSeries.trim().toLocaleUpperCase('uk-UA'),
+      registrationNumber: raw.registrationNumber.trim().toLocaleUpperCase('uk-UA'),
       vehicleType: raw.vehicleType
     };
     this.actionError.set('');
@@ -344,14 +394,14 @@ export class AdminVehiclesComponent {
 
   private patchForm(row: VehicleContractDto): void {
     this.form.patchValue({
-      plateNumber: row.plateNumber,
-      vin: row.vin,
-      make: row.make,
-      model: row.model,
+      plateNumber: sanitizeUaPlateInput(row.plateNumber),
+      vin: sanitizeVinInput(row.vin),
+      make: row.make.toLocaleUpperCase('uk-UA'),
+      model: row.model.toLocaleUpperCase('uk-UA'),
       manufactureYear: row.manufactureYear,
       owner: row.owner,
-      registrationSeries: row.registrationSeries,
-      registrationNumber: row.registrationNumber,
+      registrationSeries: row.registrationSeries.toLocaleUpperCase('uk-UA'),
+      registrationNumber: row.registrationNumber.toLocaleUpperCase('uk-UA'),
       vehicleType: row.vehicleType
     });
   }
@@ -370,5 +420,18 @@ export class AdminVehiclesComponent {
       default:
         return fallback;
     }
+  }
+
+  private applyUppercaseInput(
+    controlName: 'make' | 'model' | 'registrationSeries' | 'registrationNumber',
+    event: Event
+  ): void {
+    const input = event.target as HTMLInputElement;
+    const upper = input.value.toLocaleUpperCase('uk-UA');
+    if (input.value !== upper) {
+      input.value = upper;
+    }
+    this.form.controls[controlName].setValue(upper, { emitEvent: false });
+    this.form.controls[controlName].markAsDirty();
   }
 }

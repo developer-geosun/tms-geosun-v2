@@ -129,19 +129,41 @@
       <form [formGroup]="form" (ngSubmit)="save()" class="admin-vehicles__form">
         <mat-form-field appearance="outline">
           <mat-label>{{ 'pages.adminVehicles.plateNumber' | translate }}</mat-label>
-          <input matInput formControlName="plateNumber" />
+          <input
+            matInput
+            formControlName="plateNumber"
+            [attr.maxlength]="plateMaxLength"
+            autocomplete="off"
+            (input)="onPlateNumberInput($event)"
+          />
+          @if (form.controls.plateNumber.touched && form.controls.plateNumber.hasError('pattern')) {
+            <mat-error>{{ 'pages.adminVehicles.plateInvalid' | translate }}</mat-error>
+          } @else if (form.controls.plateNumber.touched && form.controls.plateNumber.hasError('required')) {
+            <mat-error>{{ 'pages.adminVehicles.plateRequired' | translate }}</mat-error>
+          }
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ 'pages.adminVehicles.vin' | translate }}</mat-label>
-          <input matInput formControlName="vin" maxlength="17" />
+          <input
+            matInput
+            formControlName="vin"
+            [attr.maxlength]="vinMaxLength"
+            autocomplete="off"
+            (input)="onVinInput($event)"
+          />
+          @if (form.controls.vin.touched && form.controls.vin.hasError('pattern')) {
+            <mat-error>{{ 'pages.adminVehicles.vinInvalid' | translate }}</mat-error>
+          } @else if (form.controls.vin.touched && form.controls.vin.hasError('required')) {
+            <mat-error>{{ 'pages.adminVehicles.vinRequired' | translate }}</mat-error>
+          }
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ 'pages.adminVehicles.make' | translate }}</mat-label>
-          <input matInput formControlName="make" />
+          <input matInput formControlName="make" autocomplete="off" (input)="onMakeInput($event)" />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ 'pages.adminVehicles.model' | translate }}</mat-label>
-          <input matInput formControlName="model" />
+          <input matInput formControlName="model" autocomplete="off" (input)="onModelInput($event)" />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ 'pages.adminVehicles.manufactureYear' | translate }}</mat-label>
@@ -153,11 +175,21 @@
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ 'pages.adminVehicles.registrationSeries' | translate }}</mat-label>
-          <input matInput formControlName="registrationSeries" />
+          <input
+            matInput
+            formControlName="registrationSeries"
+            autocomplete="off"
+            (input)="onRegistrationSeriesInput($event)"
+          />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ 'pages.adminVehicles.registrationNumber' | translate }}</mat-label>
-          <input matInput formControlName="registrationNumber" />
+          <input
+            matInput
+            formControlName="registrationNumber"
+            autocomplete="off"
+            (input)="onRegistrationNumberInput($event)"
+          />
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>{{ 'pages.adminVehicles.vehicleType' | translate }}</mat-label>
