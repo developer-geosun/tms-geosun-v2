@@ -3,23 +3,33 @@ package com.geosun.tms.reference.service;
 import com.geosun.tms.auth.exception.ApiException;
 import com.geosun.tms.reference.domain.RegistrationScanSide;
 import com.geosun.tms.reference.domain.Vehicle;
+import com.geosun.tms.reference.domain.VehicleDocument;
+import com.geosun.tms.reference.domain.VehicleDocumentCompliance;
+import com.geosun.tms.reference.domain.VehicleDocumentStatus;
+import com.geosun.tms.reference.domain.VehicleDocumentType;
 import com.geosun.tms.reference.domain.VehicleListView;
 import com.geosun.tms.reference.domain.VehicleRegistrationScan;
 import com.geosun.tms.reference.domain.VehicleType;
 import com.geosun.tms.reference.dto.request.CreateVehicleRequest;
 import com.geosun.tms.reference.dto.request.UpdateVehicleRequest;
 import com.geosun.tms.reference.dto.response.VehicleDto;
+import com.geosun.tms.reference.repository.VehicleDocumentRepository;
 import com.geosun.tms.reference.repository.VehicleRegistrationScanRepository;
 import com.geosun.tms.reference.repository.VehicleRepository;
 import com.geosun.tms.storage.dto.StoredFileDto;
 import com.geosun.tms.storage.service.StoredFileService;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.Year;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
@@ -36,14 +46,17 @@ public class VehicleService {
 
   private final VehicleRepository vehicleRepository;
   private final VehicleRegistrationScanRepository scanRepository;
+  private final VehicleDocumentRepository documentRepository;
   private final StoredFileService storedFileService;
 
   public VehicleService(
       VehicleRepository vehicleRepository,
       VehicleRegistrationScanRepository scanRepository,
+      VehicleDocumentRepository documentRepository,
       StoredFileService storedFileService) {
     this.vehicleRepository = vehicleRepository;
     this.scanRepository = scanRepository;
+    this.documentRepository = documentRepository;
     this.storedFileService = storedFileService;
   }
 
@@ -55,12 +68,18 @@ public class VehicleService {
           case DELETED -> vehicleRepository.findByDeletedTrueOrderByPlateNumberAsc();
           case ALL -> vehicleRepository.findAllByOrderByPlateNumberAsc();
         };
-    return vehicles.stream().map(this::toDto).toList();
+    Map<String, VehicleDocumentCompliance> complianceMap =
+        computeComplianceMap(Objects.requireNonNull(vehicles));
+    return vehicles.stream()
+        .map(
+            v -> toDto(v, complianceMap.getOrDefault(v.getId(), VehicleDocumentCompliance.PROBLEM)))
+        .toList();
   }
 
   @Transactional(readOnly = true)
   public VehicleDto getById(@NonNull String id) {
-    return toDto(requireVehicle(id));
+    Vehicle vehicle = requireVehicle(id);
+    return toDto(vehicle, computeCompliance(vehicle));
   }
 
   @Transactional
@@ -76,9 +95,11 @@ public class VehicleService {
         request.owner(),
         request.registrationSeries(),
         request.registrationNumber(),
-        request.vehicleType());
+        request.vehicleType(),
+        request.hasRefrigerator());
     assertUnique(vehicle, null);
-    return toDto(vehicleRepository.save(vehicle));
+    Vehicle saved = vehicleRepository.save(vehicle);
+    return toDto(saved, computeCompliance(saved));
   }
 
   @Transactional
@@ -97,9 +118,11 @@ public class VehicleService {
         request.owner(),
         request.registrationSeries(),
         request.registrationNumber(),
-        request.vehicleType());
+        request.vehicleType(),
+        request.hasRefrigerator());
     assertUnique(vehicle, id);
-    return toDto(vehicleRepository.save(vehicle));
+    Vehicle saved = vehicleRepository.save(vehicle);
+    return toDto(saved, computeCompliance(saved));
   }
 
   @Transactional
@@ -117,12 +140,13 @@ public class VehicleService {
   public VehicleDto restore(@NonNull String id) {
     Vehicle vehicle = requireVehicle(id);
     if (!vehicle.isDeleted()) {
-      return toDto(vehicle);
+      return toDto(vehicle, computeCompliance(vehicle));
     }
     assertUnique(vehicle, id);
     vehicle.setDeleted(false);
     vehicle.setDeletedAt(null);
-    return toDto(vehicleRepository.save(vehicle));
+    Vehicle saved = vehicleRepository.save(vehicle);
+    return toDto(saved, computeCompliance(saved));
   }
 
   @NonNull
@@ -152,7 +176,8 @@ public class VehicleService {
       String owner,
       String registrationSeries,
       String registrationNumber,
-      VehicleType vehicleType) {
+      VehicleType vehicleType,
+      Boolean hasRefrigerator) {
     vehicle.setPlateNumber(normalizePlateNumber(plateNumber));
     vehicle.setVin(normalizeVin(vin));
     vehicle.setMake(normalizeUpperText(make, "make"));
@@ -165,6 +190,10 @@ public class VehicleService {
       throw ApiException.badRequest("VALIDATION_ERROR", "vehicleType is required");
     }
     vehicle.setVehicleType(vehicleType);
+    // Для тягача прапор рефрижератора завжди false
+    boolean fridge =
+        Boolean.TRUE.equals(hasRefrigerator) && vehicleType == VehicleType.SEMI_TRAILER;
+    vehicle.setHasRefrigerator(fridge);
   }
 
   private void assertUnique(Vehicle vehicle, String excludeId) {
@@ -204,7 +233,7 @@ public class VehicleService {
     }
   }
 
-  private VehicleDto toDto(Vehicle vehicle) {
+  private VehicleDto toDto(Vehicle vehicle, VehicleDocumentCompliance compliance) {
     Map<RegistrationScanSide, StoredFileDto> scans =
         loadScanMap(Objects.requireNonNull(vehicle.getId()));
     return new VehicleDto(
@@ -218,12 +247,84 @@ public class VehicleService {
         vehicle.getRegistrationSeries(),
         vehicle.getRegistrationNumber(),
         vehicle.getVehicleType(),
+        vehicle.isHasRefrigerator(),
+        compliance,
         vehicle.isDeleted(),
         vehicle.getDeletedAt(),
         vehicle.getCreatedAt(),
         vehicle.getUpdatedAt(),
         scans.get(RegistrationScanSide.FRONT),
         scans.get(RegistrationScanSide.BACK));
+  }
+
+  @NonNull
+  private VehicleDocumentCompliance computeCompliance(@NonNull Vehicle vehicle) {
+    List<VehicleDocument> docs =
+        documentRepository.findByVehicle_IdOrderByDocumentTypeAscCreatedAtDesc(
+            Objects.requireNonNull(vehicle.getId()));
+    return complianceOf(vehicle, docs, LocalDate.now());
+  }
+
+  @NonNull
+  private Map<String, VehicleDocumentCompliance> computeComplianceMap(
+      @NonNull List<Vehicle> vehicles) {
+    Map<String, VehicleDocumentCompliance> result = new HashMap<>();
+    if (vehicles.isEmpty()) {
+      return result;
+    }
+    List<String> ids =
+        vehicles.stream().map(v -> Objects.requireNonNull(v.getId())).distinct().toList();
+    List<VehicleDocument> allDocs = documentRepository.findByVehicle_IdIn(ids);
+    Map<String, List<VehicleDocument>> byVehicle = new HashMap<>();
+    for (VehicleDocument doc : allDocs) {
+      String vid = Objects.requireNonNull(doc.getVehicle().getId());
+      byVehicle.computeIfAbsent(vid, k -> new ArrayList<>()).add(doc);
+    }
+    LocalDate today = LocalDate.now();
+    for (Vehicle vehicle : vehicles) {
+      String id = Objects.requireNonNull(vehicle.getId());
+      result.put(id, complianceOf(vehicle, byVehicle.getOrDefault(id, List.of()), today));
+    }
+    return result;
+  }
+
+  @NonNull
+  private static VehicleDocumentCompliance complianceOf(
+      Vehicle vehicle, List<VehicleDocument> allDocs, LocalDate today) {
+    Set<VehicleDocumentType> required =
+        VehicleDocumentRules.requiredTypes(
+            Objects.requireNonNull(vehicle.getVehicleType()), vehicle.isHasRefrigerator());
+    Map<VehicleDocumentType, VehicleDocument> currentByType =
+        new EnumMap<>(VehicleDocumentType.class);
+    allDocs.stream()
+        .sorted(
+            Comparator.comparing(
+                    (VehicleDocument d) -> Objects.requireNonNull(d.getCreatedAt()),
+                    Comparator.reverseOrder())
+                .thenComparing(d -> Objects.requireNonNull(d.getId()), Comparator.reverseOrder()))
+        .forEach(doc -> currentByType.putIfAbsent(doc.getDocumentType(), doc));
+
+    boolean hasExpiredOrMissing = false;
+    boolean hasExpiringSoon = false;
+    for (VehicleDocumentType type : required) {
+      VehicleDocument current = currentByType.get(type);
+      VehicleDocumentStatus status =
+          current == null
+              ? VehicleDocumentStatus.MISSING
+              : VehicleDocumentRules.statusOf(current.getValidTo(), Objects.requireNonNull(today));
+      if (status == VehicleDocumentStatus.MISSING || status == VehicleDocumentStatus.EXPIRED) {
+        hasExpiredOrMissing = true;
+      } else if (status == VehicleDocumentStatus.EXPIRING_SOON) {
+        hasExpiringSoon = true;
+      }
+    }
+    if (hasExpiredOrMissing) {
+      return VehicleDocumentCompliance.PROBLEM;
+    }
+    if (hasExpiringSoon) {
+      return VehicleDocumentCompliance.ATTENTION;
+    }
+    return VehicleDocumentCompliance.OK;
   }
 
   private Map<RegistrationScanSide, StoredFileDto> loadScanMap(String vehicleId) {

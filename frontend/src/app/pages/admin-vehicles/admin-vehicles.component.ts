@@ -23,6 +23,8 @@ import {
   RegistrationScanSideContract,
   StoredFileContractDto,
   VehicleContractDto,
+  VehicleDocumentComplianceContract,
+  VehicleDocumentsFilterContract,
   VehicleListViewContract,
   VehicleTypeContract,
   VehiclesApiService
@@ -79,6 +81,7 @@ export class AdminVehiclesComponent implements OnDestroy {
     'owner',
     'registration',
     'scans',
+    'documents',
     'status',
     'actions'
   ];
@@ -89,6 +92,7 @@ export class AdminVehiclesComponent implements OnDestroy {
   /** Повний список з API (view=all) для лічильників і клієнтського фільтра. */
   readonly allVehicles = signal<VehicleContractDto[]>([]);
   readonly listView = signal<VehicleListViewContract>('all');
+  readonly documentsFilter = signal<VehicleDocumentsFilterContract>('all');
   readonly pageIndex = signal(0);
   readonly pageSize = signal(AdminVehiclesComponent.DESKTOP_PAGE_SIZE);
   /** Ручний вибір на desktop; на handset завжди картки. */
@@ -124,14 +128,29 @@ export class AdminVehiclesComponent implements OnDestroy {
 
   readonly vehicles = computed(() => {
     const all = this.allVehicles();
+    let byStatus: VehicleContractDto[];
     switch (this.listView()) {
       case 'active':
-        return all.filter((v) => !v.deleted);
+        byStatus = all.filter((v) => !v.deleted);
+        break;
       case 'deleted':
-        return all.filter((v) => v.deleted);
+        byStatus = all.filter((v) => v.deleted);
+        break;
       default:
-        return all;
+        byStatus = all;
     }
+    const docsFilter = this.documentsFilter();
+    if (docsFilter === 'all') {
+      return byStatus;
+    }
+    const complianceMap: Record<Exclude<VehicleDocumentsFilterContract, 'all'>, VehicleDocumentComplianceContract> =
+      {
+        ok: 'OK',
+        attention: 'ATTENTION',
+        problem: 'PROBLEM'
+      };
+    const needed = complianceMap[docsFilter];
+    return byStatus.filter((v) => v.documentCompliance === needed);
   });
 
   readonly pagedVehicles = computed(() => {
@@ -184,6 +203,18 @@ export class AdminVehiclesComponent implements OnDestroy {
     }
     this.listView.set(view);
     this.pageIndex.set(0);
+  }
+
+  onDocumentsFilterChange(filter: VehicleDocumentsFilterContract | undefined): void {
+    if (!filter) {
+      return;
+    }
+    this.documentsFilter.set(filter);
+    this.pageIndex.set(0);
+  }
+
+  complianceLabelKey(compliance: VehicleDocumentComplianceContract): string {
+    return `pages.adminVehicles.compliance.${compliance}`;
   }
 
   onDisplayModeChange(mode: VehiclesDisplayMode | undefined): void {
@@ -573,7 +604,7 @@ export class AdminVehiclesComponent implements OnDestroy {
     const ref = this.dialog.open(
       VehicleFormDialogComponent,
       getHandsetFriendlyDialogConfig({
-        width: 'min(560px, calc(100vw - 24px))',
+        width: 'min(640px, calc(100vw - 24px))',
         maxHeight: 'min(92vh, 900px)',
         data: {
           vehicle,

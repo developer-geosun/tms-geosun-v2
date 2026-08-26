@@ -74,7 +74,8 @@ class AdminVehicleIntegrationTest {
             "ТОВ Тест",
             "АВС",
             "123456",
-            VehicleType.SEMI_TRACTOR);
+            VehicleType.SEMI_TRACTOR,
+            false);
 
     MvcResult createdResult =
         mockMvc
@@ -87,6 +88,8 @@ class AdminVehicleIntegrationTest {
             .andExpect(jsonPath("$.plateNumber").value("AA1234BB"))
             .andExpect(jsonPath("$.vin").value("WVWZZZ1JZYW000001"))
             .andExpect(jsonPath("$.deleted").value(false))
+            .andExpect(jsonPath("$.hasRefrigerator").value(false))
+            .andExpect(jsonPath("$.documentCompliance").value("PROBLEM"))
             .andReturn();
 
     String id =
@@ -163,7 +166,8 @@ class AdminVehicleIntegrationTest {
             "ТОВ Тест",
             "АВС",
             "123456",
-            VehicleType.SEMI_TRACTOR);
+            VehicleType.SEMI_TRACTOR,
+            false);
     mockMvc
         .perform(
             put(ReferenceApiPaths.ADMIN_VEHICLES_BASE + "/" + id)
@@ -189,7 +193,8 @@ class AdminVehicleIntegrationTest {
             "ТОВ Тест",
             "АВС",
             "654321",
-            VehicleType.SEMI_TRACTOR);
+            VehicleType.SEMI_TRACTOR,
+            false);
     mockMvc
         .perform(
             post(ReferenceApiPaths.ADMIN_VEHICLES_BASE)
@@ -209,7 +214,8 @@ class AdminVehicleIntegrationTest {
             "ТОВ Тест",
             "АВС",
             "654322",
-            VehicleType.SEMI_TRACTOR);
+            VehicleType.SEMI_TRACTOR,
+            false);
     mockMvc
         .perform(
             post(ReferenceApiPaths.ADMIN_VEHICLES_BASE)
@@ -235,7 +241,8 @@ class AdminVehicleIntegrationTest {
             "ТОВ Тест",
             "АВС",
             "111111",
-            VehicleType.SEMI_TRACTOR);
+            VehicleType.SEMI_TRACTOR,
+            false);
     mockMvc
         .perform(
             post(ReferenceApiPaths.ADMIN_VEHICLES_BASE)
@@ -255,7 +262,8 @@ class AdminVehicleIntegrationTest {
             "ТОВ Тест",
             "АВС",
             "111112",
-            VehicleType.SEMI_TRACTOR);
+            VehicleType.SEMI_TRACTOR,
+            false);
     mockMvc
         .perform(
             post(ReferenceApiPaths.ADMIN_VEHICLES_BASE)
@@ -264,6 +272,148 @@ class AdminVehicleIntegrationTest {
                 .content(toJson(spaced)))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.vin").value("WVWZZZ1JZYW000004"));
+  }
+
+  @Test
+  void manager_vehicleDocuments_historyAndCompliance() throws Exception {
+    User manager = saveUser("manager-veh-docs@example.com", "Secret123", Role.MANAGER);
+    String token = login(Objects.requireNonNull(manager.getEmail()), "Secret123");
+
+    CreateVehicleRequest create =
+        new CreateVehicleRequest(
+            "CA1234DE",
+            "WVWZZZ1JZYW000010",
+            "MAN",
+            "TGX",
+            (short) 2022,
+            "ТОВ Тест",
+            "XYZ",
+            "900001",
+            VehicleType.SEMI_TRACTOR,
+            false);
+
+    MvcResult createdResult =
+        mockMvc
+            .perform(
+                post(ReferenceApiPaths.ADMIN_VEHICLES_BASE)
+                    .header("Authorization", "Bearer " + token)
+                    .contentType(jsonContentType())
+                    .content(toJson(create)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.documentCompliance").value("PROBLEM"))
+            .andReturn();
+    String id =
+        objectMapper.readTree(createdResult.getResponse().getContentAsString()).get("id").asText();
+
+    mockMvc
+        .perform(
+            get(ReferenceApiPaths.ADMIN_VEHICLES_BASE + "/" + id + "/documents")
+                .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.documents.length()").value(5))
+        .andExpect(jsonPath("$.documents[0].status").value("MISSING"));
+
+    MockMultipartFile scan1 =
+        new MockMultipartFile("file", "liability-v1.jpg", "image/jpeg", jpegBytes());
+    MvcResult v1 =
+        mockMvc
+            .perform(
+                multipart(
+                        ReferenceApiPaths.ADMIN_VEHICLES_BASE
+                            + "/"
+                            + id
+                            + "/documents/THIRD_PARTY_LIABILITY")
+                    .file(scan1)
+                    .param("validFrom", "2025-01-01")
+                    .param("validTo", "2025-12-31")
+                    .header("Authorization", "Bearer " + token))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.status").value("EXPIRED"))
+            .andReturn();
+    String v1Id = objectMapper.readTree(v1.getResponse().getContentAsString()).get("id").asText();
+
+    MockMultipartFile scan2 =
+        new MockMultipartFile("file", "liability-v2.jpg", "image/jpeg", jpegBytes());
+    MvcResult v2 =
+        mockMvc
+            .perform(
+                multipart(
+                        ReferenceApiPaths.ADMIN_VEHICLES_BASE
+                            + "/"
+                            + id
+                            + "/documents/THIRD_PARTY_LIABILITY")
+                    .file(scan2)
+                    .param("validFrom", "2026-01-01")
+                    .param("validTo", "2027-12-31")
+                    .header("Authorization", "Bearer " + token))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.status").value("VALID"))
+            .andReturn();
+    String v2Id = objectMapper.readTree(v2.getResponse().getContentAsString()).get("id").asText();
+
+    mockMvc
+        .perform(
+            get(ReferenceApiPaths.ADMIN_VEHICLES_BASE + "/" + id + "/documents")
+                .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.documents[0].current.id").value(v2Id))
+        .andExpect(jsonPath("$.documents[0].history.length()").value(1))
+        .andExpect(jsonPath("$.documents[0].history[0].id").value(v1Id));
+
+    mockMvc
+        .perform(
+            get(ReferenceApiPaths.ADMIN_VEHICLES_BASE + "/" + id + "/documents/" + v1Id + "/scan")
+                .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk());
+
+    // Рефрижератор недоступний для тягача
+    MockMultipartFile fridge =
+        new MockMultipartFile("file", "fridge.jpg", "image/jpeg", jpegBytes());
+    mockMvc
+        .perform(
+            multipart(
+                    ReferenceApiPaths.ADMIN_VEHICLES_BASE
+                        + "/"
+                        + id
+                        + "/documents/REFRIGERATOR_VERIFICATION")
+                .file(fridge)
+                .param("validFrom", "2026-01-01")
+                .param("validTo", "2027-01-01")
+                .header("Authorization", "Bearer " + token))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("DOCUMENT_TYPE_NOT_ALLOWED"));
+
+    CreateVehicleRequest trailer =
+        new CreateVehicleRequest(
+            "CB1234EF",
+            "WVWZZZ1JZYW000011",
+            "SCHMITZ",
+            "SKO",
+            (short) 2021,
+            "ТОВ Тест",
+            "XYZ",
+            "900002",
+            VehicleType.SEMI_TRAILER,
+            true);
+    MvcResult trailerResult =
+        mockMvc
+            .perform(
+                post(ReferenceApiPaths.ADMIN_VEHICLES_BASE)
+                    .header("Authorization", "Bearer " + token)
+                    .contentType(jsonContentType())
+                    .content(toJson(trailer)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.hasRefrigerator").value(true))
+            .andReturn();
+    String trailerId =
+        objectMapper.readTree(trailerResult.getResponse().getContentAsString()).get("id").asText();
+
+    mockMvc
+        .perform(
+            get(ReferenceApiPaths.ADMIN_VEHICLES_BASE + "/" + trailerId + "/documents")
+                .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.documents.length()").value(4));
   }
 
   @NonNull

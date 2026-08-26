@@ -63,6 +63,7 @@ public class StoredFileService {
   }
 
   @Transactional(readOnly = true)
+  @NonNull
   public OpenedStoredFile open(@NonNull String id) {
     StoredFile file = requireById(id);
     Resource resource = storageService.open(file.getStorageKey());

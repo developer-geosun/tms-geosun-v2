@@ -180,6 +180,30 @@
     }
   }
 
+  &__compliance {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+
+    &--ok {
+      background: color-mix(in srgb, #2e7d32 16%, transparent);
+      color: #2e7d32;
+    }
+
+    &--attention {
+      background: color-mix(in srgb, #ef6c00 16%, transparent);
+      color: #ef6c00;
+    }
+
+    &--problem {
+      background: color-mix(in srgb, #c62828 16%, transparent);
+      color: #c62828;
+    }
+  }
+
   &__actions-cell {
     white-space: nowrap;
 
@@ -285,6 +309,23 @@
     &--deleted {
       background: var(--mat-sys-error-container);
       color: var(--mat-sys-on-error-container);
+    }
+  }
+
+  &__compliance {
+    font-size: 0.85rem;
+    font-weight: 600;
+
+    &--ok {
+      color: #2e7d32;
+    }
+
+    &--attention {
+      color: #ef6c00;
+    }
+
+    &--problem {
+      color: #c62828;
     }
   }
 

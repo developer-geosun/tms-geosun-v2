@@ -1,178 +1,401 @@
-<h2 mat-dialog-title>{{ titleKey() | translate }}</h2>
+<h2 mat-dialog-title>{{ dialogTitle() }}</h2>
 
 <mat-dialog-content class="vehicle-form-dialog__content">
-  <form [formGroup]="form" (ngSubmit)="save()" class="vehicle-form-dialog__form" id="vehicle-form">
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'pages.adminVehicles.plateNumber' | translate }}</mat-label>
-      <input
-        matInput
-        formControlName="plateNumber"
-        [attr.maxlength]="plateMaxLength"
-        autocomplete="off"
-        (input)="onPlateNumberInput($event)"
-      />
-      @if (form.controls.plateNumber.touched && form.controls.plateNumber.hasError('pattern')) {
-        <mat-error>{{ 'pages.adminVehicles.plateInvalid' | translate }}</mat-error>
-      } @else if (form.controls.plateNumber.touched && form.controls.plateNumber.hasError('required')) {
-        <mat-error>{{ 'pages.adminVehicles.plateRequired' | translate }}</mat-error>
-      }
-    </mat-form-field>
+  <mat-stepper
+    class="vehicle-form-dialog__stepper"
+    [linear]="false"
+    [selectedIndex]="stepIndex()"
+    (selectionChange)="onStepChange($event.selectedIndex)"
+    animationDuration="200ms"
+  >
+    <!-- Крок 1: дані ТЗ -->
+    <mat-step [stepControl]="form" [editable]="true">
+      <ng-template matStepLabel>
+        {{ 'pages.adminVehicles.stepData' | translate }}
+      </ng-template>
 
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'pages.adminVehicles.vin' | translate }}</mat-label>
-      <input
-        matInput
-        formControlName="vin"
-        [attr.maxlength]="vinMaxLength"
-        autocomplete="off"
-        (input)="onVinInput($event)"
-      />
-      @if (form.controls.vin.touched && form.controls.vin.hasError('pattern')) {
-        <mat-error>{{ 'pages.adminVehicles.vinInvalid' | translate }}</mat-error>
-      } @else if (form.controls.vin.touched && form.controls.vin.hasError('required')) {
-        <mat-error>{{ 'pages.adminVehicles.vinRequired' | translate }}</mat-error>
-      }
-    </mat-form-field>
+      <form
+        [formGroup]="form"
+        (ngSubmit)="save()"
+        class="vehicle-form-dialog__form"
+        id="vehicle-form"
+      >
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.plateNumber' | translate }}</mat-label>
+          <input
+            matInput
+            formControlName="plateNumber"
+            [attr.maxlength]="plateMaxLength"
+            autocomplete="off"
+            (input)="onPlateNumberInput($event)"
+          />
+          @if (form.controls.plateNumber.touched && form.controls.plateNumber.hasError('pattern')) {
+            <mat-error>{{ 'pages.adminVehicles.plateInvalid' | translate }}</mat-error>
+          } @else if (
+            form.controls.plateNumber.touched && form.controls.plateNumber.hasError('required')
+          ) {
+            <mat-error>{{ 'pages.adminVehicles.plateRequired' | translate }}</mat-error>
+          }
+        </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'pages.adminVehicles.make' | translate }}</mat-label>
-      <input
-        matInput
-        formControlName="make"
-        autocomplete="off"
-        [matAutocomplete]="makeAutocomplete"
-        (input)="onMakeInput($event)"
-      />
-      <mat-autocomplete #makeAutocomplete="matAutocomplete">
-        @for (make of filteredMakes(); track make) {
-          <mat-option [value]="make">{{ make }}</mat-option>
-        }
-      </mat-autocomplete>
-    </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.vin' | translate }}</mat-label>
+          <input
+            matInput
+            formControlName="vin"
+            [attr.maxlength]="vinMaxLength"
+            autocomplete="off"
+            (input)="onVinInput($event)"
+          />
+          @if (form.controls.vin.touched && form.controls.vin.hasError('pattern')) {
+            <mat-error>{{ 'pages.adminVehicles.vinInvalid' | translate }}</mat-error>
+          } @else if (form.controls.vin.touched && form.controls.vin.hasError('required')) {
+            <mat-error>{{ 'pages.adminVehicles.vinRequired' | translate }}</mat-error>
+          }
+        </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'pages.adminVehicles.model' | translate }}</mat-label>
-      <input matInput formControlName="model" autocomplete="off" (input)="onModelInput($event)" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'pages.adminVehicles.vehicleType' | translate }}</mat-label>
-      <mat-select formControlName="vehicleType">
-        @for (type of vehicleTypeOptions; track type) {
-          <mat-option [value]="type">{{ typeLabelKey(type) | translate }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'pages.adminVehicles.manufactureYear' | translate }}</mat-label>
-      <input matInput type="number" formControlName="manufactureYear" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'pages.adminVehicles.owner' | translate }}</mat-label>
-      <input matInput formControlName="owner" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'pages.adminVehicles.registrationSeries' | translate }}</mat-label>
-      <input
-        matInput
-        formControlName="registrationSeries"
-        autocomplete="off"
-        (input)="onRegistrationSeriesInput($event)"
-      />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>{{ 'pages.adminVehicles.registrationNumber' | translate }}</mat-label>
-      <input
-        matInput
-        formControlName="registrationNumber"
-        autocomplete="off"
-        (input)="onRegistrationNumberInput($event)"
-      />
-    </mat-form-field>
-  </form>
-
-  <div class="vehicle-form-dialog__scans">
-    <h3>{{ 'pages.adminVehicles.scansTitle' | translate }}</h3>
-    @if (isCreate()) {
-      <p class="vehicle-form-dialog__hint">{{ 'pages.adminVehicles.scansAfterCreate' | translate }}</p>
-    } @else {
-      @for (side of scanSides; track side) {
-        <div class="vehicle-form-dialog__scan-row">
-          <div>
-            <strong>
-              {{
-                (side === 'front'
-                  ? 'pages.adminVehicles.scanFront'
-                  : 'pages.adminVehicles.scanBack'
-                ) | translate
-              }}
-            </strong>
-            <p>
-              {{
-                (side === 'front'
-                  ? vehicle()?.scanFront?.originalFilename
-                  : vehicle()?.scanBack?.originalFilename
-                ) || ('pages.adminVehicles.scanEmpty' | translate)
-              }}
-            </p>
-          </div>
-          <div class="vehicle-form-dialog__scan-actions">
-            @if (
-              (side === 'front' && vehicle()?.scanFront) ||
-              (side === 'back' && vehicle()?.scanBack)
-            ) {
-              <button mat-stroked-button type="button" (click)="openScan(side)">
-                {{ 'pages.adminVehicles.scanOpen' | translate }}
-              </button>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.make' | translate }}</mat-label>
+          <input
+            matInput
+            formControlName="make"
+            autocomplete="off"
+            [matAutocomplete]="makeAutocomplete"
+            (input)="onMakeInput($event)"
+          />
+          <mat-autocomplete #makeAutocomplete="matAutocomplete">
+            @for (make of filteredMakes(); track make) {
+              <mat-option [value]="make">{{ make }}</mat-option>
             }
-            @if (!isDeleted()) {
-              <button
-                mat-stroked-button
-                type="button"
-                [disabled]="scanBusy()"
-                (click)="side === 'front' ? frontInput.click() : backInput.click()"
-              >
-                {{ 'pages.adminVehicles.scanUpload' | translate }}
-              </button>
-              @if (
-                (side === 'front' && vehicle()?.scanFront) ||
-                (side === 'back' && vehicle()?.scanBack)
-              ) {
-                <button mat-button color="warn" type="button" (click)="deleteScan(side)">
-                  {{ 'pages.adminVehicles.scanDelete' | translate }}
-                </button>
-              }
+          </mat-autocomplete>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.model' | translate }}</mat-label>
+          <input
+            matInput
+            formControlName="model"
+            autocomplete="off"
+            (input)="onModelInput($event)"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.vehicleType' | translate }}</mat-label>
+          <mat-select formControlName="vehicleType">
+            @for (type of vehicleTypeOptions; track type) {
+              <mat-option [value]="type">{{ typeLabelKey(type) | translate }}</mat-option>
             }
-          </div>
-        </div>
-      }
-      <input
-        #frontInput
-        type="file"
-        class="vehicle-form-dialog__file-input"
-        accept="image/jpeg,image/png,application/pdf"
-        (change)="onScanSelected('front', $event)"
-      />
-      <input
-        #backInput
-        type="file"
-        class="vehicle-form-dialog__file-input"
-        accept="image/jpeg,image/png,application/pdf"
-        (change)="onScanSelected('back', $event)"
-      />
-    }
-  </div>
+          </mat-select>
+        </mat-form-field>
+
+        @if (showRefrigerator()) {
+          <mat-checkbox formControlName="hasRefrigerator" class="vehicle-form-dialog__fridge">
+            {{ 'pages.adminVehicles.hasRefrigerator' | translate }}
+          </mat-checkbox>
+        }
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.manufactureYear' | translate }}</mat-label>
+          <input matInput type="number" formControlName="manufactureYear" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.owner' | translate }}</mat-label>
+          <input matInput formControlName="owner" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.registrationSeries' | translate }}</mat-label>
+          <input
+            matInput
+            formControlName="registrationSeries"
+            autocomplete="off"
+            (input)="onRegistrationSeriesInput($event)"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'pages.adminVehicles.registrationNumber' | translate }}</mat-label>
+          <input
+            matInput
+            formControlName="registrationNumber"
+            autocomplete="off"
+            (input)="onRegistrationNumberInput($event)"
+          />
+        </mat-form-field>
+      </form>
+    </mat-step>
+
+    <!-- Крок 2: скани свідоцтва -->
+    <mat-step [editable]="true">
+      <ng-template matStepLabel>
+        {{ 'pages.adminVehicles.stepScans' | translate }}
+      </ng-template>
+
+      <div class="vehicle-form-dialog__step-body">
+        @if (isCreate()) {
+          <p class="vehicle-form-dialog__hint">
+            {{ 'pages.adminVehicles.scansAfterCreate' | translate }}
+          </p>
+        } @else {
+          @for (side of scanSides; track side) {
+            <div class="vehicle-form-dialog__scan-row">
+              <div>
+                <strong>
+                  {{
+                    (side === 'front'
+                      ? 'pages.adminVehicles.scanFront'
+                      : 'pages.adminVehicles.scanBack'
+                    ) | translate
+                  }}
+                </strong>
+                <p>
+                  {{
+                    (side === 'front'
+                      ? vehicle()?.scanFront?.originalFilename
+                      : vehicle()?.scanBack?.originalFilename
+                    ) || ('pages.adminVehicles.scanEmpty' | translate)
+                  }}
+                </p>
+              </div>
+              <div class="vehicle-form-dialog__scan-actions">
+                @if (
+                  (side === 'front' && vehicle()?.scanFront) ||
+                  (side === 'back' && vehicle()?.scanBack)
+                ) {
+                  <button mat-stroked-button type="button" (click)="openScan(side)">
+                    {{ 'pages.adminVehicles.scanOpen' | translate }}
+                  </button>
+                }
+                @if (!isDeleted()) {
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    [disabled]="scanBusy()"
+                    (click)="side === 'front' ? frontInput.click() : backInput.click()"
+                  >
+                    {{ 'pages.adminVehicles.scanUpload' | translate }}
+                  </button>
+                  @if (
+                    (side === 'front' && vehicle()?.scanFront) ||
+                    (side === 'back' && vehicle()?.scanBack)
+                  ) {
+                    <button mat-button color="warn" type="button" (click)="deleteScan(side)">
+                      {{ 'pages.adminVehicles.scanDelete' | translate }}
+                    </button>
+                  }
+                }
+              </div>
+            </div>
+          }
+          <input
+            #frontInput
+            type="file"
+            class="vehicle-form-dialog__file-input"
+            accept="image/jpeg,image/png,application/pdf"
+            (change)="onScanSelected('front', $event)"
+          />
+          <input
+            #backInput
+            type="file"
+            class="vehicle-form-dialog__file-input"
+            accept="image/jpeg,image/png,application/pdf"
+            (change)="onScanSelected('back', $event)"
+          />
+        }
+      </div>
+    </mat-step>
+
+    <!-- Крок 3: діючі документи -->
+    <mat-step [editable]="true">
+      <ng-template matStepLabel>
+        {{ 'pages.adminVehicles.stepDocuments' | translate }}
+      </ng-template>
+
+      <div class="vehicle-form-dialog__step-body">
+        @if (isCreate()) {
+          <p class="vehicle-form-dialog__hint">
+            {{ 'pages.adminVehicles.documentsAfterCreate' | translate }}
+          </p>
+        } @else if (documentsLoading()) {
+          <p class="vehicle-form-dialog__hint">
+            {{ 'pages.adminVehicles.documentsLoading' | translate }}
+          </p>
+        } @else {
+          <mat-accordion multi>
+            @for (group of documentGroups(); track group.documentType) {
+              <mat-expansion-panel>
+                <mat-expansion-panel-header>
+                  <mat-panel-title>
+                    {{ documentTypeKey(group.documentType) | translate }}
+                  </mat-panel-title>
+                  <mat-panel-description>
+                    <span
+                      class="vehicle-form-dialog__status"
+                      [class.vehicle-form-dialog__status--valid]="group.status === 'VALID'"
+                      [class.vehicle-form-dialog__status--soon]="group.status === 'EXPIRING_SOON'"
+                      [class.vehicle-form-dialog__status--expired]="group.status === 'EXPIRED'"
+                      [class.vehicle-form-dialog__status--missing]="group.status === 'MISSING'"
+                    >
+                      {{ documentStatusKey(group.status) | translate }}
+                    </span>
+                  </mat-panel-description>
+                </mat-expansion-panel-header>
+
+                @if (group.current; as current) {
+                  <div class="vehicle-form-dialog__doc-current">
+                    <p>
+                      {{ current.validFrom }} — {{ current.validTo }}
+                      · {{ current.scan.originalFilename }}
+                    </p>
+                    <div class="vehicle-form-dialog__scan-actions">
+                      <button
+                        mat-stroked-button
+                        type="button"
+                        (click)="openDocumentScan(current.id)"
+                      >
+                        {{ 'pages.adminVehicles.scanOpen' | translate }}
+                      </button>
+                      @if (!isDeleted()) {
+                        <button
+                          mat-button
+                          color="warn"
+                          type="button"
+                          [disabled]="documentBusy()"
+                          (click)="deleteDocumentVersion(current.id)"
+                        >
+                          {{ 'pages.adminVehicles.documentDelete' | translate }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+                } @else {
+                  <p class="vehicle-form-dialog__hint">
+                    {{ 'pages.adminVehicles.documentMissing' | translate }}
+                  </p>
+                }
+
+                @if (group.history.length > 0) {
+                  <h4>{{ 'pages.adminVehicles.documentHistory' | translate }}</h4>
+                  <ul class="vehicle-form-dialog__history">
+                    @for (item of group.history; track item.id) {
+                      <li>
+                        <span>{{ item.validFrom }} — {{ item.validTo }}</span>
+                        <button mat-button type="button" (click)="openDocumentScan(item.id)">
+                          {{ 'pages.adminVehicles.scanOpen' | translate }}
+                        </button>
+                        @if (!isDeleted()) {
+                          <button
+                            mat-button
+                            color="warn"
+                            type="button"
+                            [disabled]="documentBusy()"
+                            (click)="deleteDocumentVersion(item.id)"
+                          >
+                            {{ 'pages.adminVehicles.documentDelete' | translate }}
+                          </button>
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
+
+                @if (!isDeleted()) {
+                  @if (addFormType() === group.documentType) {
+                    <div class="vehicle-form-dialog__add-form">
+                      <mat-form-field appearance="outline">
+                        <mat-label>
+                          {{ 'pages.adminVehicles.documentValidFrom' | translate }}
+                        </mat-label>
+                        <input
+                          matInput
+                          [matDatepicker]="fromPicker"
+                          [value]="addValidFrom()"
+                          (dateChange)="addValidFrom.set($event.value)"
+                        />
+                        <mat-datepicker-toggle matIconSuffix [for]="fromPicker" />
+                        <mat-datepicker #fromPicker />
+                      </mat-form-field>
+                      <mat-form-field appearance="outline">
+                        <mat-label>
+                          {{ 'pages.adminVehicles.documentValidTo' | translate }}
+                        </mat-label>
+                        <input
+                          matInput
+                          [matDatepicker]="toPicker"
+                          [value]="addValidTo()"
+                          (dateChange)="addValidTo.set($event.value)"
+                        />
+                        <mat-datepicker-toggle matIconSuffix [for]="toPicker" />
+                        <mat-datepicker #toPicker />
+                      </mat-form-field>
+                      <div class="vehicle-form-dialog__scan-actions">
+                        <button mat-stroked-button type="button" (click)="addFileInput.click()">
+                          {{
+                            (addFile()
+                              ? 'pages.adminVehicles.scanReplace'
+                              : 'pages.adminVehicles.scanUpload'
+                            ) | translate
+                          }}
+                        </button>
+                        <span class="vehicle-form-dialog__hint">
+                          {{ addFile()?.name || ('pages.adminVehicles.scanEmpty' | translate) }}
+                        </span>
+                        <input
+                          #addFileInput
+                          type="file"
+                          class="vehicle-form-dialog__file-input"
+                          accept="image/jpeg,image/png,application/pdf"
+                          (change)="onAddFileSelected($event)"
+                        />
+                      </div>
+                      <div class="vehicle-form-dialog__scan-actions">
+                        <button
+                          mat-flat-button
+                          color="primary"
+                          type="button"
+                          [disabled]="documentBusy()"
+                          (click)="submitAddDocument()"
+                        >
+                          {{ 'pages.adminVehicles.documentAddSubmit' | translate }}
+                        </button>
+                        <button mat-button type="button" (click)="cancelAddDocument()">
+                          {{ 'common.confirmDialog.cancel' | translate }}
+                        </button>
+                      </div>
+                    </div>
+                  } @else {
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      (click)="startAddDocument(group.documentType)"
+                    >
+                      {{ 'pages.adminVehicles.documentAdd' | translate }}
+                    </button>
+                  }
+                }
+              </mat-expansion-panel>
+            }
+          </mat-accordion>
+        }
+      </div>
+    </mat-step>
+  </mat-stepper>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end">
+<mat-dialog-actions class="vehicle-form-dialog__actions" align="end">
   <button mat-stroked-button type="button" (click)="close()" [disabled]="saving()">
     {{ 'common.confirmDialog.cancel' | translate }}
   </button>
-  @if (!isDeleted()) {
+
+  @if (!onDataStep()) {
+    <button mat-stroked-button type="button" (click)="goPrev()" [disabled]="saving()">
+      {{ 'pages.adminVehicles.stepBack' | translate }}
+    </button>
+  }
+
+  @if (onDataStep() && !isDeleted()) {
     <button
       mat-flat-button
       color="primary"
@@ -181,6 +404,12 @@
       [disabled]="form.invalid || saving()"
     >
       {{ 'pages.adminVehicles.save' | translate }}
+    </button>
+  }
+
+  @if (!onDocumentsStep()) {
+    <button mat-flat-button color="primary" type="button" (click)="goNext()" [disabled]="saving()">
+      {{ 'pages.adminVehicles.stepNext' | translate }}
     </button>
   }
 </mat-dialog-actions>

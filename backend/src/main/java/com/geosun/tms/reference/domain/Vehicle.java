@@ -48,6 +48,10 @@ public class Vehicle {
   @Column(name = "vehicle_type", nullable = false, length = 32)
   private VehicleType vehicleType;
 
+  /** Чи є рефрижератор (актуально для напівпричепа). */
+  @Column(name = "has_refrigerator", nullable = false)
+  private boolean hasRefrigerator;
+
   @Column(name = "is_deleted", nullable = false)
   private boolean deleted;
 
@@ -147,6 +151,14 @@ public class Vehicle {
 
   public void setVehicleType(VehicleType vehicleType) {
     this.vehicleType = vehicleType;
+  }
+
+  public boolean isHasRefrigerator() {
+    return hasRefrigerator;
+  }
+
+  public void setHasRefrigerator(boolean hasRefrigerator) {
+    this.hasRefrigerator = hasRefrigerator;
   }
 
   public boolean isDeleted() {

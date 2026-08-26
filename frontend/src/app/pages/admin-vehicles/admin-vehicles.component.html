@@ -18,6 +18,26 @@
         </mat-button-toggle>
       </mat-button-toggle-group>
 
+      <mat-button-toggle-group
+        [value]="documentsFilter()"
+        hideSingleSelectionIndicator
+        (change)="onDocumentsFilterChange($event.value)"
+        [attr.aria-label]="'pages.adminVehicles.documentsFilter' | translate"
+      >
+        <mat-button-toggle value="all">
+          {{ 'pages.adminVehicles.documentsFilterAll' | translate }}
+        </mat-button-toggle>
+        <mat-button-toggle value="ok">
+          {{ 'pages.adminVehicles.documentsFilterOk' | translate }}
+        </mat-button-toggle>
+        <mat-button-toggle value="attention">
+          {{ 'pages.adminVehicles.documentsFilterAttention' | translate }}
+        </mat-button-toggle>
+        <mat-button-toggle value="problem">
+          {{ 'pages.adminVehicles.documentsFilterProblem' | translate }}
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+
       @if (!isHandset()) {
         <mat-button-toggle-group
           class="admin-vehicles__display-toggle"
@@ -133,6 +153,18 @@
               <div class="vehicle-card__field">
                 <span class="vehicle-card__label">{{ 'pages.adminVehicles.owner' | translate }}</span>
                 <span class="vehicle-card__value">{{ row.owner }}</span>
+              </div>
+
+              <div class="vehicle-card__field">
+                <span class="vehicle-card__label">{{ 'pages.adminVehicles.documents' | translate }}</span>
+                <span
+                  class="vehicle-card__compliance"
+                  [class.vehicle-card__compliance--ok]="row.documentCompliance === 'OK'"
+                  [class.vehicle-card__compliance--attention]="row.documentCompliance === 'ATTENTION'"
+                  [class.vehicle-card__compliance--problem]="row.documentCompliance === 'PROBLEM'"
+                >
+                  {{ complianceLabelKey(row.documentCompliance) | translate }}
+                </span>
               </div>
 
               <div class="vehicle-card__scans">
@@ -313,6 +345,21 @@
                 </button>
               }
             </div>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="documents">
+          <th mat-header-cell *matHeaderCellDef>
+            {{ 'pages.adminVehicles.documents' | translate }}
+          </th>
+          <td mat-cell *matCellDef="let row">
+            <span
+              class="admin-vehicles__compliance"
+              [class.admin-vehicles__compliance--ok]="row.documentCompliance === 'OK'"
+              [class.admin-vehicles__compliance--attention]="row.documentCompliance === 'ATTENTION'"
+              [class.admin-vehicles__compliance--problem]="row.documentCompliance === 'PROBLEM'"
+            >
+              {{ complianceLabelKey(row.documentCompliance) | translate }}
+            </span>
           </td>
         </ng-container>
         <ng-container matColumnDef="status">

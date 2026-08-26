@@ -70,6 +70,7 @@ public class VehicleRegistrationScanService {
   }
 
   @Transactional(readOnly = true)
+  @NonNull
   public OpenedStoredFile open(@NonNull String vehicleId, @NonNull RegistrationScanSide side) {
     vehicleService.requireVehicle(vehicleId);
     VehicleRegistrationScan scan =

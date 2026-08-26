@@ -6,25 +6,29 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  min-width: min(100%, 420px);
+  min-width: min(100%, 520px);
   /* Місце під floating label outline-поля (інакше обрізається зверху). */
   padding-top: 0.75rem;
+}
+
+.vehicle-form-dialog__stepper {
+  width: 100%;
 }
 
 .vehicle-form-dialog__form {
   display: grid;
   gap: 0.25rem;
-  padding-top: 0.25rem;
+  padding-top: 0.5rem;
 }
 
-.vehicle-form-dialog__scans {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+.vehicle-form-dialog__step-body {
+  padding-top: 0.5rem;
+  min-height: 8rem;
 }
 
 .vehicle-form-dialog__hint {
   opacity: 0.8;
+  margin: 0.25rem 0 0.75rem;
 }
 
 .vehicle-form-dialog__scan-row {
@@ -34,14 +38,77 @@
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+
+  &:last-of-type {
+    border-bottom: none;
+  }
 }
 
 .vehicle-form-dialog__scan-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
+  align-items: center;
 }
 
 .vehicle-form-dialog__file-input {
   display: none;
+}
+
+.vehicle-form-dialog__fridge {
+  margin: 0.25rem 0 0.75rem;
+}
+
+.vehicle-form-dialog__status {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.vehicle-form-dialog__status--valid {
+  color: #2e7d32;
+}
+
+.vehicle-form-dialog__status--soon {
+  color: #ef6c00;
+}
+
+.vehicle-form-dialog__status--expired,
+.vehicle-form-dialog__status--missing {
+  color: #c62828;
+}
+
+.vehicle-form-dialog__doc-current {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.vehicle-form-dialog__history {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.vehicle-form-dialog__history li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.vehicle-form-dialog__add-form {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.vehicle-form-dialog__actions {
+  flex-wrap: wrap;
+  gap: 0.35rem;
 }

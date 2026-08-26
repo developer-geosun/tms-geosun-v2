@@ -10,20 +10,28 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MAT_NATIVE_DATE_FORMATS, provideNativeDateAdapter } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import {
   MAT_DIALOG_DATA,
   MatDialog,
   MatDialogModule,
   MatDialogRef
 } from '@angular/material/dialog';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatStepperModule } from '@angular/material/stepper';
 import { firstValueFrom } from 'rxjs';
 import {
   RegistrationScanSideContract,
   VehicleContractDto,
+  VehicleDocumentGroupContractDto,
+  VehicleDocumentStatusContract,
+  VehicleDocumentTypeContract,
   VehicleTypeContract,
   VehiclesApiService
 } from '../../core/api';
@@ -50,11 +58,24 @@ export interface VehicleFormDialogData {
     TranslateModule,
     MatAutocompleteModule,
     MatButtonModule,
+    MatCheckboxModule,
+    MatDatepickerModule,
     MatDialogModule,
+    MatExpansionModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatStepperModule
+  ],
+  providers: [
+    provideNativeDateAdapter({
+      parse: MAT_NATIVE_DATE_FORMATS.parse,
+      display: {
+        ...MAT_NATIVE_DATE_FORMATS.display,
+        dateInput: { year: 'numeric', month: '2-digit', day: '2-digit' }
+      }
+    })
   ],
   templateUrl: './vehicle-form-dialog.component.html',
   styleUrl: './vehicle-form-dialog.component.scss',
@@ -75,16 +96,35 @@ export class VehicleFormDialogComponent {
   readonly vinMaxLength = VIN_MAX_LENGTH;
 
   readonly vehicle = signal<VehicleContractDto | null>(this.data.vehicle);
+  readonly documentGroups = signal<VehicleDocumentGroupContractDto[]>([]);
+  readonly documentsLoading = signal(false);
+  readonly documentBusy = signal(false);
   readonly scanBusy = signal(false);
   readonly saving = signal(false);
+  /** Активний крок: 0 — дані, 1 — скани, 2 — документи. */
+  readonly stepIndex = signal(0);
+  /** Тип документа, для якого відкрита форма додавання версії. */
+  readonly addFormType = signal<VehicleDocumentTypeContract | null>(null);
+  readonly addValidFrom = signal<Date | null>(null);
+  readonly addValidTo = signal<Date | null>(null);
+  readonly addFile = signal<File | null>(null);
   /** Чи були зміни, щоб батьківська сторінка перезавантажила список. */
   private readonly changed = signal(false);
 
   readonly isCreate = computed(() => this.vehicle() == null);
   readonly isDeleted = computed(() => this.vehicle()?.deleted === true);
-  readonly titleKey = computed(() =>
-    this.isCreate() ? 'pages.adminVehicles.createTitle' : 'pages.adminVehicles.editTitle'
-  );
+  /** Заголовок: при редагуванні — з поточним держномером. */
+  readonly dialogTitle = computed(() => {
+    if (this.isCreate()) {
+      return this.translate.instant('pages.adminVehicles.createTitle');
+    }
+    const plate = this.vehicle()?.plateNumber?.trim() || '';
+    const base = this.translate.instant('pages.adminVehicles.editTitle');
+    return plate ? `${base} · ${plate}` : base;
+  });
+  readonly onDataStep = computed(() => this.stepIndex() === 0);
+  readonly onScansStep = computed(() => this.stepIndex() === 1);
+  readonly onDocumentsStep = computed(() => this.stepIndex() === 2);
 
   readonly form = this.formBuilder.nonNullable.group({
     plateNumber: [
@@ -108,12 +148,19 @@ export class VehicleFormDialogComponent {
     owner: ['', [Validators.required, Validators.maxLength(255)]],
     registrationSeries: ['', [Validators.required, Validators.maxLength(16)]],
     registrationNumber: ['', [Validators.required, Validators.maxLength(32)]],
-    vehicleType: [null as VehicleTypeContract | null, Validators.required]
+    vehicleType: [null as VehicleTypeContract | null, Validators.required],
+    hasRefrigerator: [false]
   });
 
   private readonly makeQuery = toSignal(this.form.controls.make.valueChanges, {
     initialValue: this.form.controls.make.value
   });
+
+  private readonly vehicleTypeValue = toSignal(this.form.controls.vehicleType.valueChanges, {
+    initialValue: this.form.controls.vehicleType.value
+  });
+
+  readonly showRefrigerator = computed(() => this.vehicleTypeValue() === 'SEMI_TRAILER');
 
   /** Підказки марок: усі або відфільтровані за введеним текстом. */
   readonly filteredMakes = computed(() => {
@@ -132,11 +179,27 @@ export class VehicleFormDialogComponent {
       if (existing.deleted) {
         this.form.disable();
       }
+      void this.reloadDocuments();
     }
   }
 
   close(): void {
     this.dialogRef.close(this.changed());
+  }
+
+  onStepChange(index: number): void {
+    this.stepIndex.set(index);
+    if (index === 2 && this.vehicle()?.id) {
+      void this.reloadDocuments();
+    }
+  }
+
+  goNext(): void {
+    this.onStepChange(Math.min(2, this.stepIndex() + 1));
+  }
+
+  goPrev(): void {
+    this.onStepChange(Math.max(0, this.stepIndex() - 1));
   }
 
   onPlateNumberInput(event: Event): void {
@@ -194,21 +257,28 @@ export class VehicleFormDialogComponent {
       owner: raw.owner.trim(),
       registrationSeries: raw.registrationSeries.trim().toLocaleUpperCase('uk-UA'),
       registrationNumber: raw.registrationNumber.trim().toLocaleUpperCase('uk-UA'),
-      vehicleType: raw.vehicleType
+      vehicleType: raw.vehicleType,
+      hasRefrigerator: raw.vehicleType === 'SEMI_TRAILER' ? raw.hasRefrigerator : false
     };
     this.saving.set(true);
     try {
       const id = this.vehicle()?.id;
       if (id) {
-        await this.vehiclesApi.update(id, payload);
+        const updated = await this.vehiclesApi.update(id, payload);
+        this.vehicle.set(updated);
+        this.changed.set(true);
+        this.notify('pages.adminVehicles.updateSuccess');
+        await this.reloadDocuments();
       } else {
-        await this.vehiclesApi.create(payload);
+        const created = await this.vehiclesApi.create(payload);
+        this.vehicle.set(created);
+        this.patchForm(created);
+        this.changed.set(true);
+        this.notify('pages.adminVehicles.createSuccess');
+        await this.reloadDocuments();
+        // Після створення переходимо до сканів.
+        this.stepIndex.set(1);
       }
-      this.changed.set(true);
-      this.notify(
-        id ? 'pages.adminVehicles.updateSuccess' : 'pages.adminVehicles.createSuccess'
-      );
-      this.dialogRef.close(true);
     } catch (err) {
       this.notify(this.mapError(err, 'pages.adminVehicles.saveFailed'), 'error');
     } finally {
@@ -251,9 +321,7 @@ export class VehicleFormDialogComponent {
     }
     try {
       const blob = await this.vehiclesApi.downloadScanBlob(row.id, side);
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank', 'noopener');
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      this.openBlob(blob);
     } catch {
       this.notify('pages.adminVehicles.scanOpenFailed', 'error');
     }
@@ -284,8 +352,131 @@ export class VehicleFormDialogComponent {
     }
   }
 
+  startAddDocument(type: VehicleDocumentTypeContract): void {
+    this.addFormType.set(type);
+    this.addValidFrom.set(null);
+    this.addValidTo.set(null);
+    this.addFile.set(null);
+  }
+
+  cancelAddDocument(): void {
+    this.addFormType.set(null);
+    this.addValidFrom.set(null);
+    this.addValidTo.set(null);
+    this.addFile.set(null);
+  }
+
+  onAddFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    input.value = '';
+    this.addFile.set(file);
+  }
+
+  async submitAddDocument(): Promise<void> {
+    const vehicleId = this.vehicle()?.id;
+    const type = this.addFormType();
+    const from = this.addValidFrom();
+    const to = this.addValidTo();
+    const file = this.addFile();
+    if (!vehicleId || !type || !from || !to || !file || this.isDeleted()) {
+      this.notify('pages.adminVehicles.documentAddIncomplete', 'error');
+      return;
+    }
+    if (to.getTime() < from.getTime()) {
+      this.notify('pages.adminVehicles.documentDatesInvalid', 'error');
+      return;
+    }
+    this.documentBusy.set(true);
+    try {
+      await this.vehiclesApi.addDocument(
+        vehicleId,
+        type,
+        this.toIsoDate(from),
+        this.toIsoDate(to),
+        file
+      );
+      this.changed.set(true);
+      this.notify('pages.adminVehicles.documentAddSuccess');
+      this.cancelAddDocument();
+      await this.reloadDocuments();
+      this.vehicle.set(await this.vehiclesApi.getById(vehicleId));
+    } catch (err) {
+      this.notify(this.mapError(err, 'pages.adminVehicles.documentAddFailed'), 'error');
+    } finally {
+      this.documentBusy.set(false);
+    }
+  }
+
+  async openDocumentScan(documentId: string): Promise<void> {
+    const vehicleId = this.vehicle()?.id;
+    if (!vehicleId) {
+      return;
+    }
+    try {
+      const blob = await this.vehiclesApi.downloadDocumentScanBlob(vehicleId, documentId);
+      this.openBlob(blob);
+    } catch {
+      this.notify('pages.adminVehicles.documentOpenFailed', 'error');
+    }
+  }
+
+  async deleteDocumentVersion(documentId: string): Promise<void> {
+    const vehicleId = this.vehicle()?.id;
+    if (!vehicleId || this.isDeleted()) {
+      return;
+    }
+    const ok = await firstValueFrom(
+      this.dialog
+        .open(ConfirmDialogComponent, {
+          data: { messageKey: 'pages.adminVehicles.documentDeleteConfirm' }
+        })
+        .afterClosed()
+    );
+    if (!ok) {
+      return;
+    }
+    this.documentBusy.set(true);
+    try {
+      await this.vehiclesApi.deleteDocument(vehicleId, documentId);
+      this.changed.set(true);
+      this.notify('pages.adminVehicles.documentDeleteSuccess');
+      await this.reloadDocuments();
+      this.vehicle.set(await this.vehiclesApi.getById(vehicleId));
+    } catch {
+      this.notify('pages.adminVehicles.documentDeleteFailed', 'error');
+    } finally {
+      this.documentBusy.set(false);
+    }
+  }
+
   typeLabelKey(type: VehicleTypeContract): string {
     return `pages.adminVehicles.types.${type}`;
+  }
+
+  documentTypeKey(type: VehicleDocumentTypeContract): string {
+    return `pages.adminVehicles.documentTypes.${type}`;
+  }
+
+  documentStatusKey(status: VehicleDocumentStatusContract): string {
+    return `pages.adminVehicles.documentStatuses.${status}`;
+  }
+
+  private async reloadDocuments(): Promise<void> {
+    const id = this.vehicle()?.id;
+    if (!id) {
+      this.documentGroups.set([]);
+      return;
+    }
+    this.documentsLoading.set(true);
+    try {
+      const response = await this.vehiclesApi.listDocuments(id);
+      this.documentGroups.set(response.documents);
+    } catch {
+      this.notify('pages.adminVehicles.documentsLoadFailed', 'error');
+    } finally {
+      this.documentsLoading.set(false);
+    }
   }
 
   private patchForm(row: VehicleContractDto): void {
@@ -298,8 +489,22 @@ export class VehicleFormDialogComponent {
       owner: row.owner,
       registrationSeries: row.registrationSeries.toLocaleUpperCase('uk-UA'),
       registrationNumber: row.registrationNumber.toLocaleUpperCase('uk-UA'),
-      vehicleType: row.vehicleType
+      vehicleType: row.vehicleType,
+      hasRefrigerator: row.hasRefrigerator
     });
+  }
+
+  private openBlob(blob: Blob): void {
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener');
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  }
+
+  private toIsoDate(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   private notify(messageKey: string, kind: 'success' | 'error' = 'success'): void {
@@ -317,6 +522,8 @@ export class VehicleFormDialogComponent {
         return 'pages.adminVehicles.registrationExists';
       case 'VEHICLE_DELETED':
         return 'pages.adminVehicles.vehicleDeleted';
+      case 'DOCUMENT_TYPE_NOT_ALLOWED':
+        return 'pages.adminVehicles.documentTypeNotAllowed';
       default:
         return fallback;
     }

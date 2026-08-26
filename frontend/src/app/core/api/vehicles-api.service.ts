@@ -8,6 +8,9 @@ import {
   RegistrationScanSideContract,
   UpdateVehicleContractRequest,
   VehicleContractDto,
+  VehicleDocumentTypeContract,
+  VehicleDocumentVersionContractDto,
+  VehicleDocumentsResponseContract,
   VehicleListViewContract
 } from './vehicles-contracts.model';
 
@@ -89,6 +92,73 @@ export class VehiclesApiService {
     await firstValueFrom(
       this.http.delete(
         `${this.backendApi.adminVehicles}/${encodeURIComponent(id)}/registration-certificate/${side}`
+      )
+    );
+  }
+
+  async listDocuments(id: string): Promise<VehicleDocumentsResponseContract> {
+    return firstValueFrom(
+      this.http.get<VehicleDocumentsResponseContract>(
+        `${this.backendApi.adminVehicles}/${encodeURIComponent(id)}/documents`
+      )
+    );
+  }
+
+  async addDocument(
+    id: string,
+    type: VehicleDocumentTypeContract,
+    validFrom: string,
+    validTo: string,
+    file: File
+  ): Promise<VehicleDocumentVersionContractDto> {
+    const formData = new FormData();
+    formData.append('validFrom', validFrom);
+    formData.append('validTo', validTo);
+    formData.append('file', file, file.name);
+    return firstValueFrom(
+      this.http.post<VehicleDocumentVersionContractDto>(
+        `${this.backendApi.adminVehicles}/${encodeURIComponent(id)}/documents/${type}`,
+        formData
+      )
+    );
+  }
+
+  async patchDocument(
+    id: string,
+    documentId: string,
+    options: { validFrom?: string; validTo?: string; file?: File }
+  ): Promise<VehicleDocumentVersionContractDto> {
+    const formData = new FormData();
+    if (options.validFrom) {
+      formData.append('validFrom', options.validFrom);
+    }
+    if (options.validTo) {
+      formData.append('validTo', options.validTo);
+    }
+    if (options.file) {
+      formData.append('file', options.file, options.file.name);
+    }
+    return firstValueFrom(
+      this.http.patch<VehicleDocumentVersionContractDto>(
+        `${this.backendApi.adminVehicles}/${encodeURIComponent(id)}/documents/${encodeURIComponent(documentId)}`,
+        formData
+      )
+    );
+  }
+
+  async downloadDocumentScanBlob(id: string, documentId: string): Promise<Blob> {
+    return firstValueFrom(
+      this.http.get(
+        `${this.backendApi.adminVehicles}/${encodeURIComponent(id)}/documents/${encodeURIComponent(documentId)}/scan`,
+        { responseType: 'blob' }
+      )
+    );
+  }
+
+  async deleteDocument(id: string, documentId: string): Promise<void> {
+    await firstValueFrom(
+      this.http.delete(
+        `${this.backendApi.adminVehicles}/${encodeURIComponent(id)}/documents/${encodeURIComponent(documentId)}`
       )
     );
   }

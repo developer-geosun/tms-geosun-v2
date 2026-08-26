@@ -16,4 +16,5 @@ public record UpdateVehicleRequest(
     @NotBlank @Size(max = 255) String owner,
     @NotBlank @Size(max = 16) String registrationSeries,
     @NotBlank @Size(max = 32) String registrationNumber,
-    @NotNull VehicleType vehicleType) {}
+    @NotNull VehicleType vehicleType,
+    Boolean hasRefrigerator) {}
