@@ -1,0 +1,344 @@
+<section class="admin-drivers page">
+  <header class="page__header admin-drivers__header">
+    <h1 class="page__title">{{ 'pages.adminDrivers.title' | translate }}</h1>
+    <div class="page__header-actions admin-drivers__actions">
+      <mat-button-toggle-group
+        [value]="listView()"
+        hideSingleSelectionIndicator
+        (change)="onViewChange($event.value)"
+      >
+        <mat-button-toggle value="all">
+          {{ 'pages.adminDrivers.viewAll' | translate }} {{ countAll() }}
+        </mat-button-toggle>
+        <mat-button-toggle value="active">
+          {{ 'pages.adminDrivers.viewActive' | translate }} {{ countActive() }}
+        </mat-button-toggle>
+        <mat-button-toggle value="deleted">
+          {{ 'pages.adminDrivers.viewDeleted' | translate }} {{ countDeleted() }}
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+
+      <mat-button-toggle-group
+        [value]="documentsFilter()"
+        hideSingleSelectionIndicator
+        (change)="onDocumentsFilterChange($event.value)"
+        [attr.aria-label]="'pages.adminDrivers.documentsFilter' | translate"
+      >
+        <mat-button-toggle value="all">
+          {{ 'pages.adminDrivers.documentsFilterAll' | translate }}
+        </mat-button-toggle>
+        <mat-button-toggle value="ok">
+          {{ 'pages.adminDrivers.documentsFilterOk' | translate }}
+        </mat-button-toggle>
+        <mat-button-toggle value="attention">
+          {{ 'pages.adminDrivers.documentsFilterAttention' | translate }}
+        </mat-button-toggle>
+        <mat-button-toggle value="problem">
+          {{ 'pages.adminDrivers.documentsFilterProblem' | translate }}
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+
+      <button
+        mat-stroked-button
+        type="button"
+        [matTooltip]="'pages.adminDrivers.refresh' | translate"
+        [attr.aria-label]="'pages.adminDrivers.refresh' | translate"
+        (click)="reload()"
+      >
+        <mat-icon aria-hidden="true">refresh</mat-icon>
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [matTooltip]="'pages.adminDrivers.create' | translate"
+        [attr.aria-label]="'pages.adminDrivers.create' | translate"
+        (click)="openCreate()"
+      >
+        {{ 'pages.adminDrivers.create' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (isLoading() || loadError()) {
+    <div class="admin-drivers__messages">
+      @if (isLoading()) {
+        <p>{{ 'pages.adminDrivers.loading' | translate }}</p>
+      } @else if (loadError()) {
+        <p class="admin-drivers__error">{{ loadError() | translate }}</p>
+      }
+    </div>
+  }
+
+  @if (isHandset()) {
+    <div class="admin-drivers__cards">
+      @if (!isLoading() && drivers().length === 0 && !loadError()) {
+        <p class="admin-drivers__empty">{{ 'pages.adminDrivers.empty' | translate }}</p>
+      } @else {
+        @for (row of pagedDrivers(); track row.id) {
+          <mat-card
+            class="driver-card"
+            appearance="outlined"
+            [class.driver-card--deleted]="row.deleted"
+          >
+            <div class="driver-card__header">
+              <div class="driver-card__title-block">
+                <div class="driver-card__name">{{ fullName(row) }}</div>
+                <div class="driver-card__phone">{{ row.phone }}</div>
+              </div>
+              <span
+                class="driver-card__badge"
+                [class.driver-card__badge--deleted]="row.deleted"
+                [class.driver-card__badge--active]="!row.deleted"
+              >
+                {{
+                  (row.deleted
+                    ? 'pages.adminDrivers.statusDeleted'
+                    : 'pages.adminDrivers.statusActive'
+                  ) | translate
+                }}
+              </span>
+            </div>
+
+            <mat-card-content class="driver-card__content">
+              <div class="driver-card__row">
+                <div class="driver-card__field">
+                  <span class="driver-card__label">
+                    {{ 'pages.adminDrivers.licenseNumber' | translate }}
+                  </span>
+                  <span class="driver-card__value">{{ row.licenseNumber }}</span>
+                </div>
+                <div class="driver-card__field">
+                  <span class="driver-card__label">
+                    {{ 'pages.adminDrivers.licenseCategories' | translate }}
+                  </span>
+                  <span class="driver-card__value">{{ row.licenseCategories }}</span>
+                </div>
+              </div>
+
+              <div class="driver-card__field">
+                <span class="driver-card__label">
+                  {{ 'pages.adminDrivers.licenseExpiresOn' | translate }}
+                </span>
+                <span class="driver-card__value">{{ row.licenseExpiresOn }}</span>
+              </div>
+
+              <div class="driver-card__field">
+                <span class="driver-card__label">
+                  {{ 'pages.adminDrivers.userEmail' | translate }}
+                </span>
+                <span class="driver-card__value">
+                  {{ row.userEmail || ('pages.adminDrivers.userNotLinked' | translate) }}
+                </span>
+              </div>
+
+              <div class="driver-card__field">
+                <span class="driver-card__label">
+                  {{ 'pages.adminDrivers.documents' | translate }}
+                </span>
+                <span
+                  class="driver-card__compliance"
+                  [class.driver-card__compliance--ok]="row.documentCompliance === 'OK'"
+                  [class.driver-card__compliance--attention]="row.documentCompliance === 'ATTENTION'"
+                  [class.driver-card__compliance--problem]="row.documentCompliance === 'PROBLEM'"
+                >
+                  {{ complianceLabelKey(row.documentCompliance) | translate }}
+                </span>
+              </div>
+            </mat-card-content>
+
+            <mat-card-actions class="driver-card__actions" align="end">
+              <button
+                mat-icon-button
+                type="button"
+                class="driver-action--edit"
+                [matTooltip]="'pages.adminDrivers.edit' | translate"
+                [attr.aria-label]="'pages.adminDrivers.edit' | translate"
+                (click)="openEdit(row)"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+              @if (!row.deleted) {
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="driver-action--danger"
+                  [matTooltip]="'pages.adminDrivers.delete' | translate"
+                  [attr.aria-label]="'pages.adminDrivers.delete' | translate"
+                  (click)="softDelete(row)"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              } @else {
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="driver-action--restore"
+                  [matTooltip]="'pages.adminDrivers.restore' | translate"
+                  [attr.aria-label]="'pages.adminDrivers.restore' | translate"
+                  (click)="restore(row)"
+                >
+                  <mat-icon>restore</mat-icon>
+                </button>
+              }
+            </mat-card-actions>
+          </mat-card>
+        }
+      }
+    </div>
+
+    <mat-paginator
+      class="admin-drivers__cards-paginator"
+      [length]="drivers().length"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="pageSizeOptions"
+      [showFirstLastButtons]="true"
+      (page)="onPage($event)"
+    />
+  } @else {
+    <div class="admin-drivers__table-panel">
+      <div class="admin-drivers__table-scroll table-shell">
+        <table mat-table [dataSource]="pagedDrivers()" class="admin-drivers__table">
+          <ng-container matColumnDef="fullName">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminDrivers.fullName' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row" class="admin-drivers__name">
+              {{ fullName(row) }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="phone">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminDrivers.phone' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">{{ row.phone }}</td>
+          </ng-container>
+          <ng-container matColumnDef="licenseNumber">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminDrivers.licenseNumber' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">{{ row.licenseNumber }}</td>
+          </ng-container>
+          <ng-container matColumnDef="licenseCategories">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminDrivers.licenseCategories' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">{{ row.licenseCategories }}</td>
+          </ng-container>
+          <ng-container matColumnDef="licenseExpiresOn">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminDrivers.licenseExpiresOn' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">{{ row.licenseExpiresOn }}</td>
+          </ng-container>
+          <ng-container matColumnDef="userEmail">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminDrivers.userEmail' | translate }}
+            </th>
+            <td
+              mat-cell
+              *matCellDef="let row"
+              class="admin-drivers__ellipsis"
+              [matTooltip]="row.userEmail || ''"
+            >
+              {{ row.userEmail || '—' }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="documents">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminDrivers.documents' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <span
+                class="admin-drivers__compliance"
+                [class.admin-drivers__compliance--ok]="row.documentCompliance === 'OK'"
+                [class.admin-drivers__compliance--attention]="
+                  row.documentCompliance === 'ATTENTION'
+                "
+                [class.admin-drivers__compliance--problem]="row.documentCompliance === 'PROBLEM'"
+              >
+                {{ complianceLabelKey(row.documentCompliance) | translate }}
+              </span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminDrivers.status' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <span
+                class="admin-drivers__status"
+                [class.admin-drivers__status--deleted]="row.deleted"
+                [class.admin-drivers__status--active]="!row.deleted"
+              >
+                {{
+                  (row.deleted
+                    ? 'pages.adminDrivers.statusDeleted'
+                    : 'pages.adminDrivers.statusActive'
+                  ) | translate
+                }}
+              </span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let row" class="admin-drivers__actions-cell">
+              <button
+                mat-icon-button
+                type="button"
+                class="driver-action--edit"
+                [matTooltip]="'pages.adminDrivers.edit' | translate"
+                [attr.aria-label]="'pages.adminDrivers.edit' | translate"
+                (click)="openEdit(row)"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+              @if (!row.deleted) {
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="driver-action--danger"
+                  [matTooltip]="'pages.adminDrivers.delete' | translate"
+                  [attr.aria-label]="'pages.adminDrivers.delete' | translate"
+                  (click)="softDelete(row)"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              } @else {
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="driver-action--restore"
+                  [matTooltip]="'pages.adminDrivers.restore' | translate"
+                  [attr.aria-label]="'pages.adminDrivers.restore' | translate"
+                  (click)="restore(row)"
+                >
+                  <mat-icon>restore</mat-icon>
+                </button>
+              }
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            [class.admin-drivers__row--deleted]="row.deleted"
+          ></tr>
+        </table>
+        @if (!isLoading() && drivers().length === 0 && !loadError()) {
+          <p class="admin-drivers__empty">{{ 'pages.adminDrivers.empty' | translate }}</p>
+        }
+      </div>
+      <mat-paginator
+        class="admin-drivers__paginator"
+        [length]="drivers().length"
+        [pageIndex]="pageIndex()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="pageSizeOptions"
+        [showFirstLastButtons]="true"
+        (page)="onPage($event)"
+      />
+    </div>
+  }
+</section>

@@ -1,0 +1,235 @@
+<section class="my-trips">
+  <header class="my-trips__header">
+    <h1>{{ 'pages.myTrips.title' | translate }}</h1>
+    <button mat-stroked-button type="button" (click)="reload()">
+      <mat-icon aria-hidden="true">refresh</mat-icon>
+      {{ 'pages.myTrips.refresh' | translate }}
+    </button>
+  </header>
+
+  @if (isLoading() || loadError()) {
+    <div class="my-trips__messages">
+      @if (isLoading()) {
+        <p>{{ 'pages.myTrips.loading' | translate }}</p>
+      } @else if (loadError()) {
+        <p class="my-trips__error">{{ loadError() | translate }}</p>
+      }
+    </div>
+  }
+
+  @if (!isLoading() && trips().length === 0 && !loadError()) {
+    <p class="my-trips__empty">{{ 'pages.myTrips.empty' | translate }}</p>
+  }
+
+  <mat-accordion class="my-trips__accordion" multi="false">
+    @for (trip of trips(); track trip.id) {
+      <mat-expansion-panel
+        [expanded]="expandedTripId() === trip.id"
+        (opened)="onPanelOpened(trip)"
+        (closed)="onPanelClosed(trip.id)"
+      >
+        <mat-expansion-panel-header>
+          <mat-panel-title>{{ trip.tripNumber }}</mat-panel-title>
+          <mat-panel-description>
+            <span>{{ trip.title || '—' }}</span>
+            <span class="my-trips__badge">{{ statusLabelKey(trip.status) | translate }}</span>
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        @if (detailLoading() && expandedTripId() === trip.id) {
+          <p>{{ 'pages.myTrips.detailLoading' | translate }}</p>
+        } @else if (detailTrip()?.id === trip.id) {
+          <div class="my-trips__detail">
+            <div class="my-trips__meta">
+              <div>
+                <span class="my-trips__label">{{ 'pages.myTrips.route' | translate }}</span>
+                <span>{{ detailTrip()?.originText || '—' }} → {{ detailTrip()?.destinationText || '—' }}</span>
+              </div>
+              <div>
+                <span class="my-trips__label">{{ 'pages.myTrips.plannedStartAt' | translate }}</span>
+                <span>{{ formatDateTime(detailTrip()?.plannedStartAt ?? null) }}</span>
+              </div>
+              <div>
+                <span class="my-trips__label">{{ 'pages.myTrips.plannedEndAt' | translate }}</span>
+                <span>{{ formatDateTime(detailTrip()?.plannedEndAt ?? null) }}</span>
+              </div>
+              @if (detailTrip()?.comment) {
+                <div>
+                  <span class="my-trips__label">{{ 'pages.myTrips.comment' | translate }}</span>
+                  <span>{{ detailTrip()?.comment }}</span>
+                </div>
+              }
+            </div>
+
+            <section class="my-trips__expense">
+              <header class="my-trips__expense-header">
+                <h2>{{ 'pages.myTrips.expenseReport' | translate }}</h2>
+                @if (expenseReport(); as report) {
+                  <span>{{ expenseStatusLabelKey(report.status) | translate }}</span>
+                }
+              </header>
+
+              @if (!expenseReport()) {
+                <p>{{ 'pages.myTrips.expenseUnavailable' | translate }}</p>
+              } @else {
+                @if (expenseEditable()) {
+                  <div class="my-trips__expense-actions">
+                    <button mat-stroked-button type="button" (click)="addExpenseLine()" [disabled]="expenseBusy()">
+                      {{ 'pages.myTrips.addExpenseLine' | translate }}
+                    </button>
+                    <button
+                      mat-flat-button
+                      color="primary"
+                      type="button"
+                      (click)="saveExpenseLines()"
+                      [disabled]="expenseBusy()"
+                    >
+                      {{ 'pages.myTrips.saveExpenseLines' | translate }}
+                    </button>
+                    <button mat-stroked-button type="button" (click)="submitExpense()" [disabled]="expenseBusy()">
+                      {{ 'pages.myTrips.submitExpense' | translate }}
+                    </button>
+                  </div>
+                }
+
+                @if (expenseReport()?.reviewComment) {
+                  <p class="my-trips__review-comment">
+                    {{ 'pages.myTrips.reviewComment' | translate }}: {{ expenseReport()?.reviewComment }}
+                  </p>
+                }
+
+                <div class="my-trips__expense-table table-shell">
+                  <table mat-table [dataSource]="editableLines()" class="my-trips__table">
+                    <ng-container matColumnDef="category">
+                      <th mat-header-cell *matHeaderCellDef>{{ 'pages.myTrips.expenseCategoryLabel' | translate }}</th>
+                      <td mat-cell *matCellDef="let row; let i = index">
+                        @if (expenseEditable()) {
+                          <mat-select
+                            [value]="row.category"
+                            (selectionChange)="updateExpenseLine(i, { category: $event.value })"
+                          >
+                            @for (cat of expenseCategories; track cat) {
+                              <mat-option [value]="cat">{{ categoryLabelKey(cat) | translate }}</mat-option>
+                            }
+                          </mat-select>
+                        } @else {
+                          {{ categoryLabelKey(row.category) | translate }}
+                        }
+                      </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="amount">
+                      <th mat-header-cell *matHeaderCellDef>{{ 'pages.myTrips.amount' | translate }}</th>
+                      <td mat-cell *matCellDef="let row; let i = index">
+                        @if (expenseEditable()) {
+                          <input
+                            class="my-trips__inline-input"
+                            type="number"
+                            [value]="row.amount"
+                            (input)="updateExpenseLine(i, { amount: $any($event.target).value })"
+                          />
+                        } @else {
+                          {{ row.amount }}
+                        }
+                      </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="currency">
+                      <th mat-header-cell *matHeaderCellDef>{{ 'pages.myTrips.currency' | translate }}</th>
+                      <td mat-cell *matCellDef="let row; let i = index">
+                        @if (expenseEditable()) {
+                          <input
+                            class="my-trips__inline-input my-trips__inline-input--code"
+                            maxlength="3"
+                            [value]="row.currencyCode"
+                            (input)="updateExpenseLine(i, { currencyCode: $any($event.target).value })"
+                          />
+                        } @else {
+                          {{ row.currencyCode }}
+                        }
+                      </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="expenseDate">
+                      <th mat-header-cell *matHeaderCellDef>{{ 'pages.myTrips.expenseDate' | translate }}</th>
+                      <td mat-cell *matCellDef="let row; let i = index">
+                        @if (expenseEditable()) {
+                          <input
+                            class="my-trips__inline-input"
+                            type="date"
+                            [value]="row.expenseDate"
+                            (input)="updateExpenseLine(i, { expenseDate: $any($event.target).value })"
+                          />
+                        } @else {
+                          {{ row.expenseDate }}
+                        }
+                      </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="description">
+                      <th mat-header-cell *matHeaderCellDef>{{ 'pages.myTrips.description' | translate }}</th>
+                      <td mat-cell *matCellDef="let row; let i = index">
+                        @if (expenseEditable()) {
+                          <input
+                            class="my-trips__inline-input my-trips__inline-input--wide"
+                            [value]="row.description"
+                            (input)="updateExpenseLine(i, { description: $any($event.target).value })"
+                          />
+                        } @else {
+                          {{ row.description || '—' }}
+                        }
+                      </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="receipt">
+                      <th mat-header-cell *matHeaderCellDef>{{ 'pages.myTrips.receipt' | translate }}</th>
+                      <td mat-cell *matCellDef="let row; let i = index">
+                        <div class="my-trips__receipt">
+                          <span>{{ row.receiptName || '—' }}</span>
+                          @if (expenseEditable() && row.id) {
+                            <label class="my-trips__file-btn">
+                              <input type="file" hidden (change)="onReceiptSelected(i, $event)" />
+                              <mat-icon aria-hidden="true">upload_file</mat-icon>
+                            </label>
+                            @if (row.storedFileId) {
+                              <button mat-icon-button type="button" (click)="deleteReceipt(i)">
+                                <mat-icon>delete</mat-icon>
+                              </button>
+                            }
+                          }
+                        </div>
+                      </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="actions">
+                      <th mat-header-cell *matHeaderCellDef></th>
+                      <td mat-cell *matCellDef="let row; let i = index">
+                        @if (expenseEditable()) {
+                          <button mat-icon-button type="button" (click)="removeExpenseLine(i)">
+                            <mat-icon>remove_circle_outline</mat-icon>
+                          </button>
+                        }
+                      </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="expenseColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: expenseColumns"></tr>
+                  </table>
+                </div>
+              }
+            </section>
+          </div>
+        }
+      </mat-expansion-panel>
+    }
+  </mat-accordion>
+
+  <mat-paginator
+    [length]="totalElements()"
+    [pageIndex]="pageIndex()"
+    [pageSize]="pageSize()"
+    [pageSizeOptions]="pageSizeOptions"
+    [showFirstLastButtons]="true"
+    (page)="onPage($event)"
+  />
+</section>

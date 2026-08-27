@@ -128,6 +128,26 @@ export class ToolbarComponent {
       roles: ['admin', 'manager'] as const
     },
     {
+      route: '/admin/drivers',
+      labelKey: 'navigation.adminDrivers',
+      roles: ['admin', 'manager'] as const
+    },
+    {
+      route: '/admin/vehicle-combinations',
+      labelKey: 'navigation.adminVehicleCombinations',
+      roles: ['admin', 'manager'] as const
+    },
+    {
+      route: '/admin/trips',
+      labelKey: 'navigation.adminTrips',
+      roles: ['admin', 'manager'] as const
+    },
+    {
+      route: '/my-trips',
+      labelKey: 'navigation.myTrips',
+      roles: ['admin', 'manager', 'driver'] as const
+    },
+    {
       route: '/admin/users',
       labelKey: 'navigation.adminUsers',
       roles: ['admin'] as const

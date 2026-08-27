@@ -1,0 +1,156 @@
+@use 'breakpoints' as bp;
+
+:host {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-trips {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-shrink: 0;
+
+    h1 {
+      margin: 0;
+      font-size: var(--page-title-size, clamp(1.1rem, 2.5vw, 1.5rem));
+      font-weight: 600;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  &__status-filter {
+    width: 12rem;
+  }
+
+  &__messages,
+  &__empty {
+    flex-shrink: 0;
+  }
+
+  &__error {
+    color: var(--mat-sys-error, #b3261e);
+  }
+
+  &__cards {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &__table-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.12));
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  &__table-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  &__table {
+    width: 100%;
+  }
+}
+
+.trip-card {
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem 0;
+  }
+
+  &__number {
+    font-weight: 600;
+  }
+
+  &__title {
+    opacity: 0.85;
+  }
+
+  &__badge {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: var(--mat-sys-secondary-container, #e8def8);
+    white-space: nowrap;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  &__label {
+    font-size: 0.75rem;
+    opacity: 0.7;
+  }
+
+  &__actions {
+    padding: 0 1rem 1rem;
+  }
+}
+
+@include bp.handset {
+  .admin-trips {
+    overflow-y: auto;
+
+    &__header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    &__actions {
+      flex-direction: column;
+      align-items: stretch;
+
+      > a,
+      > button,
+      .admin-trips__status-filter {
+        width: 100%;
+      }
+    }
+  }
+}

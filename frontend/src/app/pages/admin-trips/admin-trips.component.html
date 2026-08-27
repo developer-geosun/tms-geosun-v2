@@ -1,0 +1,137 @@
+<section class="admin-trips">
+  <header class="admin-trips__header">
+    <h1>{{ 'pages.adminTrips.title' | translate }}</h1>
+    <div class="admin-trips__actions">
+      <mat-form-field appearance="outline" class="admin-trips__status-filter" subscriptSizing="dynamic">
+        <mat-label>{{ 'pages.adminTrips.statusFilter' | translate }}</mat-label>
+        <mat-select
+          [value]="statusFilter()"
+          (selectionChange)="onStatusFilterChange($event.value)"
+        >
+          @for (status of statusOptions; track status) {
+            <mat-option [value]="status">
+              {{
+                (status
+                  ? statusLabelKey(status)
+                  : 'pages.adminTrips.statusFilterAll'
+                ) | translate
+              }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <button mat-stroked-button type="button" (click)="reload()">
+        <mat-icon aria-hidden="true">refresh</mat-icon>
+      </button>
+      <a mat-flat-button color="primary" routerLink="/admin/trips/new">
+        {{ 'pages.adminTrips.create' | translate }}
+      </a>
+    </div>
+  </header>
+
+  @if (isLoading() || loadError()) {
+    <div class="admin-trips__messages">
+      @if (isLoading()) {
+        <p>{{ 'pages.adminTrips.loading' | translate }}</p>
+      } @else if (loadError()) {
+        <p class="admin-trips__error">{{ loadError() | translate }}</p>
+      }
+    </div>
+  }
+
+  @if (isHandset()) {
+    <div class="admin-trips__cards">
+      @if (!isLoading() && trips().length === 0 && !loadError()) {
+        <p class="admin-trips__empty">{{ 'pages.adminTrips.empty' | translate }}</p>
+      } @else {
+        @for (row of trips(); track row.id) {
+          <mat-card class="trip-card" appearance="outlined">
+            <div class="trip-card__header">
+              <div>
+                <div class="trip-card__number">{{ row.tripNumber }}</div>
+                <div class="trip-card__title">{{ row.title || '—' }}</div>
+              </div>
+              <span class="trip-card__badge">{{ statusLabelKey(row.status) | translate }}</span>
+            </div>
+            <mat-card-content class="trip-card__content">
+              <div class="trip-card__field">
+                <span class="trip-card__label">{{ 'pages.adminTrips.driver' | translate }}</span>
+                <span>{{ row.driverName || '—' }}</span>
+              </div>
+              <div class="trip-card__field">
+                <span class="trip-card__label">{{ 'pages.adminTrips.route' | translate }}</span>
+                <span>{{ row.originText || '—' }} → {{ row.destinationText || '—' }}</span>
+              </div>
+              <div class="trip-card__field">
+                <span class="trip-card__label">{{ 'pages.adminTrips.plannedStartAt' | translate }}</span>
+                <span>{{ formatDateTime(row.plannedStartAt) }}</span>
+              </div>
+            </mat-card-content>
+            <div class="trip-card__actions">
+              <a mat-stroked-button [routerLink]="['/admin/trips', row.id]">
+                {{ 'pages.adminTrips.open' | translate }}
+              </a>
+            </div>
+          </mat-card>
+        }
+      }
+    </div>
+  } @else {
+    <div class="admin-trips__table-panel">
+      <div class="admin-trips__table-scroll table-shell">
+        <table mat-table [dataSource]="trips()" class="admin-trips__table">
+          <ng-container matColumnDef="tripNumber">
+            <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminTrips.tripNumber' | translate }}</th>
+            <td mat-cell *matCellDef="let row">{{ row.tripNumber }}</td>
+          </ng-container>
+          <ng-container matColumnDef="title">
+            <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminTrips.tripTitle' | translate }}</th>
+            <td mat-cell *matCellDef="let row">{{ row.title || '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminTrips.statusLabel' | translate }}</th>
+            <td mat-cell *matCellDef="let row">{{ statusLabelKey(row.status) | translate }}</td>
+          </ng-container>
+          <ng-container matColumnDef="driver">
+            <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminTrips.driver' | translate }}</th>
+            <td mat-cell *matCellDef="let row">{{ row.driverName || '—' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="route">
+            <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminTrips.route' | translate }}</th>
+            <td mat-cell *matCellDef="let row">
+              {{ row.originText || '—' }} → {{ row.destinationText || '—' }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="plannedStartAt">
+            <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminTrips.plannedStartAt' | translate }}</th>
+            <td mat-cell *matCellDef="let row">{{ formatDateTime(row.plannedStartAt) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminTrips.actions' | translate }}</th>
+            <td mat-cell *matCellDef="let row">
+              <a
+                mat-icon-button
+                [routerLink]="['/admin/trips', row.id]"
+                [matTooltip]="'pages.adminTrips.open' | translate"
+              >
+                <mat-icon>open_in_new</mat-icon>
+              </a>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+    </div>
+  }
+
+  <mat-paginator
+    [length]="totalElements()"
+    [pageIndex]="pageIndex()"
+    [pageSize]="pageSize()"
+    [pageSizeOptions]="pageSizeOptions"
+    [showFirstLastButtons]="true"
+    (page)="onPage($event)"
+  />
+</section>

@@ -1,0 +1,321 @@
+<section class="admin-trip-detail">
+  <header class="admin-trip-detail__header">
+    <div class="admin-trip-detail__title-block">
+      <a mat-stroked-button routerLink="/admin/trips">
+        <mat-icon aria-hidden="true">arrow_back</mat-icon>
+        {{ 'pages.adminTrips.backToList' | translate }}
+      </a>
+      <h1>
+        {{
+          (isCreate() ? 'pages.adminTrips.createTitle' : 'pages.adminTrips.editTitle') | translate
+        }}
+        @if (trip(); as t) {
+          <span class="admin-trip-detail__number">{{ t.tripNumber }}</span>
+        }
+      </h1>
+    </div>
+    @if (trip(); as t) {
+      <span class="admin-trip-detail__status">{{ statusLabelKey(t.status) | translate }}</span>
+    }
+  </header>
+
+  @if (isLoading() || loadError()) {
+    <div class="admin-trip-detail__messages">
+      @if (isLoading()) {
+        <p>{{ 'pages.adminTrips.loading' | translate }}</p>
+      } @else if (loadError()) {
+        <p class="admin-trip-detail__error">{{ loadError() | translate }}</p>
+      }
+    </div>
+  }
+
+  <form class="admin-trip-detail__form" [formGroup]="form" (ngSubmit)="saveTrip()">
+    <div class="admin-trip-detail__grid">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'pages.adminTrips.tripTitle' | translate }}</mat-label>
+        <input matInput formControlName="title" maxlength="256" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'pages.adminTrips.routeRequestId' | translate }}</mat-label>
+        <input matInput type="number" formControlName="routeRequestId" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="admin-trip-detail__full">
+        <mat-label>{{ 'pages.adminTrips.comment' | translate }}</mat-label>
+        <textarea matInput rows="2" formControlName="comment"></textarea>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'pages.adminTrips.originText' | translate }}</mat-label>
+        <input matInput formControlName="originText" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'pages.adminTrips.destinationText' | translate }}</mat-label>
+        <input matInput formControlName="destinationText" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'pages.adminTrips.plannedStartAt' | translate }}</mat-label>
+        <input matInput type="datetime-local" formControlName="plannedStartAt" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'pages.adminTrips.plannedEndAt' | translate }}</mat-label>
+        <input matInput type="datetime-local" formControlName="plannedEndAt" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="admin-trip-detail__full">
+        <mat-label>{{ 'pages.adminTrips.driver' | translate }}</mat-label>
+        <mat-select formControlName="driverId">
+          <mat-option value="">—</mat-option>
+          @for (d of drivers(); track d.id) {
+            <mat-option [value]="d.id">{{ driverLabel(d) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="admin-trip-detail__vehicle">
+      <mat-button-toggle-group
+        [value]="vehicleMode()"
+        hideSingleSelectionIndicator
+        (change)="setVehicleMode($event.value)"
+      >
+        <mat-button-toggle value="combination">
+          {{ 'pages.adminTrips.vehicleModeCombination' | translate }}
+        </mat-button-toggle>
+        <mat-button-toggle value="manual">
+          {{ 'pages.adminTrips.vehicleModeManual' | translate }}
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+
+      @if (vehicleMode() === 'combination') {
+        <mat-form-field appearance="outline" class="admin-trip-detail__full">
+          <mat-label>{{ 'pages.adminTrips.combination' | translate }}</mat-label>
+          <mat-select formControlName="combinationId">
+            <mat-option value="">—</mat-option>
+            @for (c of combinations(); track c.id) {
+              <mat-option [value]="c.id">{{ combinationLabel(c) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      } @else {
+        <div class="admin-trip-detail__grid">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'pages.adminTrips.tractor' | translate }}</mat-label>
+            <mat-select formControlName="tractorId">
+              <mat-option value="">—</mat-option>
+              @for (v of tractors(); track v.id) {
+                <mat-option [value]="v.id">{{ v.plateNumber }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'pages.adminTrips.trailer' | translate }}</mat-label>
+            <mat-select formControlName="trailerId">
+              <mat-option value="">—</mat-option>
+              @for (v of trailers(); track v.id) {
+                <mat-option [value]="v.id">{{ v.plateNumber }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      }
+    </div>
+
+    <div class="admin-trip-detail__form-actions">
+      <button mat-flat-button color="primary" type="submit" [disabled]="isSaving() || isLoading()">
+        {{ 'pages.adminTrips.save' | translate }}
+      </button>
+    </div>
+  </form>
+
+  @if (!isCreate() && trip(); as t) {
+    <section class="admin-trip-detail__status-block">
+      <h2>{{ 'pages.adminTrips.statusActions' | translate }}</h2>
+      <div class="admin-trip-detail__status-actions">
+        @for (status of statusActions(); track status) {
+          <button mat-stroked-button type="button" (click)="changeStatus(status)">
+            {{ statusLabelKey(status) | translate }}
+          </button>
+        }
+        @if (statusActions().length === 0) {
+          <p>{{ 'pages.adminTrips.noStatusActions' | translate }}</p>
+        }
+      </div>
+    </section>
+
+    <section class="admin-trip-detail__expense">
+      <header class="admin-trip-detail__expense-header">
+        <h2>{{ 'pages.adminTrips.expenseReport' | translate }}</h2>
+        @if (expenseReport(); as report) {
+          <span>{{ expenseStatusLabelKey(report.status) | translate }}</span>
+        }
+      </header>
+
+      @if (!expenseReport()) {
+        <p>{{ 'pages.adminTrips.expenseUnavailable' | translate }}</p>
+      } @else {
+        <div class="admin-trip-detail__expense-actions">
+          @if (expenseEditable()) {
+            <button mat-stroked-button type="button" (click)="addExpenseLine()" [disabled]="isExpenseBusy()">
+              {{ 'pages.adminTrips.addExpenseLine' | translate }}
+            </button>
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              (click)="saveExpenseLines()"
+              [disabled]="isExpenseBusy()"
+            >
+              {{ 'pages.adminTrips.saveExpenseLines' | translate }}
+            </button>
+            <button mat-stroked-button type="button" (click)="submitExpense()" [disabled]="isExpenseBusy()">
+              {{ 'pages.adminTrips.submitExpense' | translate }}
+            </button>
+          }
+          @if (expenseReport()?.status === 'SUBMITTED') {
+            <button mat-flat-button color="primary" type="button" (click)="approveExpense()" [disabled]="isExpenseBusy()">
+              {{ 'pages.adminTrips.approve' | translate }}
+            </button>
+            <button mat-stroked-button color="warn" type="button" (click)="rejectExpense()" [disabled]="isExpenseBusy()">
+              {{ 'pages.adminTrips.reject' | translate }}
+            </button>
+          }
+          @if (expenseReport()?.status === 'APPROVED' || expenseReport()?.status === 'REJECTED') {
+            <button mat-stroked-button type="button" (click)="reopenExpense()" [disabled]="isExpenseBusy()">
+              {{ 'pages.adminTrips.reopen' | translate }}
+            </button>
+          }
+        </div>
+
+        @if (expenseReport()?.reviewComment) {
+          <p class="admin-trip-detail__review-comment">
+            {{ 'pages.adminTrips.reviewComment' | translate }}: {{ expenseReport()?.reviewComment }}
+          </p>
+        }
+
+        <div class="admin-trip-detail__expense-table table-shell">
+          <table mat-table [dataSource]="editableLines()" class="admin-trip-detail__table">
+            <ng-container matColumnDef="category">
+              <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminTrips.expenseCategoryLabel' | translate }}</th>
+              <td mat-cell *matCellDef="let row; let i = index">
+                @if (expenseEditable()) {
+                  <mat-select
+                    [value]="row.category"
+                    (selectionChange)="updateExpenseLine(i, { category: $event.value })"
+                  >
+                    @for (cat of expenseCategories; track cat) {
+                      <mat-option [value]="cat">{{ categoryLabelKey(cat) | translate }}</mat-option>
+                    }
+                  </mat-select>
+                } @else {
+                  {{ categoryLabelKey(row.category) | translate }}
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="amount">
+              <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminTrips.amount' | translate }}</th>
+              <td mat-cell *matCellDef="let row; let i = index">
+                @if (expenseEditable()) {
+                  <input
+                    class="admin-trip-detail__inline-input"
+                    type="number"
+                    [value]="row.amount"
+                    (input)="updateExpenseLine(i, { amount: $any($event.target).value })"
+                  />
+                } @else {
+                  {{ row.amount }}
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="currency">
+              <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminTrips.currency' | translate }}</th>
+              <td mat-cell *matCellDef="let row; let i = index">
+                @if (expenseEditable()) {
+                  <input
+                    class="admin-trip-detail__inline-input admin-trip-detail__inline-input--code"
+                    maxlength="3"
+                    [value]="row.currencyCode"
+                    (input)="updateExpenseLine(i, { currencyCode: $any($event.target).value })"
+                  />
+                } @else {
+                  {{ row.currencyCode }}
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="expenseDate">
+              <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminTrips.expenseDate' | translate }}</th>
+              <td mat-cell *matCellDef="let row; let i = index">
+                @if (expenseEditable()) {
+                  <input
+                    class="admin-trip-detail__inline-input"
+                    type="date"
+                    [value]="row.expenseDate"
+                    (input)="updateExpenseLine(i, { expenseDate: $any($event.target).value })"
+                  />
+                } @else {
+                  {{ row.expenseDate }}
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="description">
+              <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminTrips.description' | translate }}</th>
+              <td mat-cell *matCellDef="let row; let i = index">
+                @if (expenseEditable()) {
+                  <input
+                    class="admin-trip-detail__inline-input admin-trip-detail__inline-input--wide"
+                    [value]="row.description"
+                    (input)="updateExpenseLine(i, { description: $any($event.target).value })"
+                  />
+                } @else {
+                  {{ row.description || '—' }}
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="receipt">
+              <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminTrips.receipt' | translate }}</th>
+              <td mat-cell *matCellDef="let row; let i = index">
+                <div class="admin-trip-detail__receipt">
+                  <span>{{ row.receiptName || '—' }}</span>
+                  @if (expenseEditable() && row.id) {
+                    <label class="admin-trip-detail__file-btn">
+                      <input type="file" hidden (change)="onReceiptSelected(i, $event)" />
+                      <mat-icon aria-hidden="true">upload_file</mat-icon>
+                    </label>
+                    @if (row.storedFileId) {
+                      <button mat-icon-button type="button" (click)="deleteReceipt(i)">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    }
+                  }
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let row; let i = index">
+                @if (expenseEditable()) {
+                  <button mat-icon-button type="button" (click)="removeExpenseLine(i)">
+                    <mat-icon>remove_circle_outline</mat-icon>
+                  </button>
+                }
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="expenseColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: expenseColumns"></tr>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</section>

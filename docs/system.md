@@ -9,7 +9,7 @@
 
 - Frontend на Angular 21 с маршрутизацией, i18n и auth-слоем (`AuthService`, `AuthGuard`, `AuthInterceptor`, login-page).
 - Экраны `/route-builder` (построение и сохранение маршрута), `/routes` (список и открытие сохранённых маршрутов), `/my-freight-requests` (заявки пользователя) и диалог заявки на фрахт работают через backend API.
-- Есть admin-страницы `/admin/route-requests` (очередь, ИИ-расчёт, quote), `/admin/freight-calculation-scenarios` (сценарии) и `/admin/users` (управление пользователями и ролями, только `ADMIN`).
+- Есть admin-страницы `/admin/route-requests` (очередь, ИИ-расчёт, quote), `/admin/freight-calculation-scenarios` (сценарии), `/admin/users` (управление пользователями и ролями, только `ADMIN`), `/admin/drivers`, `/admin/vehicle-combinations`, `/admin/trips`, а также `/my-trips` для водителя.
 - Backend на Java 21 + Spring Boot 3 с JWT auth, refresh token rotation и RBAC.
 - Backend модуль `routes`: сохранение, чтение списка/деталей (в т.ч. `view=active|all|deleted`), soft delete, блокировка `PUT` после заявки, `duplicate`/`restore`.
 - Backend модуль `route-requests`: создание заявок, список заявок пользователя, admin очередь; пробіг по країнах у відповіді заявки — з БД до явного admin `POST .../country-breakdown` (провайдер расчёта выбирается feature flag: `here` или `geojson`).
@@ -28,6 +28,10 @@
 - **Route**: сохраненный snapshot маршрута (polyline, точки, метаданные).
 - **RouteRequest**: заявка на перевозку, связанная с сохраненным маршрутом.
 - **FreightQuote**: коммерческое предложение по заявке с версионностью и статусом.
+- **Driver**: кадровая карточка водителя (опциональная привязка к `User`, сканы паспорта/прав).
+- **Vehicle / VehicleCombination**: справочник ТС и именованные автопоезда (тягач + полуприцеп).
+- **Trip**: операционный рейс с назначением водителя/состава и статусами исполнения.
+- **TripExpenseReport**: фактический отчёт по затратам рейса (строки + чеки, submit/approve).
 
 ## Основные API (текущее состояние)
 
@@ -58,6 +62,10 @@
 - `PATCH /api/v1/admin/users/{id}/active` — activate/deactivate (`ADMIN`).
 - `DELETE /api/v1/admin/users/{id}` — soft-delete пользователя (`ADMIN`); legacy: `DELETE /api/v1/users/{id}`.
 - `POST /api/v1/admin/users/{id}/restore` — восстановить soft-deleted пользователя (`ADMIN`).
+- `GET/POST/PUT/DELETE /api/v1/admin/drivers` — справочник водителей + soft-delete/restore, документы, привязка User (`ADMIN`/`MANAGER`).
+- `GET/POST/PUT/DELETE /api/v1/admin/vehicle-combinations` — автопоезда (`ADMIN`/`MANAGER`).
+- `GET/POST/PUT/DELETE /api/v1/admin/trips` — учёт рейсов, `PATCH .../status`, expense-report (`ADMIN`/`MANAGER`).
+- `GET /api/v1/my/trips` — рейсы текущего водителя (через привязанную карточку) и свой expense-report.
 
 Переменные окружения для breakdown по странам: `COUNTRY_BREAKDOWN_PROVIDER=here|geojson` (по умолчанию `here`), `HERE_API_KEY` обязателен только при `COUNTRY_BREAKDOWN_PROVIDER=here`. Для `geojson` используются локальные границы стран из ресурсов backend.
 

@@ -1,0 +1,204 @@
+<section class="admin-vehicle-combinations">
+  <header class="admin-vehicle-combinations__header">
+    <h1>{{ 'pages.adminVehicleCombinations.title' | translate }}</h1>
+    <div class="admin-vehicle-combinations__actions">
+      <mat-button-toggle-group
+        [value]="listView()"
+        hideSingleSelectionIndicator
+        (change)="onViewChange($event.value)"
+      >
+        <mat-button-toggle value="active">
+          {{ 'pages.adminVehicleCombinations.viewActive' | translate }} {{ countActive() }}
+        </mat-button-toggle>
+        <mat-button-toggle value="all">
+          {{ 'pages.adminVehicleCombinations.viewAll' | translate }} {{ countAll() }}
+        </mat-button-toggle>
+        <mat-button-toggle value="deleted">
+          {{ 'pages.adminVehicleCombinations.viewDeleted' | translate }} {{ countDeleted() }}
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+
+      @if (!isHandset()) {
+        <mat-button-toggle-group
+          [value]="preferredDisplayMode()"
+          hideSingleSelectionIndicator
+          (change)="onDisplayModeChange($event.value)"
+        >
+          <mat-button-toggle value="table">
+            <mat-icon aria-hidden="true">view_list</mat-icon>
+          </mat-button-toggle>
+          <mat-button-toggle value="cards">
+            <mat-icon aria-hidden="true">view_module</mat-icon>
+          </mat-button-toggle>
+        </mat-button-toggle-group>
+      }
+
+      <button mat-stroked-button type="button" (click)="reload()">
+        <mat-icon aria-hidden="true">refresh</mat-icon>
+      </button>
+      <button mat-flat-button color="primary" type="button" (click)="openCreate()">
+        {{ 'pages.adminVehicleCombinations.create' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (isLoading() || loadError()) {
+    <div class="admin-vehicle-combinations__messages">
+      @if (isLoading()) {
+        <p>{{ 'pages.adminVehicleCombinations.loading' | translate }}</p>
+      } @else if (loadError()) {
+        <p class="admin-vehicle-combinations__error">{{ loadError() | translate }}</p>
+      }
+    </div>
+  }
+
+  @if (displayMode() === 'cards') {
+    <div class="admin-vehicle-combinations__cards">
+      @if (!isLoading() && combinations().length === 0 && !loadError()) {
+        <p class="admin-vehicle-combinations__empty">
+          {{ 'pages.adminVehicleCombinations.empty' | translate }}
+        </p>
+      } @else {
+        @for (row of pagedCombinations(); track row.id) {
+          <mat-card
+            class="combination-card"
+            appearance="outlined"
+            [class.combination-card--deleted]="row.deleted"
+          >
+            <div class="combination-card__header">
+              <div class="combination-card__title">{{ displayName(row) }}</div>
+              <span
+                class="combination-card__badge"
+                [class.combination-card__badge--deleted]="row.deleted"
+              >
+                {{
+                  (row.deleted
+                    ? 'pages.adminVehicleCombinations.statusDeleted'
+                    : 'pages.adminVehicleCombinations.statusActive'
+                  ) | translate
+                }}
+              </span>
+            </div>
+            <mat-card-content class="combination-card__content">
+              <div class="combination-card__field">
+                <span class="combination-card__label">
+                  {{ 'pages.adminVehicleCombinations.tractor' | translate }}
+                </span>
+                <span>{{ row.tractorPlateNumber }}</span>
+              </div>
+              <div class="combination-card__field">
+                <span class="combination-card__label">
+                  {{ 'pages.adminVehicleCombinations.trailer' | translate }}
+                </span>
+                <span>{{ row.trailerPlateNumber }}</span>
+              </div>
+            </mat-card-content>
+            <div class="combination-card__actions">
+              @if (!row.deleted) {
+                <button mat-stroked-button type="button" (click)="openEdit(row)">
+                  {{ 'pages.adminVehicleCombinations.edit' | translate }}
+                </button>
+                <button mat-stroked-button color="warn" type="button" (click)="softDelete(row)">
+                  {{ 'pages.adminVehicleCombinations.delete' | translate }}
+                </button>
+              } @else {
+                <button mat-stroked-button type="button" (click)="restore(row)">
+                  {{ 'pages.adminVehicleCombinations.restore' | translate }}
+                </button>
+              }
+            </div>
+          </mat-card>
+        }
+      }
+    </div>
+  } @else {
+    <div class="admin-vehicle-combinations__table-panel">
+      <div class="admin-vehicle-combinations__table-scroll table-shell">
+        <table mat-table [dataSource]="pagedCombinations()" class="admin-vehicle-combinations__table">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminVehicleCombinations.name' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">{{ displayName(row) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="tractor">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminVehicleCombinations.tractor' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">{{ row.tractorPlateNumber }}</td>
+          </ng-container>
+          <ng-container matColumnDef="trailer">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminVehicleCombinations.trailer' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">{{ row.trailerPlateNumber }}</td>
+          </ng-container>
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminVehicleCombinations.status' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">
+              {{
+                (row.deleted
+                  ? 'pages.adminVehicleCombinations.statusDeleted'
+                  : 'pages.adminVehicleCombinations.statusActive'
+                ) | translate
+              }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminVehicleCombinations.actions' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <div class="admin-vehicle-combinations__row-actions">
+                @if (!row.deleted) {
+                  <button
+                    mat-icon-button
+                    type="button"
+                    [matTooltip]="'pages.adminVehicleCombinations.edit' | translate"
+                    (click)="openEdit(row)"
+                  >
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    [matTooltip]="'pages.adminVehicleCombinations.delete' | translate"
+                    (click)="softDelete(row)"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                } @else {
+                  <button
+                    mat-icon-button
+                    type="button"
+                    [matTooltip]="'pages.adminVehicleCombinations.restore' | translate"
+                    (click)="restore(row)"
+                  >
+                    <mat-icon>restore_from_trash</mat-icon>
+                  </button>
+                }
+              </div>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            [class.admin-vehicle-combinations__row--deleted]="row.deleted"
+          ></tr>
+        </table>
+      </div>
+    </div>
+  }
+
+  <mat-paginator
+    [length]="combinations().length"
+    [pageIndex]="pageIndex()"
+    [pageSize]="pageSize()"
+    [pageSizeOptions]="pageSizeOptions"
+    [showFirstLastButtons]="true"
+    (page)="onPage($event)"
+  />
+</section>

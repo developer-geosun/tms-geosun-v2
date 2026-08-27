@@ -20,4 +20,10 @@ export * from './stored-files-api.service';
 export * from './stored-files-contracts.model';
 export * from './vehicles-api.service';
 export * from './vehicles-contracts.model';
+export * from './drivers-api.service';
+export * from './drivers-contracts.model';
+export * from './vehicle-combinations-api.service';
+export * from './vehicle-combinations-contracts.model';
+export * from './trips-api.service';
+export * from './trips-contracts.model';
 

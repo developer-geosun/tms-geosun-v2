@@ -132,6 +132,53 @@ export const routes: Routes = [
       )
   },
   {
+    path: 'admin/drivers',
+    canActivate: [authAvailabilityGuard, serviceStopGuard, authGuard],
+    data: { roles: ['admin', 'manager'] },
+    loadComponent: () =>
+      import('./pages/admin-drivers/admin-drivers.component').then((m) => m.AdminDriversComponent)
+  },
+  {
+    path: 'admin/vehicle-combinations',
+    canActivate: [authAvailabilityGuard, serviceStopGuard, authGuard],
+    data: { roles: ['admin', 'manager'] },
+    loadComponent: () =>
+      import('./pages/admin-vehicle-combinations/admin-vehicle-combinations.component').then(
+        (m) => m.AdminVehicleCombinationsComponent
+      )
+  },
+  {
+    path: 'admin/trips',
+    canActivate: [authAvailabilityGuard, serviceStopGuard, authGuard],
+    data: { roles: ['admin', 'manager'] },
+    loadComponent: () =>
+      import('./pages/admin-trips/admin-trips.component').then((m) => m.AdminTripsComponent)
+  },
+  {
+    path: 'admin/trips/new',
+    canActivate: [authAvailabilityGuard, serviceStopGuard, authGuard],
+    data: { roles: ['admin', 'manager'] },
+    loadComponent: () =>
+      import('./pages/admin-trips/admin-trip-detail.component').then(
+        (m) => m.AdminTripDetailComponent
+      )
+  },
+  {
+    path: 'admin/trips/:id',
+    canActivate: [authAvailabilityGuard, serviceStopGuard, authGuard],
+    data: { roles: ['admin', 'manager'] },
+    loadComponent: () =>
+      import('./pages/admin-trips/admin-trip-detail.component').then(
+        (m) => m.AdminTripDetailComponent
+      )
+  },
+  {
+    path: 'my-trips',
+    canActivate: [authAvailabilityGuard, serviceStopGuard, authGuard],
+    data: { roles: ['admin', 'manager', 'driver'] },
+    loadComponent: () => import('./pages/my-trips/my-trips.component').then((m) => m.MyTripsComponent)
+  },
+  {
     path: '404',
     loadComponent: () => import('./pages/not-found/not-found.component').then((m) => m.NotFoundComponent)
   },

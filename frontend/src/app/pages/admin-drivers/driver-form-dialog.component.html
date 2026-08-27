@@ -1,0 +1,278 @@
+<h2 mat-dialog-title>{{ dialogTitle() }}</h2>
+
+<mat-dialog-content class="driver-form-dialog__content">
+  <form
+    [formGroup]="form"
+    (ngSubmit)="save()"
+    class="driver-form-dialog__form"
+    id="driver-form"
+  >
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'pages.adminDrivers.lastName' | translate }}</mat-label>
+      <input matInput formControlName="lastName" autocomplete="family-name" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'pages.adminDrivers.firstName' | translate }}</mat-label>
+      <input matInput formControlName="firstName" autocomplete="given-name" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'pages.adminDrivers.patronymic' | translate }}</mat-label>
+      <input matInput formControlName="patronymic" autocomplete="additional-name" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'pages.adminDrivers.phone' | translate }}</mat-label>
+      <input matInput formControlName="phone" autocomplete="tel" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'pages.adminDrivers.licenseNumber' | translate }}</mat-label>
+      <input matInput formControlName="licenseNumber" autocomplete="off" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'pages.adminDrivers.licenseCategories' | translate }}</mat-label>
+      <input matInput formControlName="licenseCategories" autocomplete="off" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'pages.adminDrivers.licenseExpiresOn' | translate }}</mat-label>
+      <input matInput [matDatepicker]="expiresPicker" formControlName="licenseExpiresOn" />
+      <mat-datepicker-toggle matIconSuffix [for]="expiresPicker" />
+      <mat-datepicker #expiresPicker />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'pages.adminDrivers.comment' | translate }}</mat-label>
+      <textarea matInput formControlName="comment" rows="3"></textarea>
+    </mat-form-field>
+  </form>
+
+  @if (hasDriverId()) {
+    <section class="driver-form-dialog__section">
+      <h3>{{ 'pages.adminDrivers.linkUserTitle' | translate }}</h3>
+
+      @if (driver()?.userEmail; as linkedEmail) {
+        <p class="driver-form-dialog__linked">
+          {{ 'pages.adminDrivers.linkedUser' | translate }}: <strong>{{ linkedEmail }}</strong>
+        </p>
+        @if (!isDeleted()) {
+          <button
+            mat-stroked-button
+            color="warn"
+            type="button"
+            [disabled]="linkBusy()"
+            (click)="unlinkUser()"
+          >
+            {{ 'pages.adminDrivers.unlinkUser' | translate }}
+          </button>
+        }
+      } @else if (!isDeleted()) {
+        <div class="driver-form-dialog__link-row">
+          <mat-form-field appearance="outline" class="driver-form-dialog__link-email">
+            <mat-label>{{ 'pages.adminDrivers.linkEmail' | translate }}</mat-label>
+            <input
+              matInput
+              type="email"
+              [value]="linkEmail()"
+              (input)="onLinkEmailInput($event)"
+              autocomplete="email"
+            />
+          </mat-form-field>
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="!linkEmail().trim() || linkBusy()"
+            (click)="findLinkableUser()"
+          >
+            {{ 'pages.adminDrivers.findUser' | translate }}
+          </button>
+        </div>
+
+        @if (linkableUser(); as user) {
+          <div class="driver-form-dialog__link-result">
+            <p>
+              {{ user.email }}
+              <span class="driver-form-dialog__hint">({{ user.role }})</span>
+            </p>
+            <button
+              mat-flat-button
+              color="primary"
+              type="button"
+              [disabled]="linkBusy()"
+              (click)="linkUser()"
+            >
+              {{ 'pages.adminDrivers.linkUser' | translate }}
+            </button>
+          </div>
+        }
+      } @else {
+        <p class="driver-form-dialog__hint">
+          {{ 'pages.adminDrivers.userNotLinked' | translate }}
+        </p>
+      }
+    </section>
+
+    <section class="driver-form-dialog__section">
+      <h3>{{ 'pages.adminDrivers.documentsTitle' | translate }}</h3>
+
+      @if (documentsLoading()) {
+        <p class="driver-form-dialog__hint">
+          {{ 'pages.adminDrivers.documentsLoading' | translate }}
+        </p>
+      } @else {
+        <mat-accordion multi>
+          @for (group of documentGroups(); track groupKey(group)) {
+            <mat-expansion-panel class="driver-form-dialog__doc-panel">
+              <mat-expansion-panel-header class="driver-form-dialog__doc-header">
+                <div class="driver-form-dialog__doc-header-row">
+                  <span class="driver-form-dialog__doc-title">
+                    {{ documentTypeKey(group.documentType) | translate }}
+                    ·
+                    {{ documentSideKey(group.side) | translate }}
+                  </span>
+                  <span
+                    class="driver-form-dialog__status"
+                    [class.driver-form-dialog__status--valid]="group.status === 'VALID'"
+                    [class.driver-form-dialog__status--soon]="group.status === 'EXPIRING_SOON'"
+                    [class.driver-form-dialog__status--expired]="group.status === 'EXPIRED'"
+                    [class.driver-form-dialog__status--missing]="group.status === 'MISSING'"
+                  >
+                    {{ documentStatusKey(group.status) | translate }}
+                  </span>
+                </div>
+              </mat-expansion-panel-header>
+
+              @if (group.current; as current) {
+                <div class="driver-form-dialog__doc-current">
+                  <p>
+                    {{ current.validFrom }} — {{ current.validTo }}
+                    · {{ current.file.originalFilename }}
+                  </p>
+                  <div class="driver-form-dialog__actions-row">
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      (click)="openDocumentFile(current.id)"
+                    >
+                      {{ 'pages.adminDrivers.documentOpen' | translate }}
+                    </button>
+                    @if (!isDeleted()) {
+                      <button
+                        mat-button
+                        color="warn"
+                        type="button"
+                        [disabled]="documentBusy()"
+                        (click)="deleteDocumentVersion(current.id)"
+                      >
+                        {{ 'pages.adminDrivers.documentDelete' | translate }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              } @else {
+                <p class="driver-form-dialog__hint">
+                  {{ 'pages.adminDrivers.documentMissing' | translate }}
+                </p>
+              }
+
+              @if (!isDeleted()) {
+                @if (addFormKey() === groupKey(group)) {
+                  <div class="driver-form-dialog__add-form">
+                    <mat-form-field appearance="outline">
+                      <mat-label>
+                        {{ 'pages.adminDrivers.documentValidFrom' | translate }}
+                      </mat-label>
+                      <input
+                        matInput
+                        [matDatepicker]="fromPicker"
+                        [value]="addValidFrom()"
+                        (dateChange)="addValidFrom.set($event.value)"
+                      />
+                      <mat-datepicker-toggle matIconSuffix [for]="fromPicker" />
+                      <mat-datepicker #fromPicker />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>
+                        {{ 'pages.adminDrivers.documentValidTo' | translate }}
+                      </mat-label>
+                      <input
+                        matInput
+                        [matDatepicker]="toPicker"
+                        [value]="addValidTo()"
+                        (dateChange)="addValidTo.set($event.value)"
+                      />
+                      <mat-datepicker-toggle matIconSuffix [for]="toPicker" />
+                      <mat-datepicker #toPicker />
+                    </mat-form-field>
+                    <div class="driver-form-dialog__actions-row">
+                      <button mat-stroked-button type="button" (click)="addFileInput.click()">
+                        {{
+                          (addFile()
+                            ? 'pages.adminDrivers.fileReplace'
+                            : 'pages.adminDrivers.fileUpload'
+                          ) | translate
+                        }}
+                      </button>
+                      <span class="driver-form-dialog__hint">
+                        {{ addFile()?.name || ('pages.adminDrivers.fileEmpty' | translate) }}
+                      </span>
+                      <input
+                        #addFileInput
+                        type="file"
+                        class="driver-form-dialog__file-input"
+                        accept="image/jpeg,image/png,application/pdf"
+                        (change)="onAddFileSelected($event)"
+                      />
+                    </div>
+                    <div class="driver-form-dialog__actions-row">
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        type="button"
+                        [disabled]="documentBusy()"
+                        (click)="submitAddDocument(group)"
+                      >
+                        {{ 'pages.adminDrivers.documentAddSubmit' | translate }}
+                      </button>
+                      <button mat-button type="button" (click)="cancelAddDocument()">
+                        {{ 'common.confirmDialog.cancel' | translate }}
+                      </button>
+                    </div>
+                  </div>
+                } @else {
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    (click)="startAddDocument(group)"
+                  >
+                    {{ 'pages.adminDrivers.documentAdd' | translate }}
+                  </button>
+                }
+              }
+            </mat-expansion-panel>
+          }
+        </mat-accordion>
+      }
+    </section>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions class="driver-form-dialog__footer" align="end">
+  <button mat-stroked-button type="button" (click)="close()" [disabled]="saving()">
+    {{ 'common.confirmDialog.cancel' | translate }}
+  </button>
+  @if (!isDeleted()) {
+    <button
+      mat-flat-button
+      color="primary"
+      type="submit"
+      form="driver-form"
+      [disabled]="form.invalid || saving()"
+    >
+      {{ 'pages.adminDrivers.save' | translate }}
+    </button>
+  }
+</mat-dialog-actions>
