@@ -85,15 +85,20 @@
     color: var(--mat-sys-primary, #1565c0);
   }
 
+  /* Рамка таблиці з футером пагінації — як у довіднику країн. */
   &__table-panel {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;
     flex-direction: column;
+    border: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.12));
+    border-radius: 8px;
+    background: var(--mat-sys-surface-container-low, #fafafa);
+    overflow: hidden;
   }
 
   &__table-scroll {
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     max-height: 100%;
     min-height: 0;
     overflow-x: auto;
@@ -114,6 +119,7 @@
 
   &__paginator {
     flex-shrink: 0;
+    border-top: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.12));
   }
 }
 
@@ -155,17 +161,7 @@
       font-size: 0.75rem;
     }
 
-    &__table-panel {
-      border: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.12));
-      border-radius: 8px;
-      background: var(--mat-sys-surface-container-low, #fafafa);
-      overflow: hidden;
-    }
-
     &__table-scroll {
-      flex: 1 1 auto;
-      overflow-x: auto;
-      overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
 
@@ -212,7 +208,6 @@
     }
 
     &__paginator {
-      border-top: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.12));
       font-size: 0.75rem;
 
       ::ng-deep .mat-mdc-paginator-container {

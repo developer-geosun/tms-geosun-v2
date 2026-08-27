@@ -252,7 +252,8 @@
       }
     </div>
   } @else {
-    <div class="admin-vehicles__table-scroll table-shell">
+    <div class="admin-vehicles__table-panel">
+      <div class="admin-vehicles__table-scroll table-shell">
       <table mat-table [dataSource]="pagedVehicles()" class="admin-vehicles__table">
         <ng-container matColumnDef="plateNumber">
           <th mat-header-cell *matHeaderCellDef>
@@ -426,17 +427,31 @@
           [class.admin-vehicles__row--deleted]="row.deleted"
         ></tr>
       </table>
-      @if (!isLoading() && vehicles().length === 0 && !loadError()) {
-        <p class="admin-vehicles__empty">{{ 'pages.adminVehicles.empty' | translate }}</p>
-      }
+        @if (!isLoading() && vehicles().length === 0 && !loadError()) {
+          <p class="admin-vehicles__empty">{{ 'pages.adminVehicles.empty' | translate }}</p>
+        }
+      </div>
+      <mat-paginator
+        class="admin-vehicles__paginator"
+        [length]="vehicles().length"
+        [pageIndex]="pageIndex()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="pageSizeOptions"
+        [showFirstLastButtons]="true"
+        (page)="onPage($event)"
+      />
     </div>
   }
 
-  <mat-paginator
-    [length]="vehicles().length"
-    [pageIndex]="pageIndex()"
-    [pageSize]="pageSize()"
-    [pageSizeOptions]="pageSizeOptions"
-    (page)="onPage($event)"
-  />
+  @if (displayMode() === 'cards') {
+    <mat-paginator
+      class="admin-vehicles__cards-paginator"
+      [length]="vehicles().length"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="pageSizeOptions"
+      [showFirstLastButtons]="true"
+      (page)="onPage($event)"
+    />
+  }
 </section>
