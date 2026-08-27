@@ -1,0 +1,8 @@
+// Локальні шрифти: Inter Variable (текст) та Material Symbols Outlined (іконки).
+@import '@fontsource-variable/inter/wght.css';
+@import 'material-symbols/outlined.css';
+
+:root {
+  --font-sans: 'Inter Variable', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Consolas, monospace;
+}

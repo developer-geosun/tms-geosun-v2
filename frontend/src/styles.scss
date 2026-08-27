@@ -1,4 +1,5 @@
 /* You can add global styles to this file, and also import other style files */
+@use 'fonts';
 @use 'styles/theme';
 @use 'page-layout';
 @use 'breakpoints' as bp;
@@ -11,7 +12,7 @@ html, body {
 }
 
 body {
-  font-family: Inter, Roboto, "Helvetica Neue", sans-serif;
+  font-family: var(--font-sans);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 

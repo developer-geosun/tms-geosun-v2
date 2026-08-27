@@ -18,7 +18,7 @@
 }
 
 .send-proposal-dialog__field--message textarea {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   line-height: 1.45;
   white-space: pre-wrap;
 }

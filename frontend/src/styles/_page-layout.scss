@@ -43,6 +43,7 @@
 .page__title {
   margin: 0;
   font-size: var(--page-title-size);
+  font-weight: 600;
   line-height: 1.25;
   flex: 1 1 auto;
   min-width: 0;
@@ -71,6 +72,14 @@
 
 .table-shell .mat-mdc-table {
   min-width: 640px;
+}
+
+/* Компактна типографіка адмін-таблиць (14px / 1.4). */
+.table-shell .mat-mdc-header-cell,
+.table-shell .mat-mdc-cell,
+.table-shell .mat-mdc-footer-cell {
+  font-size: 0.875rem;
+  line-height: 1.4;
 }
 
 /* Компактний paginator на handset (спільні правила admin-сторінок). */

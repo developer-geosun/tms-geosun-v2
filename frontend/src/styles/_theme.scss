@@ -2,6 +2,16 @@
 
 @include mat.core();
 
+// Спільна типографіка: Inter Variable для brand і plain (без Roboto).
+$app-typography: (
+  brand-family: 'Inter Variable',
+  plain-family: 'Inter Variable',
+  regular-weight: 400,
+  medium-weight: 500,
+  bold-weight: 600,
+  use-system-variables: true
+);
+
 // Стандартні теми Angular Material 3 (M3)
 $azure-blue-theme: mat.define-theme((
   color: (
@@ -10,9 +20,7 @@ $azure-blue-theme: mat.define-theme((
     tertiary: mat.$blue-palette,
     use-system-variables: true
   ),
-  typography: (
-    use-system-variables: true
-  )
+  typography: $app-typography
 ));
 
 $rose-red-theme: mat.define-theme((
@@ -22,9 +30,7 @@ $rose-red-theme: mat.define-theme((
     tertiary: mat.$red-palette,
     use-system-variables: true
   ),
-  typography: (
-    use-system-variables: true
-  )
+  typography: $app-typography
 ));
 
 $magenta-violet-theme: mat.define-theme((
@@ -34,9 +40,7 @@ $magenta-violet-theme: mat.define-theme((
     tertiary: mat.$violet-palette,
     use-system-variables: true
   ),
-  typography: (
-    use-system-variables: true
-  )
+  typography: $app-typography
 ));
 
 $cyan-orange-theme: mat.define-theme((
@@ -46,9 +50,7 @@ $cyan-orange-theme: mat.define-theme((
     tertiary: mat.$orange-palette,
     use-system-variables: true
   ),
-  typography: (
-    use-system-variables: true
-  )
+  typography: $app-typography
 ));
 
 .theme-rose-red {
@@ -74,4 +76,3 @@ $cyan-orange-theme: mat.define-theme((
   @include mat.system-level-colors($cyan-orange-theme);
   @include mat.system-level-typography($cyan-orange-theme);
 }
-

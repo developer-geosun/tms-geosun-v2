@@ -353,7 +353,7 @@
 .admin-route-requests__nbu-summary-text {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.4;
   max-height: 420px;
