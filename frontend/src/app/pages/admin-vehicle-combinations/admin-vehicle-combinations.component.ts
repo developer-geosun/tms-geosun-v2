@@ -38,6 +38,7 @@ import {
 import { LayoutService } from '../../core/layout';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { getHandsetFriendlyDialogConfig } from '../../shared/utils/handset-friendly-dialog-config';
+import { showAppSnack } from '../../shared/utils/app-snackbar';
 
 type CombinationsDisplayMode = 'table' | 'cards';
 
@@ -388,10 +389,6 @@ export class AdminVehicleCombinationsComponent {
   }
 
   private notify(messageKey: string, kind: 'success' | 'error' = 'success'): void {
-    this.snackBar.open(this.translate.instant(messageKey), undefined, {
-      duration: kind === 'error' ? 6000 : 3500,
-      horizontalPosition: 'center',
-      verticalPosition: 'bottom'
-    });
+    showAppSnack(this.snackBar, this.translate, messageKey, kind);
   }
 }

@@ -1,4 +1,5 @@
 @use 'breakpoints' as bp;
+@use 'admin-list-toolbar';
 
 :host {
   display: flex;
@@ -23,108 +24,11 @@
   overflow: hidden;
 
   &__header {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    align-items: flex-start;
-    justify-content: space-between;
-    flex-shrink: 0;
-
-    h1 {
-      margin: 0;
-      font-size: var(--page-title-size, clamp(1.1rem, 2.5vw, 1.5rem));
-    }
+    @include admin-list-toolbar.admin-list-page-header;
   }
 
   &__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-
-    /* Однакова висота + вертикальне центрування тексту. */
-    --admin-vehicles-action-height: 40px;
-
-    > button.mat-mdc-button-base {
-      height: var(--admin-vehicles-action-height);
-      min-height: var(--admin-vehicles-action-height);
-      padding-block: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1.25;
-
-      .mdc-button__label {
-        display: inline-flex;
-        align-items: center;
-        line-height: 1.25;
-      }
-    }
-
-    > .mat-button-toggle-group {
-      height: var(--admin-vehicles-action-height);
-      min-height: var(--admin-vehicles-action-height);
-      display: inline-flex;
-      align-items: stretch;
-    }
-
-    .mat-button-toggle {
-      height: 100%;
-      display: flex;
-      align-items: stretch;
-    }
-
-    .mat-button-toggle-button {
-      height: 100% !important;
-      min-height: 0 !important;
-      padding: 0 !important;
-      display: flex !important;
-      align-items: center;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-
-    .mat-button-toggle-label-content {
-      display: inline-flex !important;
-      align-items: center;
-      justify-content: center;
-      gap: 0.25rem;
-      line-height: 1.25;
-      height: auto !important;
-      padding: 0 0.75rem !important;
-    }
-
-    mat-icon {
-      display: inline-flex !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.35rem !important;
-      width: 1.35rem !important;
-      height: 1.35rem !important;
-      line-height: 1;
-      margin: 0;
-    }
-
-    /* Іконкові toggle без тексту — компактніші. */
-    > .mat-button-toggle-group.admin-vehicles__display-toggle {
-      .mat-button-toggle-label-content {
-        padding: 0 0.65rem !important;
-      }
-    }
-
-    /* Іконкова кнопка (оновлення) — як сегмент toggle зліва. */
-    > button.admin-vehicles__icon-action {
-      min-width: var(--admin-vehicles-action-height);
-      width: auto;
-      padding-inline: 0.65rem;
-      border-radius: 4px;
-
-      mat-icon {
-        margin: 0;
-      }
-    }
+    @include admin-list-toolbar.admin-list-toolbar-actions;
   }
 
   &__messages {
@@ -279,21 +183,6 @@
   @include bp.desktop {
     &__cards {
       grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-
-  @include bp.handset {
-    &__header {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    &__actions {
-      width: 100%;
-
-      > * {
-        flex: 1 1 auto;
-      }
     }
   }
 }

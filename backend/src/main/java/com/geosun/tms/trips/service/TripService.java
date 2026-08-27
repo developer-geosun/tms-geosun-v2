@@ -411,7 +411,8 @@ public class TripService {
     Driver driver = driverService.requireActiveDriver(Objects.requireNonNull(trip.getDriverId()));
     LocalDate plannedDay =
         Objects.requireNonNull(trip.getPlannedStartAt()).atZone(ZoneOffset.UTC).toLocalDate();
-    if (Objects.requireNonNull(driver.getLicenseExpiresOn()).isBefore(plannedDay)) {
+    LocalDate licenseExpiresOn = driverService.resolveLicenseExpiresOn(driver);
+    if (licenseExpiresOn.isBefore(plannedDay)) {
       throw ApiException.conflict("LICENSE_EXPIRED", "Driver license is expired for planned start");
     }
   }

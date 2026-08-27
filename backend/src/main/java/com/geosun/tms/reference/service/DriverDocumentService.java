@@ -84,6 +84,9 @@ public class DriverDocumentService {
     doc.setValidTo(validTo);
     doc.setStoredFile(storedEntity);
     DriverDocument saved = documentRepository.save(doc);
+    if (type == DriverDocumentType.DRIVER_LICENSE) {
+      driverService.syncLicenseExpiresOnFromDocuments(driverId);
+    }
     return toVersionDto(Objects.requireNonNull(saved), LocalDate.now());
   }
 

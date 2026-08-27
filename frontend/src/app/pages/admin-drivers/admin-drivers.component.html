@@ -1,7 +1,7 @@
-<section class="admin-drivers page">
-  <header class="page__header admin-drivers__header">
-    <h1 class="page__title">{{ 'pages.adminDrivers.title' | translate }}</h1>
-    <div class="page__header-actions admin-drivers__actions">
+<section class="admin-drivers">
+  <header class="admin-drivers__header">
+    <h1>{{ 'pages.adminDrivers.title' | translate }}</h1>
+    <div class="admin-drivers__actions">
       <mat-button-toggle-group
         [value]="listView()"
         hideSingleSelectionIndicator
@@ -41,6 +41,7 @@
       <button
         mat-stroked-button
         type="button"
+        class="admin-list-toolbar__icon-action"
         [matTooltip]="'pages.adminDrivers.refresh' | translate"
         [attr.aria-label]="'pages.adminDrivers.refresh' | translate"
         (click)="reload()"
@@ -51,11 +52,12 @@
         mat-flat-button
         color="primary"
         type="button"
-        [matTooltip]="'pages.adminDrivers.create' | translate"
-        [attr.aria-label]="'pages.adminDrivers.create' | translate"
+        class="admin-list-toolbar__icon-action"
+        [matTooltip]="'pages.adminDrivers.createTitle' | translate"
+        [attr.aria-label]="'pages.adminDrivers.createTitle' | translate"
         (click)="openCreate()"
       >
-        {{ 'pages.adminDrivers.create' | translate }}
+        <mat-icon aria-hidden="true">add</mat-icon>
       </button>
     </div>
   </header>

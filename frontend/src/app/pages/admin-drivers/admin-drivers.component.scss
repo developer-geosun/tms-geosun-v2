@@ -1,4 +1,5 @@
 @use 'breakpoints' as bp;
+@use 'admin-list-toolbar';
 
 :host {
   display: flex;
@@ -23,11 +24,12 @@
   overflow: hidden;
 
   &__header {
+    @include admin-list-toolbar.admin-list-page-header;
     flex-shrink: 0;
   }
 
   &__actions {
-    flex-wrap: wrap;
+    @include admin-list-toolbar.admin-list-toolbar-actions;
   }
 
   &__messages {

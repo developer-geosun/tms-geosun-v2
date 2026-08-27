@@ -47,11 +47,11 @@
               </div>
               <div>
                 <span class="my-trips__label">{{ 'pages.myTrips.plannedStartAt' | translate }}</span>
-                <span>{{ formatDateTime(detailTrip()?.plannedStartAt ?? null) }}</span>
+                <span>{{ formatDate(detailTrip()?.plannedStartAt ?? null) }}</span>
               </div>
               <div>
                 <span class="my-trips__label">{{ 'pages.myTrips.plannedEndAt' | translate }}</span>
-                <span>{{ formatDateTime(detailTrip()?.plannedEndAt ?? null) }}</span>
+                <span>{{ formatDate(detailTrip()?.plannedEndAt ?? null) }}</span>
               </div>
               @if (detailTrip()?.comment) {
                 <div>

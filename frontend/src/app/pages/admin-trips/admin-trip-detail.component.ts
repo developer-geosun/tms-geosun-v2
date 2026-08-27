@@ -12,11 +12,13 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MAT_NATIVE_DATE_FORMATS, provideNativeDateAdapter } from '@angular/material/core';
 import {
   MatDialog,
   MatDialogModule,
   MatDialogRef
 } from '@angular/material/dialog';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -42,6 +44,7 @@ import {
   VehiclesApiService
 } from '../../core/api';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { showAppSnack } from '../../shared/utils/app-snackbar';
 import { getHandsetFriendlyDialogConfig } from '../../shared/utils/handset-friendly-dialog-config';
 
 type VehicleMode = 'combination' | 'manual';
@@ -113,6 +116,7 @@ export class TripRejectCommentDialogComponent {
     TranslateModule,
     MatButtonModule,
     MatButtonToggleModule,
+    MatDatepickerModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
@@ -121,6 +125,15 @@ export class TripRejectCommentDialogComponent {
     MatSnackBarModule,
     MatTableModule,
     MatTooltipModule
+  ],
+  providers: [
+    provideNativeDateAdapter({
+      parse: MAT_NATIVE_DATE_FORMATS.parse,
+      display: {
+        ...MAT_NATIVE_DATE_FORMATS.display,
+        dateInput: { year: 'numeric', month: '2-digit', day: '2-digit' }
+      }
+    })
   ],
   templateUrl: './admin-trip-detail.component.html',
   styleUrl: './admin-trip-detail.component.scss',
@@ -177,8 +190,8 @@ export class AdminTripDetailComponent implements OnInit {
     comment: [''],
     originText: [''],
     destinationText: [''],
-    plannedStartAt: [''],
-    plannedEndAt: [''],
+    plannedStartAt: [null as Date | null],
+    plannedEndAt: [null as Date | null],
     driverId: [''],
     combinationId: [''],
     tractorId: [''],
@@ -302,8 +315,8 @@ export class AdminTripDetailComponent implements OnInit {
         this.notify('pages.adminTrips.updateSuccess');
         await this.loadTrip(id);
       }
-    } catch {
-      this.notify('pages.adminTrips.saveFailed', 'error');
+    } catch (err) {
+      this.notify(this.mapError(err, 'pages.adminTrips.saveFailed'), 'error');
     } finally {
       this.isSaving.set(false);
     }
@@ -313,6 +326,13 @@ export class AdminTripDetailComponent implements OnInit {
     const id = this.tripId();
     if (!id) {
       return;
+    }
+    if (status === 'PLANNED') {
+      const validationError = this.validateReadyForPlanned();
+      if (validationError) {
+        this.notify(validationError, 'error');
+        return;
+      }
     }
     const ok = await firstValueFrom(
       this.dialog
@@ -324,12 +344,19 @@ export class AdminTripDetailComponent implements OnInit {
     if (!ok) {
       return;
     }
+    const payload = this.toTripPayload();
+    if (!payload) {
+      this.notify('pages.adminTrips.validationError', 'error');
+      return;
+    }
     try {
+      // Спочатку зберігаємо форму — статус перевіряє дані в БД, не в полях UI.
+      await this.tripsApi.update(id, payload);
       await this.tripsApi.updateStatus(id, status);
       this.notify('pages.adminTrips.statusUpdated');
       await this.loadTrip(id);
-    } catch {
-      this.notify('pages.adminTrips.statusFailed', 'error');
+    } catch (err) {
+      this.notify(this.mapError(err, 'pages.adminTrips.statusFailed'), 'error');
     }
   }
 
@@ -520,8 +547,8 @@ export class AdminTripDetailComponent implements OnInit {
       comment: trip.comment ?? '',
       originText: trip.originText ?? '',
       destinationText: trip.destinationText ?? '',
-      plannedStartAt: toDatetimeLocalValue(trip.plannedStartAt),
-      plannedEndAt: toDatetimeLocalValue(trip.plannedEndAt),
+      plannedStartAt: isoToLocalDate(trip.plannedStartAt),
+      plannedEndAt: isoToLocalDate(trip.plannedEndAt),
       driverId: trip.driverId ?? '',
       combinationId: trip.combinationId ?? '',
       tractorId: trip.tractorId ?? '',
@@ -565,8 +592,8 @@ export class AdminTripDetailComponent implements OnInit {
       comment: raw.comment.trim() || null,
       originText: raw.originText.trim() || null,
       destinationText: raw.destinationText.trim() || null,
-      plannedStartAt: fromDatetimeLocalValue(raw.plannedStartAt),
-      plannedEndAt: fromDatetimeLocalValue(raw.plannedEndAt),
+      plannedStartAt: dateToUtcMidnightIso(raw.plannedStartAt),
+      plannedEndAt: dateToUtcMidnightIso(raw.plannedEndAt),
       driverId: raw.driverId || null,
       routeRequestId,
       combinationId: null,
@@ -603,36 +630,64 @@ export class AdminTripDetailComponent implements OnInit {
   }
 
   private notify(messageKey: string, kind: 'success' | 'error' = 'success'): void {
-    this.snackBar.open(this.translate.instant(messageKey), undefined, {
-      duration: kind === 'error' ? 6000 : 3500,
-      horizontalPosition: 'center',
-      verticalPosition: 'bottom'
-    });
+    showAppSnack(this.snackBar, this.translate, messageKey, kind);
+  }
+
+  private validateReadyForPlanned(): string | null {
+    const raw = this.form.getRawValue();
+    if (!raw.driverId) {
+      return 'pages.adminTrips.plannedRequiresDriver';
+    }
+    if (!raw.plannedStartAt || !raw.plannedEndAt) {
+      return 'pages.adminTrips.plannedRequiresDates';
+    }
+    if (raw.plannedEndAt.getTime() < raw.plannedStartAt.getTime()) {
+      return 'pages.adminTrips.plannedDatesInvalid';
+    }
+    if (this.vehicleMode() === 'combination') {
+      if (!raw.combinationId) {
+        return 'pages.adminTrips.plannedRequiresVehicle';
+      }
+    } else if (!raw.tractorId || !raw.trailerId) {
+      return 'pages.adminTrips.plannedRequiresVehicle';
+    }
+    return null;
+  }
+
+  private mapError(err: unknown, fallback: string): string {
+    const code = (err as { error?: { code?: string } })?.error?.code;
+    switch (code) {
+      case 'VALIDATION_ERROR':
+        return 'pages.adminTrips.errors.plannedRequirements';
+      case 'LICENSE_EXPIRED':
+        return 'pages.adminTrips.errors.licenseExpired';
+      case 'RESOURCE_OVERLAP':
+        return 'pages.adminTrips.errors.resourceOverlap';
+      case 'INVALID_STATUS_TRANSITION':
+        return 'pages.adminTrips.errors.invalidStatusTransition';
+      default:
+        return fallback;
+    }
   }
 }
 
-/** ISO → значення для input[type=datetime-local]. */
-function toDatetimeLocalValue(iso: string | null): string {
+/** ISO → локальна дата для datepicker (без часу). */
+function isoToLocalDate(iso: string | null): Date | null {
   if (!iso) {
-    return '';
+    return null;
   }
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return '';
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
   }
-  const pad = (n: number): string => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return new Date(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate());
 }
 
-/** Значення datetime-local → ISO або null. */
-function fromDatetimeLocalValue(value: string): string | null {
-  const trimmed = value.trim();
-  if (!trimmed) {
+/** Локальна дата → ISO на північ UTC обраного календарного дня. */
+function dateToUtcMidnightIso(value: Date | null): string | null {
+  if (!value) {
     return null;
   }
-  const date = new Date(trimmed);
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-  return date.toISOString();
+  const utc = new Date(Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()));
+  return utc.toISOString();
 }

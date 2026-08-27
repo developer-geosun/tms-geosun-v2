@@ -7,11 +7,11 @@
         hideSingleSelectionIndicator
         (change)="onViewChange($event.value)"
       >
-        <mat-button-toggle value="active">
-          {{ 'pages.adminVehicleCombinations.viewActive' | translate }} {{ countActive() }}
-        </mat-button-toggle>
         <mat-button-toggle value="all">
           {{ 'pages.adminVehicleCombinations.viewAll' | translate }} {{ countAll() }}
+        </mat-button-toggle>
+        <mat-button-toggle value="active">
+          {{ 'pages.adminVehicleCombinations.viewActive' | translate }} {{ countActive() }}
         </mat-button-toggle>
         <mat-button-toggle value="deleted">
           {{ 'pages.adminVehicleCombinations.viewDeleted' | translate }} {{ countDeleted() }}
@@ -20,24 +20,49 @@
 
       @if (!isHandset()) {
         <mat-button-toggle-group
+          class="admin-list-toolbar__display-toggle"
           [value]="preferredDisplayMode()"
           hideSingleSelectionIndicator
           (change)="onDisplayModeChange($event.value)"
+          [attr.aria-label]="'pages.adminVehicleCombinations.displayMode' | translate"
         >
-          <mat-button-toggle value="table">
+          <mat-button-toggle
+            value="table"
+            [matTooltip]="'pages.adminVehicleCombinations.displayTable' | translate"
+            [attr.aria-label]="'pages.adminVehicleCombinations.displayTable' | translate"
+          >
             <mat-icon aria-hidden="true">view_list</mat-icon>
           </mat-button-toggle>
-          <mat-button-toggle value="cards">
+          <mat-button-toggle
+            value="cards"
+            [matTooltip]="'pages.adminVehicleCombinations.displayCards' | translate"
+            [attr.aria-label]="'pages.adminVehicleCombinations.displayCards' | translate"
+          >
             <mat-icon aria-hidden="true">view_module</mat-icon>
           </mat-button-toggle>
         </mat-button-toggle-group>
       }
 
-      <button mat-stroked-button type="button" (click)="reload()">
+      <button
+        mat-stroked-button
+        type="button"
+        class="admin-list-toolbar__icon-action"
+        [matTooltip]="'pages.adminVehicleCombinations.refresh' | translate"
+        [attr.aria-label]="'pages.adminVehicleCombinations.refresh' | translate"
+        (click)="reload()"
+      >
         <mat-icon aria-hidden="true">refresh</mat-icon>
       </button>
-      <button mat-flat-button color="primary" type="button" (click)="openCreate()">
-        {{ 'pages.adminVehicleCombinations.create' | translate }}
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        class="admin-list-toolbar__icon-action"
+        [matTooltip]="'pages.adminVehicleCombinations.createTitle' | translate"
+        [attr.aria-label]="'pages.adminVehicleCombinations.createTitle' | translate"
+        (click)="openCreate()"
+      >
+        <mat-icon aria-hidden="true">add</mat-icon>
       </button>
     </div>
   </header>

@@ -13,7 +13,7 @@ public class TripNumberSeq {
   @Column(name = "seq_year", nullable = false)
   private int year;
 
-  @Column(name = "last_value", nullable = false)
+  @Column(name = "last_seq", nullable = false)
   private int lastValue;
 
   public int getYear() {

@@ -28,6 +28,7 @@ import {
 } from '../../core/api';
 import { LayoutService } from '../../core/layout';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { showAppSnack } from '../../shared/utils/app-snackbar';
 
 interface EditableExpenseLine {
   id: string | null;
@@ -174,6 +175,17 @@ export class MyTripsComponent {
 
   categoryLabelKey(category: TripExpenseCategoryContract): string {
     return `pages.myTrips.expenseCategory.${category}`;
+  }
+
+  formatDate(iso: string | null): string {
+    if (!iso) {
+      return '—';
+    }
+    const parsed = Date.parse(iso);
+    if (Number.isNaN(parsed)) {
+      return iso;
+    }
+    return new Date(parsed).toLocaleDateString();
   }
 
   formatDateTime(iso: string | null): string {
@@ -364,10 +376,6 @@ export class MyTripsComponent {
   }
 
   private notify(messageKey: string, kind: 'success' | 'error' = 'success'): void {
-    this.snackBar.open(this.translate.instant(messageKey), undefined, {
-      duration: kind === 'error' ? 6000 : 3500,
-      horizontalPosition: 'center',
-      verticalPosition: 'bottom'
-    });
+    showAppSnack(this.snackBar, this.translate, messageKey, kind);
   }
 }

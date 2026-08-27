@@ -8,7 +8,9 @@ import com.geosun.tms.reference.domain.Driver;
 import com.geosun.tms.reference.domain.DriverDocument;
 import com.geosun.tms.reference.domain.DriverDocumentCompliance;
 import com.geosun.tms.reference.domain.DriverDocumentStatus;
+import com.geosun.tms.reference.domain.DriverDocumentType;
 import com.geosun.tms.reference.domain.DriverListView;
+import com.geosun.tms.reference.domain.RegistrationScanSide;
 import com.geosun.tms.reference.dto.request.CreateDriverRequest;
 import com.geosun.tms.reference.dto.request.UpdateDriverRequest;
 import com.geosun.tms.reference.dto.response.DriverDto;
@@ -254,6 +256,48 @@ public class DriverService {
     if (exists) {
       throw ApiException.conflict("LICENSE_ALREADY_EXISTS", "License number already exists");
     }
+  }
+
+  /**
+   * Дата закінчення прав для бізнес-перевірок: мінімум серед актуальних сканів DRIVER_LICENSE,
+   * інакше поле картки водія.
+   */
+  @NonNull
+  public LocalDate resolveLicenseExpiresOn(@NonNull Driver driver) {
+    LocalDate fromDocuments =
+        minCurrentLicenseDocumentValidTo(Objects.requireNonNull(driver.getId()));
+    if (fromDocuments != null) {
+      return fromDocuments;
+    }
+    return Objects.requireNonNull(driver.getLicenseExpiresOn());
+  }
+
+  @Transactional
+  public void syncLicenseExpiresOnFromDocuments(@NonNull String driverId) {
+    LocalDate fromDocuments = minCurrentLicenseDocumentValidTo(driverId);
+    if (fromDocuments == null) {
+      return;
+    }
+    Driver driver = requireActiveDriver(driverId);
+    if (!fromDocuments.equals(driver.getLicenseExpiresOn())) {
+      driver.setLicenseExpiresOn(fromDocuments);
+      driverRepository.save(driver);
+    }
+  }
+
+  @Nullable
+  private LocalDate minCurrentLicenseDocumentValidTo(@NonNull String driverId) {
+    LocalDate min = null;
+    for (RegistrationScanSide side : RegistrationScanSide.values()) {
+      Optional<DriverDocument> doc =
+          documentRepository.findFirstByDriver_IdAndDocumentTypeAndSideOrderByCreatedAtDesc(
+              driverId, DriverDocumentType.DRIVER_LICENSE, side);
+      if (doc.isPresent()) {
+        LocalDate validTo = Objects.requireNonNull(doc.get().getValidTo());
+        min = min == null || validTo.isBefore(min) ? validTo : min;
+      }
+    }
+    return min;
   }
 
   @NonNull

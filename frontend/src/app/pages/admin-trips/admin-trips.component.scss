@@ -1,4 +1,5 @@
 @use 'breakpoints' as bp;
+@use 'admin-list-toolbar';
 
 :host {
   display: flex;
@@ -23,29 +24,11 @@
   overflow: hidden;
 
   &__header {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    align-items: flex-start;
-    justify-content: space-between;
-    flex-shrink: 0;
-
-    h1 {
-      margin: 0;
-      font-size: var(--page-title-size, clamp(1.1rem, 2.5vw, 1.5rem));
-      font-weight: 600;
-    }
+    @include admin-list-toolbar.admin-list-page-header;
   }
 
   &__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-  }
-
-  &__status-filter {
-    width: 12rem;
+    @include admin-list-toolbar.admin-list-toolbar-actions;
   }
 
   &__messages,
@@ -136,21 +119,5 @@
 @include bp.handset {
   .admin-trips {
     overflow-y: auto;
-
-    &__header {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    &__actions {
-      flex-direction: column;
-      align-items: stretch;
-
-      > a,
-      > button,
-      .admin-trips__status-filter {
-        width: 100%;
-      }
-    }
   }
 }

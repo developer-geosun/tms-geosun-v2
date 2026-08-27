@@ -28,6 +28,7 @@ import {
 import { LayoutService } from '../../core/layout';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { getHandsetFriendlyDialogConfig } from '../../shared/utils/handset-friendly-dialog-config';
+import { showAppSnack } from '../../shared/utils/app-snackbar';
 import { DriverFormDialogComponent } from './driver-form-dialog.component';
 
 @Component({
@@ -255,15 +256,7 @@ export class AdminDriversComponent {
   }
 
   private notify(messageKey: string, kind: 'success' | 'error' = 'success'): void {
-    this.snackBar.open(this.translate.instant(messageKey), undefined, {
-      duration: kind === 'error' ? 6000 : 3500,
-      horizontalPosition: 'center',
-      verticalPosition: 'bottom',
-      panelClass:
-        kind === 'error'
-          ? ['admin-drivers-snackbar', 'admin-drivers-snackbar--error']
-          : ['admin-drivers-snackbar', 'admin-drivers-snackbar--success']
-    });
+    showAppSnack(this.snackBar, this.translate, messageKey, kind);
   }
 
   private mapError(err: unknown, fallback: string): string {

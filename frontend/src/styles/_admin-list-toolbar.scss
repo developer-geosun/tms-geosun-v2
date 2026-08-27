@@ -1,0 +1,121 @@
+@use 'breakpoints' as bp;
+
+/* Спільні стилі панелі фільтрів / оновлення / додавання (як admin/vehicles). */
+@mixin admin-list-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+
+  --admin-list-action-height: 40px;
+
+  > button.mat-mdc-button-base,
+  > a.mat-mdc-button-base {
+    height: var(--admin-list-action-height);
+    min-height: var(--admin-list-action-height);
+    padding-block: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.25;
+
+    .mdc-button__label {
+      display: inline-flex;
+      align-items: center;
+      line-height: 1.25;
+    }
+  }
+
+  > .mat-button-toggle-group {
+    height: var(--admin-list-action-height);
+    min-height: var(--admin-list-action-height);
+    display: inline-flex;
+    align-items: stretch;
+  }
+
+  .mat-button-toggle {
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+  }
+
+  .mat-button-toggle-button {
+    height: 100% !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .mat-button-toggle-label-content {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    line-height: 1.25;
+    height: auto !important;
+    padding: 0 0.75rem !important;
+  }
+
+  mat-icon {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem !important;
+    width: 1.35rem !important;
+    height: 1.35rem !important;
+    line-height: 1;
+    margin: 0;
+  }
+
+  > .mat-button-toggle-group.admin-list-toolbar__display-toggle {
+    .mat-button-toggle-label-content {
+      padding: 0 0.65rem !important;
+    }
+  }
+
+  > button.admin-list-toolbar__icon-action,
+  > a.admin-list-toolbar__icon-action {
+    min-width: var(--admin-list-action-height);
+    width: auto;
+    padding-inline: 0.65rem;
+    border-radius: 4px;
+
+    mat-icon {
+      margin: 0;
+    }
+  }
+
+  @include bp.handset {
+    width: 100%;
+
+    > * {
+      flex: 1 1 auto;
+    }
+  }
+}
+
+@mixin admin-list-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-shrink: 0;
+
+  h1,
+  .page__title {
+    margin: 0;
+    font-size: var(--page-title-size, clamp(1.1rem, 2.5vw, 1.5rem));
+    font-weight: 600;
+  }
+
+  @include bp.handset {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

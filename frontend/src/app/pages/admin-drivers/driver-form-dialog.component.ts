@@ -21,6 +21,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatStepperModule } from '@angular/material/stepper';
 import { firstValueFrom } from 'rxjs';
 import {
   DriverContractDto,
@@ -32,6 +33,7 @@ import {
   RegistrationScanSideContract
 } from '../../core/api';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { showAppSnack } from '../../shared/utils/app-snackbar';
 
 export interface DriverFormDialogData {
   driver: DriverContractDto | null;
@@ -50,7 +52,8 @@ export interface DriverFormDialogData {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatStepperModule
   ],
   providers: [
     provideNativeDateAdapter({
@@ -82,6 +85,8 @@ export class DriverFormDialogComponent {
   readonly linkBusy = signal(false);
   readonly linkEmail = signal('');
   readonly linkableUser = signal<LinkableUserContractDto | null>(null);
+  /** Активний крок: 0 — дані, 1 — обліковий запис, 2 — документи. */
+  readonly stepIndex = signal(0);
   /** Тип+сторона, для яких відкрита форма додавання версії. */
   readonly addFormKey = signal<string | null>(null);
   readonly addValidFrom = signal<Date | null>(null);
@@ -93,6 +98,9 @@ export class DriverFormDialogComponent {
   readonly isCreate = computed(() => this.driver() == null);
   readonly isDeleted = computed(() => this.driver()?.deleted === true);
   readonly hasDriverId = computed(() => !!this.driver()?.id);
+  readonly onDataStep = computed(() => this.stepIndex() === 0);
+  readonly onAccountStep = computed(() => this.stepIndex() === 1);
+  readonly onDocumentsStep = computed(() => this.stepIndex() === 2);
 
   readonly dialogTitle = computed(() => {
     if (this.isCreate()) {
@@ -132,6 +140,21 @@ export class DriverFormDialogComponent {
     this.dialogRef.close(this.changed());
   }
 
+  onStepChange(index: number): void {
+    this.stepIndex.set(index);
+    if (index === 2 && this.driver()?.id) {
+      void this.reloadDocuments();
+    }
+  }
+
+  goNext(): void {
+    this.onStepChange(Math.min(2, this.stepIndex() + 1));
+  }
+
+  goPrev(): void {
+    this.onStepChange(Math.max(0, this.stepIndex() - 1));
+  }
+
   async save(): Promise<void> {
     if (this.form.invalid || this.isDeleted() || this.saving()) {
       this.form.markAllAsTouched();
@@ -168,6 +191,7 @@ export class DriverFormDialogComponent {
         this.changed.set(true);
         this.notify('pages.adminDrivers.createSuccess');
         await this.reloadDocuments();
+        this.stepIndex.set(1);
       }
     } catch (err) {
       this.notify(this.mapError(err, 'pages.adminDrivers.saveFailed'), 'error');
@@ -421,15 +445,7 @@ export class DriverFormDialogComponent {
   }
 
   private notify(messageKey: string, kind: 'success' | 'error' = 'success'): void {
-    this.snackBar.open(this.translate.instant(messageKey), undefined, {
-      duration: kind === 'error' ? 6000 : 3500,
-      horizontalPosition: 'center',
-      verticalPosition: 'bottom',
-      panelClass:
-        kind === 'error'
-          ? ['admin-drivers-snackbar', 'admin-drivers-snackbar--error']
-          : ['admin-drivers-snackbar', 'admin-drivers-snackbar--success']
-    });
+    showAppSnack(this.snackBar, this.translate, messageKey, kind);
   }
 
   private mapError(err: unknown, fallback: string): string {

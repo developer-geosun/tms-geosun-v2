@@ -43,7 +43,7 @@ CREATE TABLE trips (
 
 CREATE TABLE trip_number_seq (
     seq_year INT NOT NULL,
-    last_value INT NOT NULL,
+    last_seq INT NOT NULL,
     PRIMARY KEY (seq_year)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

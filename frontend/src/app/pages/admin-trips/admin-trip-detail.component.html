@@ -58,12 +58,16 @@
 
       <mat-form-field appearance="outline">
         <mat-label>{{ 'pages.adminTrips.plannedStartAt' | translate }}</mat-label>
-        <input matInput type="datetime-local" formControlName="plannedStartAt" />
+        <input matInput [matDatepicker]="plannedStartPicker" formControlName="plannedStartAt" />
+        <mat-datepicker-toggle matIconSuffix [for]="plannedStartPicker" />
+        <mat-datepicker #plannedStartPicker />
       </mat-form-field>
 
       <mat-form-field appearance="outline">
         <mat-label>{{ 'pages.adminTrips.plannedEndAt' | translate }}</mat-label>
-        <input matInput type="datetime-local" formControlName="plannedEndAt" />
+        <input matInput [matDatepicker]="plannedEndPicker" formControlName="plannedEndAt" />
+        <mat-datepicker-toggle matIconSuffix [for]="plannedEndPicker" />
+        <mat-datepicker #plannedEndPicker />
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="admin-trip-detail__full">
@@ -135,6 +139,11 @@
   @if (!isCreate() && trip(); as t) {
     <section class="admin-trip-detail__status-block">
       <h2>{{ 'pages.adminTrips.statusActions' | translate }}</h2>
+      @if (t.status === 'DRAFT') {
+        <p class="admin-trip-detail__status-hint">
+          {{ 'pages.adminTrips.plannedRequirementsHint' | translate }}
+        </p>
+      }
       <div class="admin-trip-detail__status-actions">
         @for (status of statusActions(); track status) {
           <button mat-stroked-button type="button" (click)="changeStatus(status)">

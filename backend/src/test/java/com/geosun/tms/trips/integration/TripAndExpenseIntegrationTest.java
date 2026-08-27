@@ -1,6 +1,7 @@
 package com.geosun.tms.trips.integration;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -43,6 +44,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -177,6 +179,73 @@ class TripAndExpenseIntegrationTest {
         .andExpect(jsonPath("$.content.length()").value(1));
   }
 
+  @Test
+  void planned_usesLicenseDocumentExpiryWhenProfileFieldIsStale() throws Exception {
+    User manager = saveUser("manager-license@example.com", "Secret123", Role.MANAGER);
+    String managerToken = login(Objects.requireNonNull(manager.getEmail()), "Secret123");
+
+    String tractorId =
+        createVehicle(managerToken, "DD1111EE", "WVWZZZ1JZYW555555", VehicleType.SEMI_TRACTOR);
+    String trailerId =
+        createVehicle(managerToken, "DD2222FF", "WVWZZZ1JZYW666666", VehicleType.SEMI_TRAILER);
+    String driverId =
+        createDriver(
+            managerToken,
+            "Сидоренко",
+            "LIC-STALE",
+            LocalDate.now().minusDays(1));
+
+    uploadDriverDocument(
+        managerToken,
+        driverId,
+        "driver-license/front",
+        LocalDate.now().minusYears(1),
+        LocalDate.now().plusYears(2));
+    uploadDriverDocument(
+        managerToken,
+        driverId,
+        "driver-license/back",
+        LocalDate.now().minusYears(1),
+        LocalDate.now().plusYears(3));
+
+    Instant start = Instant.now().plus(2, ChronoUnit.DAYS);
+    Instant end = start.plus(2, ChronoUnit.DAYS);
+    CreateTripRequest create =
+        new CreateTripRequest(
+            null,
+            "License sync trip",
+            null,
+            "Kyiv",
+            "Lviv",
+            start,
+            end,
+            driverId,
+            null,
+            tractorId,
+            trailerId);
+
+    MvcResult created =
+        mockMvc
+            .perform(
+                post(TripsApiPaths.ADMIN_TRIPS_BASE)
+                    .header("Authorization", "Bearer " + managerToken)
+                    .contentType(json())
+                    .content(toJson(create)))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String tripId =
+        objectMapper.readTree(created.getResponse().getContentAsString()).get("id").asText();
+
+    mockMvc
+        .perform(
+            patch(TripsApiPaths.ADMIN_TRIPS_BASE + "/" + tripId + "/status")
+                .header("Authorization", "Bearer " + managerToken)
+                .contentType(json())
+                .content(toJson(new UpdateTripStatusRequest(TripStatus.PLANNED))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("PLANNED"));
+  }
+
   private void ensureUah() {
     if (!currencyRepository.existsById("UAH")) {
       Currency uah = new Currency();
@@ -193,6 +262,11 @@ class TripAndExpenseIntegrationTest {
   }
 
   private String createDriver(String token, String lastName, String license) throws Exception {
+    return createDriver(token, lastName, license, LocalDate.now().plusYears(3));
+  }
+
+  private String createDriver(
+      String token, String lastName, String license, LocalDate licenseExpiresOn) throws Exception {
     CreateDriverRequest req =
         new CreateDriverRequest(
             lastName,
@@ -201,7 +275,7 @@ class TripAndExpenseIntegrationTest {
             "+380671112233",
             license,
             "CE",
-            LocalDate.now().plusYears(3),
+            licenseExpiresOn,
             null);
     MvcResult result =
         mockMvc
@@ -213,6 +287,44 @@ class TripAndExpenseIntegrationTest {
             .andExpect(status().isCreated())
             .andReturn();
     return objectMapper.readTree(result.getResponse().getContentAsString()).get("id").asText();
+  }
+
+  private void uploadDriverDocument(
+      String token,
+      String driverId,
+      String path,
+      LocalDate validFrom,
+      LocalDate validTo)
+      throws Exception {
+    MockMultipartFile file =
+        new MockMultipartFile("file", "license.jpg", "image/jpeg", jpegBytes());
+    mockMvc
+        .perform(
+            multipart(
+                    ReferenceApiPaths.ADMIN_DRIVERS_BASE
+                        + "/"
+                        + driverId
+                        + "/documents/"
+                        + path)
+                .file(file)
+                .param("validFrom", validFrom.toString())
+                .param("validTo", validTo.toString())
+                .header("Authorization", "Bearer " + token)
+                .with(
+                    request -> {
+                      request.setMethod("POST");
+                      return request;
+                    }))
+        .andExpect(status().isCreated());
+  }
+
+  private static byte[] jpegBytes() {
+    return new byte[] {
+      (byte) 0xFF,
+      (byte) 0xD8,
+      (byte) 0xFF,
+      (byte) 0xD9
+    };
   }
 
   private String createVehicle(String token, String plate, String vin, VehicleType type)

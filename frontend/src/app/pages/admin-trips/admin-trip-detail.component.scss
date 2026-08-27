@@ -81,6 +81,13 @@
     grid-column: 1 / -1;
   }
 
+  &__status-hint {
+    margin: 0;
+    opacity: 0.8;
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
   &__form-actions,
   &__status-actions,
   &__expense-actions {
