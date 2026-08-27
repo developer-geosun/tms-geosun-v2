@@ -1,0 +1,47 @@
+---
+description: Единые шрифты и иконки фронтенда — Inter Variable + Material Symbols
+globs: frontend/src/**/*.{scss,css,html,ts}
+alwaysApply: false
+---
+
+# Typography & icons (TMS GeoSun)
+
+Не подключай Google Fonts / Roboto / Material Icons. Текст и иконки уже самохостятся.
+
+## Текст
+
+- Единственный UI-шрифт: **`Inter Variable`** (пакет `@fontsource-variable/inter`).
+- Стек: `var(--font-sans)` → `'Inter Variable', system-ui, sans-serif` из [`frontend/src/styles/_fonts.scss`](frontend/src/styles/_fonts.scss).
+- Моноширинный: только `var(--font-mono)` (не копируй локальные стеки Consolas/Menlo).
+- Темы Material: `brand-family` / `plain-family` = `'Inter Variable'` в [`_theme.scss`](frontend/src/styles/_theme.scss). Не возвращай дефолтный Roboto.
+- Заголовки страниц (`.page__title`, auth `h1`): **font-weight 600**, не 700.
+- Таблицы в `.table-shell`: опирайся на общие стили page-layout (≈14px / 1.4), не плоди ad-hoc `font-family`.
+
+```scss
+/* ❌ */
+font-family: Roboto, Inter, sans-serif;
+font-family: ui-monospace, Menlo, monospace;
+
+/* ✅ */
+font-family: var(--font-sans);
+font-family: var(--font-mono);
+```
+
+## Иконки
+
+- Только **Material Symbols Outlined** (`material-symbols` npm). Дефолт задан в `app.config.ts` через `MatIconRegistry.setDefaultFontSetClass('material-symbols-outlined', 'mat-ligature-font')`.
+- Класс **`mat-ligature-font` обязателен** для `fontIcon` (иначе пустые глифы). Не переопределяй `fontSet` на `material-icons` / `material-icons-outlined`.
+- Не добавляй `<link>` на `fonts.googleapis.com` / `fonts.gstatic.com` в `index.html` / `404.html`.
+
+```html
+<!-- ✅ -->
+<mat-icon fontIcon="settings"></mat-icon>
+<mat-icon>login</mat-icon>
+
+<!-- ❌ -->
+<mat-icon fontSet="material-icons-outlined">settings</mat-icon>
+```
+
+## Письма (backend mail HTML)
+
+- Веб-шрифты в email не тащи: оставляй `Arial, sans-serif` (или системный стек для mail).
