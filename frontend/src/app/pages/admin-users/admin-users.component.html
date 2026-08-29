@@ -2,54 +2,48 @@
   <header class="admin-users__header">
     <h1>{{ 'pages.adminUsers.title' | translate }}</h1>
     <div class="admin-users__actions">
-      <button
-        mat-stroked-button
-        type="button"
-        class="admin-users__action-btn"
-        [attr.aria-label]="'pages.adminUsers.refresh' | translate"
-        (click)="reload()"
-        [disabled]="isLoading()">
-        <mat-icon aria-hidden="true">refresh</mat-icon>
-        <span class="admin-users__action-label">{{ 'pages.adminUsers.refresh' | translate }}</span>
-      </button>
       @if (filtersActive()) {
         <button
           mat-flat-button
           color="primary"
           type="button"
-          class="admin-users__action-btn admin-users__filter-btn"
+          class="admin-list-toolbar__icon-action"
+          [matTooltip]="'pages.adminUsers.filter' | translate"
           [attr.aria-label]="'pages.adminUsers.filter' | translate"
           (click)="openFiltersDialog()">
           <mat-icon aria-hidden="true">filter_list</mat-icon>
-          <span class="admin-users__action-label">{{ 'pages.adminUsers.filter' | translate }}</span>
         </button>
       } @else {
         <button
           mat-stroked-button
           type="button"
-          class="admin-users__action-btn admin-users__filter-btn"
+          class="admin-list-toolbar__icon-action"
+          [matTooltip]="'pages.adminUsers.filter' | translate"
           [attr.aria-label]="'pages.adminUsers.filter' | translate"
           (click)="openFiltersDialog()">
           <mat-icon aria-hidden="true">filter_list</mat-icon>
-          <span class="admin-users__action-label">{{ 'pages.adminUsers.filter' | translate }}</span>
         </button>
       }
+      <button
+        mat-stroked-button
+        type="button"
+        class="admin-list-toolbar__icon-action"
+        [matTooltip]="'pages.adminUsers.refresh' | translate"
+        [attr.aria-label]="'pages.adminUsers.refresh' | translate"
+        (click)="reload()"
+        [disabled]="isLoading()">
+        <mat-icon aria-hidden="true">refresh</mat-icon>
+      </button>
     </div>
   </header>
 
-  @if (isLoading() || loadError() || actionError() || actionSuccess()) {
+  @if (isLoading()) {
+    <mat-progress-bar class="admin-users__progress" mode="indeterminate" />
+  }
+
+  @if (loadError()) {
     <div class="admin-users__messages">
-      @if (isLoading()) {
-        <p>{{ 'pages.adminUsers.loading' | translate }}</p>
-      } @else if (loadError()) {
-        <p class="admin-users__error">{{ loadError() | translate }}</p>
-      }
-      @if (actionError()) {
-        <p class="admin-users__error">{{ actionError() | translate }}</p>
-      }
-      @if (actionSuccess()) {
-        <p class="admin-users__success">{{ actionSuccess() | translate }}</p>
-      }
+      <p class="admin-users__error">{{ loadError() | translate }}</p>
     </div>
   }
 
@@ -120,8 +114,7 @@
             <mat-card-actions class="user-card__actions" align="end">
               @if (row.deleted) {
                 <button
-                  mat-stroked-button
-                  color="primary"
+                  mat-button
                   type="button"
                   (click)="onRestore(row)"
                   [disabled]="isUpdating(row.id)"
@@ -131,7 +124,7 @@
                 </button>
               } @else {
                 <button
-                  mat-stroked-button
+                  mat-button
                   color="warn"
                   type="button"
                   (click)="onSoftDelete(row)"
@@ -219,8 +212,7 @@
           <td mat-cell *matCellDef="let row">
             @if (row.deleted) {
               <button
-                mat-stroked-button
-                color="primary"
+                mat-button
                 type="button"
                 (click)="onRestore(row)"
                 [disabled]="isUpdating(row.id)"
@@ -229,7 +221,7 @@
               </button>
             } @else {
               <button
-                mat-stroked-button
+                mat-button
                 color="warn"
                 type="button"
                 (click)="onSoftDelete(row)"

@@ -1,0 +1,59 @@
+---
+description: Единообразие UI фронтенда — роли кнопок, оболочка админ-списков, snackbar vs inline
+globs:
+  - frontend/src/**/*.{html,scss,ts}
+alwaysApply: false
+---
+
+# UI consistency (TMS GeoSun)
+
+Не изобретай layout и кнопки. Ориентиры: `admin-drivers`, `admin-vehicles`, `admin-trips`; диалоги — `filter-users-dialog`, `confirm-dialog`.
+
+Auth (login/register) — отдельное семейство (карточка), но primary = `mat-flat-button`, не `raised`.
+
+## Роли кнопок
+
+| Роль | Директива |
+|---|---|
+| Главное (Сохранить, Войти, Создать) | `mat-flat-button color="primary"` |
+| Вторичное / Отмена | `mat-stroked-button` |
+| Refresh / Filter в тулбаре списка | `mat-stroked-button` + `admin-list-toolbar__icon-action` (иконка + tooltip) |
+| Строка плотной таблицы (drivers/vehicles) | `mat-icon-button` |
+| Строка/карточка с текстом | `mat-button`; удаление — `color="warn"` |
+| Карта | `mat-fab` / `mat-mini-fab` |
+| Переключение вида | `mat-button-toggle` |
+
+```html
+<!-- ❌ primary через raised -->
+<button mat-raised-button color="primary">Save</button>
+
+<!-- ✅ -->
+<button mat-flat-button color="primary">Save</button>
+```
+
+## Оболочка админ-списка
+
+- SCSS: `@include admin-list-toolbar.admin-list-page-header` и `admin-list-toolbar-actions` из [`_admin-list-toolbar.scss`](frontend/src/styles/_admin-list-toolbar.scss).
+- Порядок экшенов: toggle/фильтры → refresh (иконка) → primary create.
+- Таблица в `.table-shell`; handset — `mat-card appearance="outlined"`.
+- Отступы страницы: CSS vars из [`_page-layout.scss`](frontend/src/styles/_page-layout.scss).
+
+## Обратная связь
+
+- Действие (сохранил, удалил, ошибка API) → `showAppSnack` ([`app-snackbar.ts`](frontend/src/app/shared/utils/app-snackbar.ts)).
+- Ошибка загрузки списка / пустой список → блок на странице.
+- Ошибки полей формы / диалога → inline под полем.
+- Загрузка списка → `mat-progress-bar mode="indeterminate"`, не текст «Завантаження…».
+
+## Диалоги
+
+- Cancel / Reset = `mat-stroked-button`; Submit = `mat-flat-button color="primary"`.
+- Деструктивное подтверждение — только `ConfirmDialogComponent`.
+- Handset: `getHandsetFriendlyDialogConfig` / `dialog-shell--handset-fullscreen`.
+
+## Не делать
+
+- Обёртки `app-button` вместо Material.
+- Свой хедер, если подходит миксин admin-list-toolbar.
+- Ad-hoc `@media` — только mixins из `_breakpoints.scss`.
+- Менять темы Material и цвета языковых toggle.

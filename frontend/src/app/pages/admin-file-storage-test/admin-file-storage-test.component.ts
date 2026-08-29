@@ -10,7 +10,9 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
-import { TranslateModule } from '@ngx-translate/core';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -21,6 +23,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { StoredFileContractDto, StoredFilesApiService } from '../../core/api';
 import { LayoutService } from '../../core/layout';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { showAppSnack } from '../../shared/utils/app-snackbar';
 
 @Component({
   selector: 'app-admin-file-storage-test',
@@ -34,7 +37,8 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
     MatIconModule,
     MatPaginatorModule,
     MatTableModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatProgressBarModule
   ],
   templateUrl: './admin-file-storage-test.component.html',
   styleUrl: './admin-file-storage-test.component.scss',
@@ -47,6 +51,8 @@ export class AdminFileStorageTestComponent implements OnInit {
   private readonly layout = inject(LayoutService);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly translate = inject(TranslateService);
 
   /** Версія завантаження прев’ю — щоб ігнорувати застарілі відповіді після reload. */
   private previewLoadEpoch = 0;
@@ -65,8 +71,6 @@ export class AdminFileStorageTestComponent implements OnInit {
   readonly isUploading = signal(false);
   readonly isDragOver = signal(false);
   readonly loadError = signal<string | null>(null);
-  readonly actionError = signal<string | null>(null);
-  readonly actionSuccess = signal<string | null>(null);
   /** Лічильник dragenter/dragleave, щоб не блимало при наведенні на дочірні елементи. */
   private dragDepth = 0;
   readonly storageType = signal<string>('-');
@@ -248,21 +252,18 @@ export class AdminFileStorageTestComponent implements OnInit {
 
   async upload(file: File): Promise<void> {
     this.isUploading.set(true);
-    this.actionError.set(null);
-    this.actionSuccess.set(null);
     try {
       await this.filesApi.upload(file);
-      this.actionSuccess.set('pages.adminFileStorageTest.uploadSuccess');
+      this.notify('pages.adminFileStorageTest.uploadSuccess');
       await this.reload();
     } catch {
-      this.actionError.set('pages.adminFileStorageTest.uploadFailed');
+      this.notify('pages.adminFileStorageTest.uploadFailed', 'error');
     } finally {
       this.isUploading.set(false);
     }
   }
 
   async download(row: StoredFileContractDto): Promise<void> {
-    this.actionError.set(null);
     try {
       const blob = await this.filesApi.downloadBlob(row.id);
       const url = URL.createObjectURL(blob);
@@ -272,7 +273,7 @@ export class AdminFileStorageTestComponent implements OnInit {
       anchor.click();
       URL.revokeObjectURL(url);
     } catch {
-      this.actionError.set('pages.adminFileStorageTest.downloadFailed');
+      this.notify('pages.adminFileStorageTest.downloadFailed', 'error');
     }
   }
 
@@ -287,15 +288,17 @@ export class AdminFileStorageTestComponent implements OnInit {
     if (!confirmed) {
       return;
     }
-    this.actionError.set(null);
-    this.actionSuccess.set(null);
     try {
       await this.filesApi.delete(row.id);
-      this.actionSuccess.set('pages.adminFileStorageTest.deleteSuccess');
+      this.notify('pages.adminFileStorageTest.deleteSuccess');
       await this.reload();
     } catch {
-      this.actionError.set('pages.adminFileStorageTest.deleteFailed');
+      this.notify('pages.adminFileStorageTest.deleteFailed', 'error');
     }
+  }
+
+  private notify(messageKey: string, kind: 'success' | 'error' = 'success'): void {
+    showAppSnack(this.snackBar, this.translate, messageKey, kind);
   }
 
   formatSize(bytes: number): string {

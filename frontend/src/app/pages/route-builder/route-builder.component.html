@@ -102,7 +102,7 @@
           </button>
           <button
             class="sidebar-login-button sidebar-request-button"
-            mat-raised-button
+            mat-flat-button
             color="primary"
             type="button"
             (click)="openFreightRequestDialog()"
@@ -113,8 +113,7 @@
         } @else {
           <button
             class="sidebar-login-button"
-            mat-raised-button
-            color="primary"
+            mat-stroked-button
             type="button"
             (click)="clearAllPoints()"
             [disabled]="!canEditRoute()"
@@ -123,8 +122,7 @@
           </button>
           <button
             class="sidebar-login-button"
-            mat-raised-button
-            color="primary"
+            mat-stroked-button
             type="button"
             (click)="clearAllOperations()"
             [disabled]="!canEditRoute() || !hasAnySelectedOperations()"
@@ -139,7 +137,7 @@
           >
             <button
               class="sidebar-login-button"
-              mat-raised-button
+              mat-flat-button
               color="primary"
               type="button"
               (click)="saveCurrentRoute()"
@@ -158,8 +156,7 @@
           @if (isEditMode()) {
             <button
               class="sidebar-login-button"
-              mat-raised-button
-              color="primary"
+              mat-stroked-button
               type="button"
               (click)="switchToViewMode()"
               [disabled]="isLoadingSavedRoute()"

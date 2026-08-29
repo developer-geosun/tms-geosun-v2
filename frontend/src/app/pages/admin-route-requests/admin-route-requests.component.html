@@ -48,12 +48,13 @@
       </header>
 
       @if (isLoading()) {
-        <p>{{ 'pages.adminRouteRequests.loading' | translate }}</p>
-      } @else if (loadError()) {
+        <mat-progress-bar class="admin-route-requests__progress" mode="indeterminate" />
+      }
+      @if (loadError()) {
         <p class="admin-route-requests__error">{{ loadError() | translate }}</p>
-      } @else if (!requests().length) {
+      } @else if (!isLoading() && !requests().length) {
         <p>{{ 'pages.adminRouteRequests.empty' | translate }}</p>
-      } @else {
+      } @else if (!isLoading()) {
         <div class="admin-route-requests__layout">
           <aside class="admin-route-requests__list">
             @for (request of requests(); track request.id) {
@@ -142,9 +143,6 @@
                 {{ 'pages.adminRouteRequests.nbuOpenCurrencies' | translate }}
               </a>
             }
-          }
-          @if (nbuActionSuccess()) {
-            <p class="admin-route-requests__success">{{ nbuActionSuccess() | translate }}</p>
           }
           @if (nbuCostDisplay(); as display) {
             <mat-card class="admin-route-requests__nbu-summary">
@@ -400,12 +398,6 @@
             </button>
           </div>
         </form>
-        @if (quoteActionError()) {
-          <p class="admin-route-requests__error">{{ quoteActionError() | translate }}</p>
-        }
-        @if (quoteActionSuccess()) {
-          <p class="admin-route-requests__success">{{ quoteActionSuccess() | translate }}</p>
-        }
 
         <h3>{{ 'pages.adminRouteRequests.quoteHistory' | translate }}</h3>
         @if (quoteLoadError()) {

@@ -9,9 +9,15 @@
       </p>
     </div>
     <div class="header-actions">
-      <button mat-stroked-button type="button" (click)="reload()" [disabled]="isLoading()">
-        <mat-icon>refresh</mat-icon>
-        {{ 'pages.adminFileStorageTest.refresh' | translate }}
+      <button
+        mat-stroked-button
+        type="button"
+        class="admin-list-toolbar__icon-action"
+        [matTooltip]="'pages.adminFileStorageTest.refresh' | translate"
+        [attr.aria-label]="'pages.adminFileStorageTest.refresh' | translate"
+        (click)="reload()"
+        [disabled]="isLoading()">
+        <mat-icon aria-hidden="true">refresh</mat-icon>
       </button>
       <button
         mat-flat-button
@@ -56,20 +62,16 @@
     </div>
   </header>
 
-  @if (actionSuccess()) {
-    <p class="banner banner--success">{{ actionSuccess()! | translate }}</p>
-  }
-  @if (actionError()) {
-    <p class="banner banner--error">{{ actionError()! | translate }}</p>
-  }
   @if (loadError()) {
     <p class="banner banner--error">{{ loadError()! | translate }}</p>
   }
 
+  @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
   <mat-card>
-    @if (isLoading()) {
-      <p>{{ 'pages.adminFileStorageTest.loading' | translate }}</p>
-    } @else if (files().length === 0) {
+    @if (!isLoading() && files().length === 0) {
       <p>{{ 'pages.adminFileStorageTest.empty' | translate }}</p>
     } @else {
       <div class="table-shell">

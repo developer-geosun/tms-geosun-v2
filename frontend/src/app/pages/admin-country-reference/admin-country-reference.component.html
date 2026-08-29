@@ -2,8 +2,15 @@
   <header class="admin-country-reference__header">
     <h1>{{ 'pages.adminCountryReference.title' | translate }}</h1>
     <div class="admin-country-reference__actions">
-      <button mat-stroked-button type="button" (click)="reload()" [disabled]="isLoading()">
-        {{ 'pages.adminCountryReference.refresh' | translate }}
+      <button
+        mat-stroked-button
+        type="button"
+        class="admin-list-toolbar__icon-action"
+        [matTooltip]="'pages.adminCountryReference.refresh' | translate"
+        [attr.aria-label]="'pages.adminCountryReference.refresh' | translate"
+        (click)="reload()"
+        [disabled]="isLoading()">
+        <mat-icon aria-hidden="true">refresh</mat-icon>
       </button>
     </div>
   </header>
@@ -18,13 +25,13 @@
     </button>
   </form>
 
-  @if (isLoading() || loadError()) {
+  @if (isLoading()) {
+    <mat-progress-bar class="admin-country-reference__progress" mode="indeterminate" />
+  }
+
+  @if (loadError()) {
     <div class="admin-country-reference__messages">
-      @if (isLoading()) {
-        <p>{{ 'pages.adminCountryReference.loading' | translate }}</p>
-      } @else if (loadError()) {
-        <p class="admin-country-reference__error">{{ loadError() | translate }}</p>
-      }
+      <p class="admin-country-reference__error">{{ loadError() | translate }}</p>
     </div>
   }
 

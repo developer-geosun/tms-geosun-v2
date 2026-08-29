@@ -5,16 +5,17 @@
       <button
         mat-stroked-button
         type="button"
-        class="admin-currencies__action-btn"
+        class="admin-list-toolbar__icon-action"
+        [matTooltip]="'pages.adminCurrencies.refresh' | translate"
+        [attr.aria-label]="'pages.adminCurrencies.refresh' | translate"
         (click)="reload()"
         [disabled]="isLoading() || isSyncing()">
-        {{ 'pages.adminCurrencies.refresh' | translate }}
+        <mat-icon aria-hidden="true">refresh</mat-icon>
       </button>
       <button
         mat-flat-button
         color="primary"
         type="button"
-        class="admin-currencies__action-btn"
         (click)="syncNbuRates()"
         [disabled]="isLoading() || isSyncing()">
         {{ (isSyncing() ? 'pages.adminCurrencies.syncing' : 'pages.adminCurrencies.syncNbu') | translate }}
@@ -64,19 +65,13 @@
     </section>
   }
 
-  @if (isLoading() || loadError() || actionError() || actionSuccess()) {
+  @if (isLoading()) {
+    <mat-progress-bar class="admin-currencies__progress" mode="indeterminate" />
+  }
+
+  @if (loadError()) {
     <div class="admin-currencies__messages">
-      @if (isLoading()) {
-        <p>{{ 'pages.adminCurrencies.loading' | translate }}</p>
-      } @else if (loadError()) {
-        <p class="admin-currencies__error">{{ loadError() | translate }}</p>
-      }
-      @if (actionError()) {
-        <p class="admin-currencies__error">{{ actionError() | translate }}</p>
-      }
-      @if (actionSuccess()) {
-        <p class="admin-currencies__success">{{ actionSuccess() | translate }}</p>
-      }
+      <p class="admin-currencies__error">{{ loadError() | translate }}</p>
     </div>
   }
 

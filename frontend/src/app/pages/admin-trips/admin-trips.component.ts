@@ -13,6 +13,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -36,6 +37,7 @@ import { showAppSnack } from '../../shared/utils/app-snackbar';
     MatCardModule,
     MatIconModule,
     MatPaginatorModule,
+    MatProgressBarModule,
     MatSnackBarModule,
     MatTableModule,
     MatTooltipModule

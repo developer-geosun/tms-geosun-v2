@@ -11,7 +11,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslateService } from '@ngx-translate/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -27,6 +31,7 @@ import {
 import { LayoutService } from '../../core/layout';
 import { parseOptionalFormNumber } from '../../core/utils/parse-optional-form-number';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { showAppSnack } from '../../shared/utils/app-snackbar';
 
 @Component({
   selector: 'app-admin-freight-numeric-scenarios',
@@ -43,6 +48,8 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
     MatSelectModule,
     MatCheckboxModule,
     MatTooltipModule,
+    MatIconModule,
+    MatProgressBarModule,
     MatDialogModule
   ],
   templateUrl: './admin-freight-numeric-scenarios.component.html',
@@ -57,6 +64,8 @@ export class AdminFreightNumericScenariosComponent {
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
   private readonly layout = inject(LayoutService);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly translate = inject(TranslateService);
 
   private static readonly DESKTOP_DEFAULT_PAGE_SIZE = 10;
   private static readonly HANDSET_DEFAULT_PAGE_SIZE = 5;
@@ -67,8 +76,6 @@ export class AdminFreightNumericScenariosComponent {
   readonly displayedColumns = ['name', 'proposalCurrency', 'isActive', 'updatedAt', 'actions'];
   readonly isLoading = signal(false);
   readonly loadError = signal('');
-  readonly actionError = signal('');
-  readonly actionSuccess = signal('');
   readonly scenarios = signal<FreightNumericScenarioContractDto[]>([]);
   readonly tollTariffSets = signal<TollTariffSetContractDto[]>([]);
   readonly editingId = signal<string | null>(null);
@@ -215,30 +222,26 @@ export class AdminFreightNumericScenariosComponent {
   async saveScenario(): Promise<void> {
     const payload = this.toPayload();
     if (!payload) {
-      this.actionError.set('pages.adminFreightNumericScenarios.validationError');
+      this.notify('pages.adminFreightNumericScenarios.validationError', 'error');
       return;
     }
-    this.actionError.set('');
-    this.actionSuccess.set('');
     try {
       const editingId = this.editingId();
       if (editingId) {
         await this.scenariosApi.update(editingId, payload);
-        this.actionSuccess.set('pages.adminFreightNumericScenarios.updated');
+        this.notify('pages.adminFreightNumericScenarios.updated');
       } else {
         await this.scenariosApi.create(payload);
-        this.actionSuccess.set('pages.adminFreightNumericScenarios.created');
+        this.notify('pages.adminFreightNumericScenarios.created');
       }
       this.startCreate();
       await this.loadScenarios();
     } catch {
-      this.actionError.set('pages.adminFreightNumericScenarios.saveFailed');
+      this.notify('pages.adminFreightNumericScenarios.saveFailed', 'error');
     }
   }
 
   async duplicateScenario(scenario: FreightNumericScenarioContractDto): Promise<void> {
-    this.actionError.set('');
-    this.actionSuccess.set('');
     const payload: CreateFreightNumericScenarioContractRequest = {
       name: this.buildCloneName(scenario.name),
       description: scenario.description,
@@ -260,10 +263,10 @@ export class AdminFreightNumericScenariosComponent {
     };
     try {
       await this.scenariosApi.create(payload);
-      this.actionSuccess.set('pages.adminFreightNumericScenarios.duplicated');
+      this.notify('pages.adminFreightNumericScenarios.duplicated');
       await this.loadScenarios();
     } catch {
-      this.actionError.set('pages.adminFreightNumericScenarios.duplicateFailed');
+      this.notify('pages.adminFreightNumericScenarios.duplicateFailed', 'error');
     }
   }
 
@@ -272,16 +275,15 @@ export class AdminFreightNumericScenariosComponent {
     if (!confirmed) {
       return;
     }
-    this.actionError.set('');
     try {
       await this.scenariosApi.delete(scenario.id);
       if (this.editingId() === scenario.id) {
         this.startCreate();
       }
       await this.loadScenarios();
-      this.actionSuccess.set('pages.adminFreightNumericScenarios.deleted');
+      this.notify('pages.adminFreightNumericScenarios.deleted');
     } catch {
-      this.actionError.set('pages.adminFreightNumericScenarios.deleteFailed');
+      this.notify('pages.adminFreightNumericScenarios.deleteFailed', 'error');
     }
   }
 
@@ -371,6 +373,10 @@ export class AdminFreightNumericScenariosComponent {
       proposalCurrency: values.proposalCurrency.trim().toUpperCase(),
       tollTariffSetId: values.tollTariffSetId
     };
+  }
+
+  private notify(messageKey: string, kind: 'success' | 'error' = 'success'): void {
+    showAppSnack(this.snackBar, this.translate, messageKey, kind);
   }
 
   private openConfirmDialog(messageKey: string): Promise<boolean> {

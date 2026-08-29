@@ -2,8 +2,15 @@
   <header class="admin-toll-tariff-sets__header">
     <h1>{{ 'pages.adminTollTariffSets.title' | translate }}</h1>
     <div class="admin-toll-tariff-sets__actions">
-      <button mat-stroked-button type="button" (click)="loadSets()" [disabled]="isLoadingSets()">
-        {{ 'pages.adminTollTariffSets.refresh' | translate }}
+      <button
+        mat-stroked-button
+        type="button"
+        class="admin-list-toolbar__icon-action"
+        [matTooltip]="'pages.adminTollTariffSets.refresh' | translate"
+        [attr.aria-label]="'pages.adminTollTariffSets.refresh' | translate"
+        (click)="loadSets()"
+        [disabled]="isLoadingSets()">
+        <mat-icon aria-hidden="true">refresh</mat-icon>
       </button>
       <button mat-stroked-button type="button" (click)="backToRouteRequests()">
         {{ 'pages.adminTollTariffSets.backToRequests' | translate }}
@@ -11,17 +18,13 @@
     </div>
   </header>
 
-  @if (loadError() || actionError() || actionSuccess()) {
+  @if (isLoadingSets()) {
+    <mat-progress-bar class="admin-toll-tariff-sets__progress" mode="indeterminate" />
+  }
+
+  @if (loadError()) {
     <div class="admin-toll-tariff-sets__messages">
-      @if (loadError()) {
-        <p class="admin-toll-tariff-sets__error">{{ loadError() | translate }}</p>
-      }
-      @if (actionError()) {
-        <p class="admin-toll-tariff-sets__error">{{ actionError() | translate }}</p>
-      }
-      @if (actionSuccess()) {
-        <p class="admin-toll-tariff-sets__success">{{ actionSuccess() | translate }}</p>
-      }
+      <p class="admin-toll-tariff-sets__error">{{ loadError() | translate }}</p>
     </div>
   }
 

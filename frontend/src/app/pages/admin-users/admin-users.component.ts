@@ -21,7 +21,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslateService } from '@ngx-translate/core';
 import {
   AdminUserRole,
   UserAdminContractDto,
@@ -31,6 +34,7 @@ import { LayoutService } from '../../core/layout';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { SuperAdminPasswordDialogComponent } from '../../shared/components/super-admin-password-dialog/super-admin-password-dialog.component';
+import { showAppSnack } from '../../shared/utils/app-snackbar';
 import { getHandsetFriendlyDialogConfig } from '../../shared/utils/handset-friendly-dialog-config';
 import {
   FilterUsersDialogComponent,
@@ -54,6 +58,7 @@ import {
     MatSlideToggleModule,
     MatSortModule,
     MatTableModule,
+    MatProgressBarModule,
     MatTooltipModule
   ],
   templateUrl: './admin-users.component.html',
@@ -69,6 +74,8 @@ export class AdminUsersComponent implements AfterViewInit {
   private readonly authService = inject(AuthService);
   private readonly dialog = inject(MatDialog);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly translate = inject(TranslateService);
 
   readonly roleOptions: AdminUserRole[] = ['USER', 'MANAGER', 'DRIVER', 'ADMIN'];
   readonly pageSizeOptions = [5, 10, 15, 25, 50];
@@ -89,8 +96,6 @@ export class AdminUsersComponent implements AfterViewInit {
   readonly sortOrder = signal<'asc' | 'desc'>('desc');
   readonly isLoading = signal(false);
   readonly loadError = signal('');
-  readonly actionError = signal('');
-  readonly actionSuccess = signal('');
   readonly updatingIds = signal<Set<string>>(new Set());
   /** Збільшується, щоб пересоздати mat-select і скинути UI після скасування/помилки */
   readonly roleSelectEpoch = signal(0);
@@ -278,7 +283,7 @@ export class AdminUsersComponent implements AfterViewInit {
           role,
           ...(superAdminPassword ? { superAdminPassword } : {})
         });
-        this.actionSuccess.set('pages.adminUsers.roleUpdated');
+        this.notify('pages.adminUsers.roleUpdated');
       },
       'pages.adminUsers.roleUpdateFailed',
       { revertRoleSelectOnError: true }
@@ -298,7 +303,7 @@ export class AdminUsersComponent implements AfterViewInit {
     }
     await this.runAction(row.id, async () => {
       await this.usersApi.setActive(row.id, { active });
-      this.actionSuccess.set(
+      this.notify(
         active ? 'pages.adminUsers.activated' : 'pages.adminUsers.deactivated'
       );
     }, 'pages.adminUsers.activeUpdateFailed');
@@ -314,7 +319,7 @@ export class AdminUsersComponent implements AfterViewInit {
     }
     await this.runAction(row.id, async () => {
       await this.usersApi.softDelete(row.id);
-      this.actionSuccess.set('pages.adminUsers.deleteSuccess');
+      this.notify('pages.adminUsers.deleteSuccess');
     }, 'pages.adminUsers.deleteFailed');
   }
 
@@ -328,7 +333,7 @@ export class AdminUsersComponent implements AfterViewInit {
     }
     await this.runAction(row.id, async () => {
       await this.usersApi.restore(row.id);
-      this.actionSuccess.set('pages.adminUsers.restoreSuccess');
+      this.notify('pages.adminUsers.restoreSuccess');
     }, 'pages.adminUsers.restoreFailed');
   }
 
@@ -346,14 +351,12 @@ export class AdminUsersComponent implements AfterViewInit {
     errorKey: string,
     options?: { revertRoleSelectOnError?: boolean }
   ): Promise<void> {
-    this.actionError.set('');
-    this.actionSuccess.set('');
     this.updatingIds.update((set) => new Set(set).add(id));
     try {
       await action();
       await this.reload();
     } catch (err: unknown) {
-      this.actionError.set(this.mapErrorKey(err, errorKey));
+      this.notify(this.mapErrorKey(err, errorKey), 'error');
       if (options?.revertRoleSelectOnError) {
         await this.revertRoleSelectUi();
       }
@@ -404,6 +407,10 @@ export class AdminUsersComponent implements AfterViewInit {
       return 'pages.adminUsers.superAdminPasswordNotConfigured';
     }
     return fallback;
+  }
+
+  private notify(messageKey: string, kind: 'success' | 'error' = 'success'): void {
+    showAppSnack(this.snackBar, this.translate, messageKey, kind);
   }
 
   private openConfirmDialog(messageKey: string): Promise<boolean> {

@@ -2,8 +2,14 @@
   <header class="admin-freight-numeric-scenarios__header">
     <h1>{{ 'pages.adminFreightNumericScenarios.title' | translate }}</h1>
     <div class="admin-freight-numeric-scenarios__actions">
-      <button mat-stroked-button type="button" (click)="loadScenarios()">
-        {{ 'pages.adminFreightNumericScenarios.refresh' | translate }}
+      <button
+        mat-stroked-button
+        type="button"
+        class="admin-list-toolbar__icon-action"
+        [matTooltip]="'pages.adminFreightNumericScenarios.refresh' | translate"
+        [attr.aria-label]="'pages.adminFreightNumericScenarios.refresh' | translate"
+        (click)="loadScenarios()">
+        <mat-icon aria-hidden="true">refresh</mat-icon>
       </button>
       <button mat-stroked-button type="button" (click)="backToRouteRequests()">
         {{ 'pages.adminFreightNumericScenarios.backToRequests' | translate }}
@@ -11,19 +17,13 @@
     </div>
   </header>
 
-  @if (isLoading() || loadError() || actionError() || actionSuccess()) {
+  @if (isLoading()) {
+    <mat-progress-bar class="admin-freight-numeric-scenarios__progress" mode="indeterminate" />
+  }
+
+  @if (loadError()) {
     <div class="admin-freight-numeric-scenarios__messages">
-      @if (isLoading()) {
-        <p>{{ 'pages.adminFreightNumericScenarios.loading' | translate }}</p>
-      } @else if (loadError()) {
-        <p class="admin-freight-numeric-scenarios__error">{{ loadError() | translate }}</p>
-      }
-      @if (actionError()) {
-        <p class="admin-freight-numeric-scenarios__error">{{ actionError() | translate }}</p>
-      }
-      @if (actionSuccess()) {
-        <p class="admin-freight-numeric-scenarios__success">{{ actionSuccess() | translate }}</p>
-      }
+      <p class="admin-freight-numeric-scenarios__error">{{ loadError() | translate }}</p>
     </div>
   }
 

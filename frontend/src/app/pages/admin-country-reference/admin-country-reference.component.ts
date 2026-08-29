@@ -17,6 +17,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CountryReferenceApiService, CountryReferenceContractDto } from '../../core/api';
@@ -35,7 +37,9 @@ import { LayoutService } from '../../core/layout';
     MatTableModule,
     MatPaginatorModule,
     MatSortModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatIconModule,
+    MatProgressBarModule
   ],
   templateUrl: './admin-country-reference.component.html',
   styleUrl: './admin-country-reference.component.scss',

@@ -14,7 +14,9 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -50,6 +52,7 @@ import {
 import { LayoutService } from '../../core/layout';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { getHandsetFriendlyDialogConfig } from '../../shared/utils/handset-friendly-dialog-config';
+import { showAppSnack } from '../../shared/utils/app-snackbar';
 import {
   SendProposalDialogComponent,
   SendProposalDialogData
@@ -70,6 +73,7 @@ import * as L from 'leaflet';
     MatButtonModule,
     MatDialogModule,
     MatProgressSpinnerModule,
+    MatProgressBarModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -96,6 +100,8 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
   private readonly routeRequestsApi = inject(RouteRequestsApiService);
   private readonly numericScenariosApi = inject(FreightNumericScenariosApiService);
   private readonly layout = inject(LayoutService);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly translate = inject(TranslateService);
 
   private static readonly DESKTOP_DEFAULT_PAGE_SIZE = 20;
   private static readonly HANDSET_DEFAULT_PAGE_SIZE = 5;
@@ -127,11 +133,8 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
   readonly isCountryBreakdownLoading = signal(false);
   readonly isNbuPreviewLoading = signal(false);
   readonly isDeletingNbuCalculation = signal(false);
-  readonly quoteActionError = signal('');
-  readonly quoteActionSuccess = signal('');
   readonly nbuActionError = signal('');
   readonly nbuActionErrorDetail = signal('');
-  readonly nbuActionSuccess = signal('');
   readonly showNbuRatesLink = signal(false);
   readonly nbuCostSummary = signal('');
   readonly nbuCostHistory = signal<FreightCostCalculationContractDto[]>([]);
@@ -277,8 +280,6 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
     this.disposeMap();
     this.isLoading.set(true);
     this.loadError.set('');
-    this.quoteActionError.set('');
-    this.quoteActionSuccess.set('');
     try {
       const filters = this.filterForm.getRawValue();
       const params: AdminRouteRequestListParams = {
@@ -394,11 +395,8 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
   selectRequest(requestId: number): void {
     this.selectedRequestId.set(requestId);
     this.closeQuotePanel();
-    this.quoteActionError.set('');
-    this.quoteActionSuccess.set('');
     this.nbuActionError.set('');
     this.nbuActionErrorDetail.set('');
-    this.nbuActionSuccess.set('');
     this.showNbuRatesLink.set(false);
     this.nbuCostSummary.set('');
     this.lastNbuPreview.set(null);
@@ -460,11 +458,9 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
     if (!selected) {
       return;
     }
-    this.quoteActionError.set('');
-    this.quoteActionSuccess.set('');
     const payload = this.toCreateQuotePayload();
     if (!payload) {
-      this.quoteActionError.set('pages.adminRouteRequests.quoteValidationError');
+      this.notify('pages.adminRouteRequests.quoteValidationError', 'error');
       return;
     }
 
@@ -472,9 +468,9 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
     try {
       await this.routeRequestsApi.createAdminQuote(selected.id, payload, this.nextIdempotencyKey('create'));
       await this.loadRequests();
-      this.quoteActionSuccess.set('pages.adminRouteRequests.quoteDraftCreated');
+      this.notify('pages.adminRouteRequests.quoteDraftCreated');
     } catch {
-      this.quoteActionError.set('pages.adminRouteRequests.quoteCreateFailed');
+      this.notify('pages.adminRouteRequests.quoteCreateFailed', 'error');
     } finally {
       this.isCreatingQuote.set(false);
     }
@@ -485,15 +481,13 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
     if (!draft) {
       return;
     }
-    this.quoteActionError.set('');
-    this.quoteActionSuccess.set('');
     this.isSendingQuote.set(true);
     try {
       await this.routeRequestsApi.sendAdminQuote(draft.id, this.nextIdempotencyKey('send'));
       await this.loadRequests();
-      this.quoteActionSuccess.set('pages.adminRouteRequests.quoteSentSuccess');
+      this.notify('pages.adminRouteRequests.quoteSentSuccess');
     } catch {
-      this.quoteActionError.set('pages.adminRouteRequests.quoteSendFailed');
+      this.notify('pages.adminRouteRequests.quoteSendFailed', 'error');
     } finally {
       this.isSendingQuote.set(false);
     }
@@ -514,7 +508,6 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
     }
     this.nbuActionError.set('');
     this.nbuActionErrorDetail.set('');
-    this.nbuActionSuccess.set('');
     this.showNbuRatesLink.set(false);
     this.isNbuPreviewLoading.set(true);
     try {
@@ -528,7 +521,7 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
       // Оновлюємо заявку (країни/пробіг) після авто-перерахунку breakdown
       await this.loadRequestDetails(selected.id);
       await this.loadNbuCostHistory(selected.id);
-      this.nbuActionSuccess.set('pages.adminRouteRequests.nbuPreviewSuccess');
+      this.notify('pages.adminRouteRequests.nbuPreviewSuccess');
     } catch (error) {
       this.handleNbuActionError(error, 'pages.adminRouteRequests.nbuPreviewFailed');
     } finally {
@@ -564,7 +557,6 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
     }
     this.nbuActionError.set('');
     this.nbuActionErrorDetail.set('');
-    this.nbuActionSuccess.set('');
     this.showNbuRatesLink.set(false);
     this.isDeletingNbuCalculation.set(true);
     try {
@@ -575,7 +567,7 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
         this.nbuCostSummary.set('');
       }
       await this.loadNbuCostHistory(selected.id);
-      this.nbuActionSuccess.set('pages.adminRouteRequests.nbuHistoryDeleted');
+      this.notify('pages.adminRouteRequests.nbuHistoryDeleted');
     } catch (error) {
       this.handleNbuActionError(error, 'pages.adminRouteRequests.nbuHistoryDeleteFailed');
     } finally {
@@ -586,17 +578,16 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
   applyNbuToQuoteDraft(): void {
     const preview = this.lastNbuPreview();
     if (!preview) {
-      this.quoteActionError.set('pages.adminRouteRequests.nbuPreviewRequiredForQuote');
+      this.notify('pages.adminRouteRequests.nbuPreviewRequiredForQuote', 'error');
       this.openQuotePanel();
       return;
     }
-    this.quoteActionError.set('');
     this.quoteDraftForm.patchValue({
       currency: preview.proposalCurrency.trim().toUpperCase(),
       totalAmount: String(preview.totalProposalAmount),
       internalNote: preview.calculationSummary ?? ''
     });
-    this.quoteActionSuccess.set('pages.adminRouteRequests.nbuAppliedToQuote');
+    this.notify('pages.adminRouteRequests.nbuAppliedToQuote');
     this.openQuotePanel();
   }
 
@@ -605,12 +596,10 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
     const preview = this.lastNbuPreview();
     const calculationId = this.nbuCalculationId(preview);
     if (!selected || !calculationId) {
-      this.quoteActionError.set('pages.adminRouteRequests.nbuPreviewRequiredForQuote');
+      this.notify('pages.adminRouteRequests.nbuPreviewRequiredForQuote', 'error');
       this.openQuotePanel();
       return;
     }
-    this.quoteActionError.set('');
-    this.quoteActionSuccess.set('');
     this.isCreatingQuote.set(true);
     try {
       await this.routeRequestsApi.createAdminQuote(
@@ -619,10 +608,10 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
         this.nextIdempotencyKey('create')
       );
       await this.loadQuoteHistory(selected.id);
-      this.quoteActionSuccess.set('pages.adminRouteRequests.quoteDraftCreatedFromNbu');
+      this.notify('pages.adminRouteRequests.quoteDraftCreatedFromNbu');
       this.openQuotePanel();
     } catch {
-      this.quoteActionError.set('pages.adminRouteRequests.quoteCreateFailed');
+      this.notify('pages.adminRouteRequests.quoteCreateFailed', 'error');
       this.openQuotePanel();
     } finally {
       this.isCreatingQuote.set(false);
@@ -634,18 +623,16 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
     const preview = this.lastNbuPreview();
     const calculationId = this.nbuCalculationId(preview);
     if (!selected || !preview || !calculationId) {
-      this.quoteActionError.set('pages.adminRouteRequests.nbuPreviewRequiredForQuote');
+      this.notify('pages.adminRouteRequests.nbuPreviewRequiredForQuote', 'error');
       this.openQuotePanel();
       return;
     }
     const requesterEmail = (selected.requesterEmail ?? '').trim();
     if (!requesterEmail) {
-      this.quoteActionError.set('pages.adminRouteRequests.sendProposalNoEmail');
+      this.notify('pages.adminRouteRequests.sendProposalNoEmail', 'error');
       this.openQuotePanel();
       return;
     }
-    this.quoteActionError.set('');
-    this.quoteActionSuccess.set('');
     const data: SendProposalDialogData = {
       requestId: selected.id,
       requesterEmail,
@@ -667,7 +654,7 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
     if (sent) {
       await this.loadRequests();
       await this.loadQuoteHistory(selected.id);
-      this.quoteActionSuccess.set('pages.adminRouteRequests.sendProposalSuccess');
+      this.notify('pages.adminRouteRequests.sendProposalSuccess');
       this.openQuotePanel();
     }
   }
@@ -679,9 +666,9 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
     }
     try {
       await navigator.clipboard.writeText(text);
-      this.nbuActionSuccess.set('pages.adminRouteRequests.nbuSummaryCopied');
+      this.notify('pages.adminRouteRequests.nbuSummaryCopied');
     } catch {
-      this.nbuActionError.set('pages.adminRouteRequests.nbuSummaryCopyFailed');
+      this.notify('pages.adminRouteRequests.nbuSummaryCopyFailed', 'error');
     }
   }
 
@@ -757,6 +744,10 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
       0
     );
     return this.formatCountryDistanceKm(totalMeters);
+  }
+
+  private notify(messageKey: string, kind: 'success' | 'error' = 'success'): void {
+    showAppSnack(this.snackBar, this.translate, messageKey, kind);
   }
 
   private handleNbuActionError(error: unknown, fallbackKey: string): void {
@@ -1074,7 +1065,7 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
     try {
       const updated = await this.routeRequestsApi.postAdminCountryBreakdown(selected.id, { scenarioId });
       this.requests.update((list) => list.map((item) => (item.id === updated.id ? updated : item)));
-      this.nbuActionSuccess.set('pages.adminRouteRequests.countryBreakdownSuccess');
+      this.notify('pages.adminRouteRequests.countryBreakdownSuccess');
       this.nbuActionError.set('');
       this.nbuActionErrorDetail.set('');
     } catch (error) {

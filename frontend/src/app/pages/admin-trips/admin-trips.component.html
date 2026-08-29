@@ -43,13 +43,13 @@
     </div>
   </header>
 
-  @if (isLoading() || loadError()) {
+  @if (isLoading()) {
+    <mat-progress-bar class="admin-trips__progress" mode="indeterminate" />
+  }
+
+  @if (loadError()) {
     <div class="admin-trips__messages">
-      @if (isLoading()) {
-        <p>{{ 'pages.adminTrips.loading' | translate }}</p>
-      } @else if (loadError()) {
-        <p class="admin-trips__error">{{ loadError() | translate }}</p>
-      }
+      <p class="admin-trips__error">{{ loadError() | translate }}</p>
     </div>
   }
 

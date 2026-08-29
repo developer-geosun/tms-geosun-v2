@@ -23,7 +23,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslateService } from '@ngx-translate/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -46,6 +50,7 @@ import { LanguageService } from '../../core/services/language.service';
 import { LayoutService } from '../../core/layout';
 import { parseOptionalFormNumber } from '../../core/utils/parse-optional-form-number';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { showAppSnack } from '../../shared/utils/app-snackbar';
 
 @Component({
   selector: 'app-admin-toll-tariff-sets',
@@ -64,6 +69,8 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/c
     MatSelectModule,
     MatCheckboxModule,
     MatTooltipModule,
+    MatIconModule,
+    MatProgressBarModule,
     MatDialogModule
   ],
   templateUrl: './admin-toll-tariff-sets.component.html',
@@ -80,6 +87,8 @@ export class AdminTollTariffSetsComponent implements AfterViewInit {
   private readonly countryReferenceApi = inject(CountryReferenceApiService);
   private readonly languageService = inject(LanguageService);
   private readonly layout = inject(LayoutService);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly translate = inject(TranslateService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(MatDialog);
 
@@ -129,8 +138,6 @@ export class AdminTollTariffSetsComponent implements AfterViewInit {
   readonly isLoadingSets = signal(false);
   readonly isLoadingRules = signal(false);
   readonly loadError = signal('');
-  readonly actionError = signal('');
-  readonly actionSuccess = signal('');
   readonly sets = signal<TollTariffSetContractDto[]>([]);
   readonly rules = signal<CountryTollRuleContractDto[]>([]);
   readonly selectedSetId = signal<string | null>(null);
@@ -282,7 +289,7 @@ export class AdminTollTariffSetsComponent implements AfterViewInit {
 
   async saveSet(): Promise<void> {
     if (this.setForm.invalid) {
-      this.actionError.set('pages.adminTollTariffSets.validationError');
+      this.notify('pages.adminTollTariffSets.validationError', 'error');
       return;
     }
     const values = this.setForm.getRawValue();
@@ -291,25 +298,23 @@ export class AdminTollTariffSetsComponent implements AfterViewInit {
       description: values.description.trim() || null,
       isActive: values.isActive
     };
-    this.actionError.set('');
-    this.actionSuccess.set('');
     try {
       const editingSetId = this.editingSetId();
       if (editingSetId) {
         const payload: UpdateTollTariffSetContractRequest = payloadBase;
         await this.tollApi.updateSet(editingSetId, payload);
-        this.actionSuccess.set('pages.adminTollTariffSets.setUpdated');
+        this.notify('pages.adminTollTariffSets.setUpdated');
       } else {
         const payload: CreateTollTariffSetContractRequest = payloadBase;
         const created = await this.tollApi.createSet(payload);
         this.selectedSetId.set(created.id);
-        this.actionSuccess.set('pages.adminTollTariffSets.setCreated');
+        this.notify('pages.adminTollTariffSets.setCreated');
       }
       this.editingSetId.set(null);
       this.setForm.reset({ name: '', description: '', isActive: true });
       await this.loadSets();
     } catch {
-      this.actionError.set('pages.adminTollTariffSets.setSaveFailed');
+      this.notify('pages.adminTollTariffSets.setSaveFailed', 'error');
     }
   }
 
@@ -318,7 +323,6 @@ export class AdminTollTariffSetsComponent implements AfterViewInit {
     if (!confirmed) {
       return;
     }
-    this.actionError.set('');
     try {
       await this.tollApi.deleteSet(set.id);
       if (this.selectedSetId() === set.id) {
@@ -326,9 +330,9 @@ export class AdminTollTariffSetsComponent implements AfterViewInit {
         this.setRules([]);
       }
       await this.loadSets();
-      this.actionSuccess.set('pages.adminTollTariffSets.setDeleted');
+      this.notify('pages.adminTollTariffSets.setDeleted');
     } catch {
-      this.actionError.set('pages.adminTollTariffSets.setDeleteFailed');
+      this.notify('pages.adminTollTariffSets.setDeleteFailed', 'error');
     }
   }
 
@@ -356,24 +360,22 @@ export class AdminTollTariffSetsComponent implements AfterViewInit {
     }
     const payload = this.toRulePayload();
     if (!payload) {
-      this.actionError.set('pages.adminTollTariffSets.validationError');
+      this.notify('pages.adminTollTariffSets.validationError', 'error');
       return;
     }
-    this.actionError.set('');
-    this.actionSuccess.set('');
     try {
       const editingRuleId = this.editingRuleId();
       if (editingRuleId) {
         await this.tollApi.updateRule(setId, editingRuleId, payload as UpdateCountryTollRuleContractRequest);
-        this.actionSuccess.set('pages.adminTollTariffSets.ruleUpdated');
+        this.notify('pages.adminTollTariffSets.ruleUpdated');
       } else {
         await this.tollApi.createRule(setId, payload as CreateCountryTollRuleContractRequest);
-        this.actionSuccess.set('pages.adminTollTariffSets.ruleCreated');
+        this.notify('pages.adminTollTariffSets.ruleCreated');
       }
       this.startCreateRule();
       await this.loadRulesForSelected();
     } catch {
-      this.actionError.set('pages.adminTollTariffSets.ruleSaveFailed');
+      this.notify('pages.adminTollTariffSets.ruleSaveFailed', 'error');
     }
   }
 
@@ -386,16 +388,15 @@ export class AdminTollTariffSetsComponent implements AfterViewInit {
     if (!confirmed) {
       return;
     }
-    this.actionError.set('');
     try {
       await this.tollApi.deleteRule(setId, rule.id);
       if (this.editingRuleId() === rule.id) {
         this.startCreateRule();
       }
       await this.loadRulesForSelected();
-      this.actionSuccess.set('pages.adminTollTariffSets.ruleDeleted');
+      this.notify('pages.adminTollTariffSets.ruleDeleted');
     } catch {
-      this.actionError.set('pages.adminTollTariffSets.ruleDeleteFailed');
+      this.notify('pages.adminTollTariffSets.ruleDeleteFailed', 'error');
     }
   }
 
@@ -418,7 +419,7 @@ export class AdminTollTariffSetsComponent implements AfterViewInit {
       this.setRules(await this.tollApi.listRules(setId));
     } catch {
       this.setRules([]);
-      this.actionError.set('pages.adminTollTariffSets.rulesLoadFailed');
+      this.notify('pages.adminTollTariffSets.rulesLoadFailed', 'error');
     } finally {
       this.isLoadingRules.set(false);
     }
@@ -572,6 +573,10 @@ export class AdminTollTariffSetsComponent implements AfterViewInit {
       fixedDays,
       isActive: values.isActive
     };
+  }
+
+  private notify(messageKey: string, kind: 'success' | 'error' = 'success'): void {
+    showAppSnack(this.snackBar, this.translate, messageKey, kind);
   }
 
   private openConfirmDialog(messageKey: string): Promise<boolean> {

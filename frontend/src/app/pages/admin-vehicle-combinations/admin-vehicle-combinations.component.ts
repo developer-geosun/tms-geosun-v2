@@ -23,6 +23,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -187,6 +188,7 @@ export class VehicleCombinationFormDialogComponent {
     MatDialogModule,
     MatIconModule,
     MatPaginatorModule,
+    MatProgressBarModule,
     MatSnackBarModule,
     MatTableModule,
     MatTooltipModule

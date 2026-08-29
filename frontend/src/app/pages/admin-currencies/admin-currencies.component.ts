@@ -15,7 +15,11 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSort, MatSortModule, Sort } from '@angular/material/sort';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslateService } from '@ngx-translate/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import {
@@ -24,6 +28,7 @@ import {
   NbuRatesSnapshotContractDto
 } from '../../core/api';
 import { LayoutService } from '../../core/layout';
+import { showAppSnack } from '../../shared/utils/app-snackbar';
 
 @Component({
   selector: 'app-admin-currencies',
@@ -38,6 +43,8 @@ import { LayoutService } from '../../core/layout';
     MatSortModule,
     MatSlideToggleModule,
     MatTooltipModule,
+    MatIconModule,
+    MatProgressBarModule,
     MatFormFieldModule,
     MatInputModule
   ],
@@ -52,6 +59,8 @@ export class AdminCurrenciesComponent implements AfterViewInit {
   private readonly currenciesApi = inject(CurrenciesApiService);
   private readonly layout = inject(LayoutService);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly translate = inject(TranslateService);
 
   readonly displayedColumns = [
     'code',
@@ -71,8 +80,6 @@ export class AdminCurrenciesComponent implements AfterViewInit {
   readonly isSyncing = signal(false);
   readonly isLoadingNbuSnapshot = signal(false);
   readonly loadError = signal('');
-  readonly actionError = signal('');
-  readonly actionSuccess = signal('');
   readonly nbuSnapshotError = signal('');
   readonly currencies = signal<CurrencyContractDto[]>([]);
   readonly nbuSnapshot = signal<NbuRatesSnapshotContractDto | null>(null);
@@ -143,14 +150,12 @@ export class AdminCurrenciesComponent implements AfterViewInit {
 
   async syncNbuRates(): Promise<void> {
     this.isSyncing.set(true);
-    this.actionError.set('');
-    this.actionSuccess.set('');
     try {
       await this.currenciesApi.syncNbuRates();
       await this.reload();
-      this.actionSuccess.set('pages.adminCurrencies.syncSuccess');
+      this.notify('pages.adminCurrencies.syncSuccess');
     } catch {
-      this.actionError.set('pages.adminCurrencies.syncFailed');
+      this.notify('pages.adminCurrencies.syncFailed', 'error');
     } finally {
       this.isSyncing.set(false);
     }
@@ -159,7 +164,6 @@ export class AdminCurrenciesComponent implements AfterViewInit {
   async toggleActive(row: CurrencyContractDto, isActive: boolean): Promise<void> {
     const code = row.code;
     this.updatingCodes.update((set) => new Set(set).add(code));
-    this.actionError.set('');
     try {
       const updated = await this.currenciesApi.update(code, { isActive });
       this.currencies.update((list) =>
@@ -167,7 +171,7 @@ export class AdminCurrenciesComponent implements AfterViewInit {
       );
       this.refreshTableData();
     } catch {
-      this.actionError.set('pages.adminCurrencies.updateFailed');
+      this.notify('pages.adminCurrencies.updateFailed', 'error');
     } finally {
       this.updatingCodes.update((set) => {
         const next = new Set(set);
@@ -197,6 +201,10 @@ export class AdminCurrenciesComponent implements AfterViewInit {
       return iso;
     }
     return new Date(parsed).toLocaleString();
+  }
+
+  private notify(messageKey: string, kind: 'success' | 'error' = 'success'): void {
+    showAppSnack(this.snackBar, this.translate, messageKey, kind);
   }
 
   private applyDefaultPageSizeForViewport(): void {
