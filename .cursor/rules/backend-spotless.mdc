@@ -1,0 +1,41 @@
+---
+description: После выполнения плана, перед коммитом или после значительных правок Java запускать mvn spotless:apply
+globs:
+  - backend/src/**/*.java
+  - backend/pom.xml
+alwaysApply: false
+---
+
+# Backend: Spotless
+
+После **выполнения плана**, перед коммитом или после **значительных** правок Java в `backend/` применяй Spotless. Не оставляй неприменённый Google Java Format в сдаваемом коде.
+
+Плагин: `com.diffplug.spotless` в `backend/pom.xml` (Google Java Format GOOGLE, unused imports, trailing whitespace).
+
+## Команда
+
+Из каталога `backend/`:
+
+```powershell
+mvn spotless:apply
+```
+
+Из корня репозитория:
+
+```powershell
+mvn -f backend/pom.xml spotless:apply
+```
+
+## Когда запускать
+
+- После выполнения плана (все шаги реализации закрыты) — один раз, если в плане менялся `backend/`.
+- Перед `git commit`, если в коммите есть Java из `backend/`.
+- После крупного изменения (новая фича, рефакторинг, серия правок по ТЗ) — один раз в конце, не после каждого файла.
+- Если `spotless:apply` изменил файлы — оставь их в рабочем дереве (не откатывай).
+
+## Когда не запускать
+
+- После мелкой правки (опечатка, одна строка, комментарий) — не гоняй Spotless сразу.
+- Не для frontend и не для файлов вне `backend/`.
+- Не заменяй Spotless ручным переформатированием «на глаз».
+- `mvn spotless:check` — только проверка; для сдачи нужен **apply**.

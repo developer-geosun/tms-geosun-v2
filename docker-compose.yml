@@ -49,7 +49,7 @@ services:
 
   # Створення bucket для MinIO (одноразово при старті)
   minio-init:
-    image: minio/mc:RELEASE.2024-11-17T19-35-56Z
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
     container_name: tms-minio-init
     depends_on:
       minio:

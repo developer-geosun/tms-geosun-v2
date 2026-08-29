@@ -189,11 +189,7 @@ class TripAndExpenseIntegrationTest {
     String trailerId =
         createVehicle(managerToken, "DD2222FF", "WVWZZZ1JZYW666666", VehicleType.SEMI_TRAILER);
     String driverId =
-        createDriver(
-            managerToken,
-            "Сидоренко",
-            "LIC-STALE",
-            LocalDate.now().minusDays(1));
+        createDriver(managerToken, "Сидоренко", "LIC-STALE", LocalDate.now().minusDays(1));
 
     uploadDriverDocument(
         managerToken,
@@ -269,14 +265,7 @@ class TripAndExpenseIntegrationTest {
       String token, String lastName, String license, LocalDate licenseExpiresOn) throws Exception {
     CreateDriverRequest req =
         new CreateDriverRequest(
-            lastName,
-            "Ім'я",
-            null,
-            "+380671112233",
-            license,
-            "CE",
-            licenseExpiresOn,
-            null);
+            lastName, "Ім'я", null, "+380671112233", license, "CE", licenseExpiresOn, null);
     MvcResult result =
         mockMvc
             .perform(
@@ -290,22 +279,13 @@ class TripAndExpenseIntegrationTest {
   }
 
   private void uploadDriverDocument(
-      String token,
-      String driverId,
-      String path,
-      LocalDate validFrom,
-      LocalDate validTo)
+      String token, String driverId, String path, LocalDate validFrom, LocalDate validTo)
       throws Exception {
     MockMultipartFile file =
         new MockMultipartFile("file", "license.jpg", "image/jpeg", jpegBytes());
     mockMvc
         .perform(
-            multipart(
-                    ReferenceApiPaths.ADMIN_DRIVERS_BASE
-                        + "/"
-                        + driverId
-                        + "/documents/"
-                        + path)
+            multipart(ReferenceApiPaths.ADMIN_DRIVERS_BASE + "/" + driverId + "/documents/" + path)
                 .file(file)
                 .param("validFrom", validFrom.toString())
                 .param("validTo", validTo.toString())
@@ -319,12 +299,7 @@ class TripAndExpenseIntegrationTest {
   }
 
   private static byte[] jpegBytes() {
-    return new byte[] {
-      (byte) 0xFF,
-      (byte) 0xD8,
-      (byte) 0xFF,
-      (byte) 0xD9
-    };
+    return new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xD9};
   }
 
   private String createVehicle(String token, String plate, String vin, VehicleType type)

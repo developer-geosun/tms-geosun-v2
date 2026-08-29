@@ -1,0 +1,41 @@
+---
+description: После выполнения плана, перед коммитом или после значительных правок frontend запускать npm run lint:fix
+globs:
+  - frontend/src/**/*.ts
+  - frontend/src/**/*.html
+  - frontend/eslint.config.js
+alwaysApply: false
+---
+
+# Frontend: ESLint autofix
+
+После **выполнения плана**, перед коммитом или после **значительных** правок frontend применяй ESLint с автофиксом. Prettier в проекте нет; аналог Spotless — `lint:fix`.
+
+Скрипт: `npm run lint:fix` → `ng lint --fix` (`frontend/package.json`, конфиг `frontend/eslint.config.js`). Чинит неиспользуемые импорты, часть stylistic TypeScript и правила, которые ESLint умеет править сам.
+
+## Команда
+
+Из каталога `frontend/`:
+
+```powershell
+npm run lint:fix
+```
+
+Из корня репозитория:
+
+```powershell
+npm --prefix frontend run lint:fix
+```
+
+## Когда запускать
+
+- После выполнения плана (все шаги реализации закрыты) — один раз, если в плане менялся `frontend/`.
+- Перед `git commit`, если в коммите есть `frontend/src/**/*.ts` или `*.html`.
+- После крупного изменения (новая страница, рефакторинг, серия правок по ТЗ) — один раз в конце, не после каждого файла.
+- Если `lint:fix` изменил файлы — оставь их в рабочем дереве (не откатывай).
+
+## Когда не запускать
+
+- После мелкой правки (опечатка, одна строка, перевод) — не гоняй lint сразу.
+- Не для backend и не вместо Spotless.
+- `npm run lint` — только проверка; для сдачи нужен **lint:fix**.
