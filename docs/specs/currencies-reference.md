@@ -22,7 +22,7 @@
 |------|----------|
 | `code` | ISO 4217 (PK) |
 | `numeric_code` | r030 НБУ |
-| `name_uk`, `name_en` | Названия |
+| `name_uk`, `name_en`, `name_ru` | Названия (`name_ru` добавлено в `V38`) |
 | `nbu_units` | Единиц валюты для курса НБУ |
 | `minor_units` | Знаков после запятой (справочно) |
 | `is_active` | Использовать в программе |
@@ -59,6 +59,7 @@ Seed: Flyway `V16`, ~40 валют + `UAH`. Активны по умолчани
 
 ## Frontend
 - `/admin/currencies` — таблица валют, slide-toggle `isActive`, кнопка «Оновити курси НБУ».
+- Колонка «Название» — локализованная (`currencyLocalizedName`): `uk` → `nameUk`, `en` → `nameEn`, `ru` → `nameRu`, при пустом переводе fallback на `nameUk`.
 
 ## Конфигурация
 `application.yml`:

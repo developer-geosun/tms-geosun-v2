@@ -33,17 +33,20 @@
     </button>
   </form>
 
-  @if (nbuSnapshotError()) {
-    <p class="admin-currencies__error">{{ nbuSnapshotError() | translate }}</p>
-  }
   @if (nbuSnapshot(); as snapshot) {
-    <section class="admin-currencies__snapshot">
-      <h2>
-        {{
-          'pages.adminCurrencies.nbuSnapshot'
-            | translate: { rateDate: snapshot.rateDate, fetchedAt: formatFetchedAt(snapshot.fetchedAt) }
-        }}
-      </h2>
+    <mat-expansion-panel
+      class="admin-currencies__snapshot"
+      [expanded]="isNbuSnapshotExpanded()"
+      (opened)="isNbuSnapshotExpanded.set(true)"
+      (closed)="isNbuSnapshotExpanded.set(false)">
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          {{
+            'pages.adminCurrencies.nbuSnapshot'
+              | translate: { rateDate: snapshot.rateDate, fetchedAt: formatFetchedAt(snapshot.fetchedAt) }
+          }}
+        </mat-panel-title>
+      </mat-expansion-panel-header>
       <div class="admin-currencies__table-scroll table-shell">
         <table mat-table [dataSource]="nbuSnapshotSource" class="admin-currencies__table">
           <ng-container matColumnDef="currencyCode">
@@ -62,7 +65,7 @@
           <tr mat-row *matRowDef="let row; columns: nbuSnapshotColumns"></tr>
         </table>
       </div>
-    </section>
+    </mat-expansion-panel>
   }
 
   @if (isLoading()) {
@@ -84,11 +87,13 @@
           </th>
           <td mat-cell *matCellDef="let row">{{ row.code }}</td>
         </ng-container>
-        <ng-container matColumnDef="nameUk">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header="nameUk">
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="name">
             {{ 'pages.adminCurrencies.name' | translate }}
           </th>
-          <td mat-cell *matCellDef="let row" [matTooltip]="row.nameUk">{{ row.nameUk }}</td>
+          <td mat-cell *matCellDef="let row" [matTooltip]="localizedName(row)">
+            {{ localizedName(row) }}
+          </td>
         </ng-container>
         <ng-container matColumnDef="nbuUnits">
           <th mat-header-cell *matHeaderCellDef>{{ 'pages.adminCurrencies.nbuUnits' | translate }}</th>

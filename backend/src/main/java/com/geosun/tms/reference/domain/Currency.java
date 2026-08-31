@@ -21,6 +21,9 @@ public class Currency {
   @Column(name = "name_en", length = 128)
   private String nameEn;
 
+  @Column(name = "name_ru", length = 128)
+  private String nameRu;
+
   @Column(name = "nbu_units", nullable = false)
   private int nbuUnits = 1;
 
@@ -63,6 +66,14 @@ public class Currency {
 
   public void setNameEn(String nameEn) {
     this.nameEn = nameEn;
+  }
+
+  public String getNameRu() {
+    return nameRu;
+  }
+
+  public void setNameRu(String nameRu) {
+    this.nameRu = nameRu;
   }
 
   public int getNbuUnits() {

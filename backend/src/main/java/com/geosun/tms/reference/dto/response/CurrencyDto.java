@@ -8,6 +8,7 @@ public record CurrencyDto(
     int numericCode,
     String nameUk,
     String nameEn,
+    String nameRu,
     int nbuUnits,
     int minorUnits,
     boolean isActive,

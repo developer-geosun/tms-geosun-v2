@@ -144,6 +144,7 @@ class CurrencyApiIntegrationTest {
     currency.setNumericCode(numericCode);
     currency.setNameUk(code);
     currency.setNameEn(code);
+    currency.setNameRu(code);
     currency.setNbuUnits(1);
     currency.setMinorUnits(2);
     currency.setActive(active);

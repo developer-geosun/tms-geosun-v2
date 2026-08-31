@@ -3,6 +3,7 @@ export interface CurrencyContractDto {
   numericCode: number;
   nameUk: string;
   nameEn: string | null;
+  nameRu: string | null;
   nbuUnits: number;
   minorUnits: number;
   isActive: boolean;

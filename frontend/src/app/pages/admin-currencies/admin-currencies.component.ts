@@ -22,12 +22,15 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateService } from '@ngx-translate/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatExpansionModule } from '@angular/material/expansion';
 import {
   CurrenciesApiService,
   CurrencyContractDto,
   NbuRatesSnapshotContractDto
 } from '../../core/api';
 import { LayoutService } from '../../core/layout';
+import { LanguageService } from '../../core/services/language.service';
+import { currencyLocalizedName } from '../../core/utils/currency-localized-name';
 import { showAppSnack } from '../../shared/utils/app-snackbar';
 
 @Component({
@@ -46,7 +49,8 @@ import { showAppSnack } from '../../shared/utils/app-snackbar';
     MatIconModule,
     MatProgressBarModule,
     MatFormFieldModule,
-    MatInputModule
+    MatInputModule,
+    MatExpansionModule
   ],
   templateUrl: './admin-currencies.component.html',
   styleUrl: './admin-currencies.component.scss',
@@ -61,10 +65,11 @@ export class AdminCurrenciesComponent implements AfterViewInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly snackBar = inject(MatSnackBar);
   private readonly translate = inject(TranslateService);
+  private readonly languageService = inject(LanguageService);
 
   readonly displayedColumns = [
     'code',
-    'nameUk',
+    'name',
     'nbuUnits',
     'ratePerUnit',
     'rateDate',
@@ -80,10 +85,11 @@ export class AdminCurrenciesComponent implements AfterViewInit {
   readonly isSyncing = signal(false);
   readonly isLoadingNbuSnapshot = signal(false);
   readonly loadError = signal('');
-  readonly nbuSnapshotError = signal('');
   readonly currencies = signal<CurrencyContractDto[]>([]);
   readonly nbuSnapshot = signal<NbuRatesSnapshotContractDto | null>(null);
   readonly updatingCodes = signal<Set<string>>(new Set());
+  /** Стан панелі курсів НБУ: користувач може згорнути її, щоб звільнити місце під таблицю. */
+  readonly isNbuSnapshotExpanded = signal(true);
 
   readonly rateDateForm = this.formBuilder.nonNullable.group({
     rateDate: [new Date().toISOString().slice(0, 10)]
@@ -97,6 +103,11 @@ export class AdminCurrenciesComponent implements AfterViewInit {
     effect(() => {
       this.layout.isHandset();
       this.applyDefaultPageSizeForViewport();
+    });
+    // Зміна мови впливає на назви валют, тому перебудовуємо таблицю для коректного сортування
+    effect(() => {
+      this.languageService.language();
+      this.refreshTableData();
     });
     void this.reload();
   }
@@ -134,14 +145,13 @@ export class AdminCurrenciesComponent implements AfterViewInit {
       return;
     }
     this.isLoadingNbuSnapshot.set(true);
-    this.nbuSnapshotError.set('');
     this.nbuSnapshot.set(null);
     try {
       const snapshot = await this.currenciesApi.getNbuRates(rateDate);
       this.nbuSnapshot.set(snapshot);
       this.nbuSnapshotSource.data = snapshot.rates;
     } catch {
-      this.nbuSnapshotError.set('pages.adminCurrencies.nbuRatesLoadFailed');
+      this.notify('pages.adminCurrencies.nbuRatesLoadFailed', 'error');
       this.nbuSnapshotSource.data = [];
     } finally {
       this.isLoadingNbuSnapshot.set(false);
@@ -179,6 +189,10 @@ export class AdminCurrenciesComponent implements AfterViewInit {
         return next;
       });
     }
+  }
+
+  localizedName(row: CurrencyContractDto): string {
+    return currencyLocalizedName(row, this.languageService.language());
   }
 
   isUpdating(code: string): boolean {
@@ -237,8 +251,10 @@ export class AdminCurrenciesComponent implements AfterViewInit {
     switch (column) {
       case 'code':
         return a.code.localeCompare(b.code);
-      case 'nameUk':
-        return a.nameUk.localeCompare(b.nameUk, 'uk');
+      case 'name': {
+        const language = this.languageService.language();
+        return this.localizedName(a).localeCompare(this.localizedName(b), language);
+      }
       case 'ratePerUnit':
         return this.compareNullableNumbers(a.latestNbuRatePerUnit, b.latestNbuRatePerUnit);
       case 'isActive':

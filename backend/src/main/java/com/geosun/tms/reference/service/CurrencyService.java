@@ -82,6 +82,7 @@ public class CurrencyService {
         currency.getNumericCode(),
         currency.getNameUk(),
         currency.getNameEn(),
+        currency.getNameRu(),
         currency.getNbuUnits(),
         currency.getMinorUnits(),
         currency.isActive(),
