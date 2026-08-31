@@ -6,9 +6,9 @@ describe('cartoVoyagerTileUrl', () => {
     expect(cartoVoyagerTileUrl('   ')).toBe(CARTO_VOYAGER_TILE_TEMPLATE);
   });
 
-  it('appends api_key query parameter', () => {
+  it('appends key query parameter', () => {
     expect(cartoVoyagerTileUrl('cb1_test')).toBe(
-      `${CARTO_VOYAGER_TILE_TEMPLATE}?api_key=cb1_test`
+      `${CARTO_VOYAGER_TILE_TEMPLATE}?key=cb1_test`
     );
   });
 });

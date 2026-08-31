@@ -2,21 +2,22 @@ import * as L from 'leaflet';
 
 /** Шаблон URL raster-підкладки CARTO Voyager (Leaflet). */
 export const CARTO_VOYAGER_TILE_TEMPLATE =
-  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
 
 /** Атрибуція, обов’язкова за умовами безкоштовного ключа CARTO. */
 export const CARTO_BASEMAP_ATTRIBUTION =
   '&copy; GeoSun | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 /**
- * URL тайлів Voyager. Без ключа CARTO віддає тайли з водяним знаком «API KEY REQUIRED».
+ * URL тайлів Voyager. Без параметра `key` CARTO віддає тайли з водяним знаком «API KEY REQUIRED».
+ * Офіційний параметр — `key`, не `api_key` (див. https://docs.carto.com/faqs/carto-basemaps).
  */
 export function cartoVoyagerTileUrl(apiKey: string): string {
   const key = apiKey.trim();
   if (!key) {
     return CARTO_VOYAGER_TILE_TEMPLATE;
   }
-  return `${CARTO_VOYAGER_TILE_TEMPLATE}?api_key=${encodeURIComponent(key)}`;
+  return `${CARTO_VOYAGER_TILE_TEMPLATE}?key=${encodeURIComponent(key)}`;
 }
 
 /** Додає підкладку CARTO Voyager на карту Leaflet. */
