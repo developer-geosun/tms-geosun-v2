@@ -193,32 +193,33 @@ mat-button-toggle .mdc-button__label {
 }
 
 /* Snackbar: кольори успіху / помилки (overlay поза :host, M3 токени). */
-.cdk-overlay-container .mat-mdc-snack-bar-container.app-snackbar,
-.cdk-overlay-container .mat-mdc-snack-bar-container.vehicle-snackbar {
+.cdk-overlay-container .mat-mdc-snack-bar-container.app-snackbar {
   --mat-snack-bar-container-color: var(--mat-sys-inverse-surface, #333);
   --mat-snack-bar-supporting-text-color: var(--mat-sys-inverse-on-surface, #fff);
 }
 
-.cdk-overlay-container .mat-mdc-snack-bar-container.app-snackbar--success,
-.cdk-overlay-container .mat-mdc-snack-bar-container.vehicle-snackbar--success {
+.cdk-overlay-container .mat-mdc-snack-bar-container.app-snackbar--success {
   --mat-snack-bar-container-color: var(--mat-sys-primary, #1967d2);
   --mat-snack-bar-supporting-text-color: var(--mat-sys-on-primary, #fff);
 }
 
-.cdk-overlay-container .mat-mdc-snack-bar-container.app-snackbar--error,
-.cdk-overlay-container .mat-mdc-snack-bar-container.vehicle-snackbar--error {
+.cdk-overlay-container .mat-mdc-snack-bar-container.app-snackbar--error {
   --mat-snack-bar-container-color: var(--mat-sys-error, #b3261e);
   --mat-snack-bar-supporting-text-color: var(--mat-sys-on-error, #fff);
 }
 
-.cdk-overlay-container .mat-mdc-snack-bar-container.app-snackbar--success .mat-mdc-snackbar-surface,
-.cdk-overlay-container .mat-mdc-snack-bar-container.vehicle-snackbar--success .mat-mdc-snackbar-surface {
+.cdk-overlay-container .mat-mdc-snack-bar-container.app-snackbar--success .mat-mdc-snackbar-surface {
   background-color: var(--mat-sys-primary, #1967d2);
   color: var(--mat-sys-on-primary, #fff);
 }
 
-.cdk-overlay-container .mat-mdc-snack-bar-container.app-snackbar--error .mat-mdc-snackbar-surface,
-.cdk-overlay-container .mat-mdc-snack-bar-container.vehicle-snackbar--error .mat-mdc-snackbar-surface {
+.cdk-overlay-container .mat-mdc-snack-bar-container.app-snackbar--error .mat-mdc-snackbar-surface {
   background-color: var(--mat-sys-error, #b3261e);
   color: var(--mat-sys-on-error, #fff);
+}
+
+/* Нижчі вертикальні відступи: праворуч від тексту стоїть кільце таймера з кнопкою закриття. */
+.cdk-overlay-container .mat-mdc-snack-bar-container.app-snackbar .mat-mdc-snack-bar-label {
+  padding-top: 8px;
+  padding-bottom: 8px;
 }

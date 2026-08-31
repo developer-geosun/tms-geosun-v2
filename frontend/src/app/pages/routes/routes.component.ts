@@ -13,13 +13,15 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatBottomSheet, MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { firstValueFrom } from 'rxjs';
 import { RoutesApiService } from '../../core/api/routes-api.service';
 import { RoutePointContract, RouteSummaryContractDto } from '../../core/api/routes-contracts.model';
 import { RouteDeleteConfirmDialogComponent, getRouteFreightRequestDialogConfig, RouteFreightRequestDialogComponent } from '../../shared/components';
+import { showAppSnack } from '../../shared/utils/app-snackbar';
 import { RoutesToolbarBottomSheetComponent } from './routes-toolbar-bottom-sheet.component';
 import {
   RoutesToolbarListView,
@@ -50,6 +52,8 @@ export class RoutesComponent {
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly bottomSheet = inject(MatBottomSheet);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly translate = inject(TranslateService);
   private readonly dateTimeFormatter = new Intl.DateTimeFormat(inject(LOCALE_ID), {
     year: 'numeric',
     month: '2-digit',
@@ -90,7 +94,6 @@ export class RoutesComponent {
   readonly deletingRouteId = signal<string | null>(null);
   readonly restoringRouteId = signal<string | null>(null);
   readonly deleteFailed = signal(false);
-  readonly toastMessage = signal('');
 
   constructor() {
     void this.loadRouteCards();
@@ -152,7 +155,7 @@ export class RoutesComponent {
     );
     const submitted = await firstValueFrom(dialogRef.afterClosed());
     if (submitted) {
-      this.showToast('pages.freightCalculation.success');
+      this.showSnack('pages.freightCalculation.success');
     }
   }
 
@@ -191,10 +194,10 @@ export class RoutesComponent {
     this.restoringRouteId.set(routeId);
     try {
       await this.routesApi.restoreMyRoute(routeId);
-      this.showToast('pages.routes.restoreSuccess');
+      this.showSnack('pages.routes.restoreSuccess');
       await this.loadRouteCards();
     } catch {
-      this.showToast('pages.routes.restoreFailed');
+      this.showSnack('pages.routes.restoreFailed', 'error');
     } finally {
       this.restoringRouteId.set(null);
     }
@@ -214,7 +217,7 @@ export class RoutesComponent {
     if (isClipboardAvailable) {
       try {
         await navigator.clipboard.writeText(value);
-        this.showToast('pages.routeBuilder.coordinatesCopied');
+        this.showSnack('pages.routeBuilder.coordinatesCopied');
         return;
       } catch {
         // Fall back to legacy clipboard API below.
@@ -222,7 +225,10 @@ export class RoutesComponent {
     }
 
     const copied = this.copyTextWithFallback(value);
-    this.showToast(copied ? 'pages.routeBuilder.coordinatesCopied' : 'pages.routeBuilder.coordinatesCopyFailed');
+    this.showSnack(
+      copied ? 'pages.routeBuilder.coordinatesCopied' : 'pages.routeBuilder.coordinatesCopyFailed',
+      copied ? 'success' : 'error'
+    );
   }
 
   private async loadRouteCards(): Promise<void> {
@@ -357,9 +363,8 @@ export class RoutesComponent {
     }
   }
 
-  private showToast(key: string): void {
-    this.toastMessage.set(key);
-    setTimeout(() => this.toastMessage.set(''), 1800);
+  private showSnack(key: string, kind: 'success' | 'error' = 'success'): void {
+    showAppSnack(this.snackBar, this.translate, key, kind);
   }
 
   private copyTextWithFallback(value: string): boolean {

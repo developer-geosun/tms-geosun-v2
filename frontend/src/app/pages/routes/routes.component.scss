@@ -501,18 +501,3 @@
     background: color-mix(in srgb, var(--mat-sys-surface-container-low) 88%, #101218);
   }
 }
-
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: max(20px, env(safe-area-inset-bottom, 0px));
-  transform: translateX(-50%);
-  max-width: min(420px, calc(100vw - 1.5rem));
-  box-sizing: border-box;
-  padding: 10px 14px;
-  background: #0f172a;
-  color: #fff;
-  border-radius: 8px;
-  text-align: center;
-  z-index: 6000;
-}

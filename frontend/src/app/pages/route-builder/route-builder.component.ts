@@ -24,6 +24,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -57,6 +58,7 @@ import { RouteDeleteConfirmDialogComponent, getRouteFreightRequestDialogConfig, 
 import { LayoutService } from '../../core/layout';
 import { ConfigService } from '../../core/services/config.service';
 import { addCartoVoyagerBasemap } from '../../shared/utils/carto-basemap';
+import { showAppSnack } from '../../shared/utils/app-snackbar';
 
 @Component({
   selector: 'app-route-builder',
@@ -90,6 +92,7 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
   private readonly backendApi = inject(BackendApiService);
   private readonly routesApi = inject(RoutesApiService);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly translate = inject(TranslateService);
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -107,8 +110,6 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
   readonly isDuplicatingRoute = signal(false);
   readonly isLoadingSavedRoute = signal(false);
   readonly myRoutes = signal<RouteSummaryContractDto[]>([]);
-  readonly toastMessage = signal('');
-  readonly toastMessageParams = signal<Record<string, unknown>>({});
   readonly borderCheckpointSelectValue = signal<Record<number, string>>({});
   /** Вузький екран: перемикання панелі маршруту та карти (брейкпоинт як у SCSS). */
   readonly compactRouteLayout = signal(false);
@@ -354,16 +355,16 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
       return;
     }
     if (!this.hasRoute()) {
-      this.showToast('pages.freightCalculation.errors.routeRequired');
+      this.showSnack('pages.freightCalculation.errors.routeRequired', 'error');
       return;
     }
     if (this.hasPendingBorder()) {
-      this.showToast('pages.freightCalculation.errors.selectBorderRequired');
+      this.showSnack('pages.freightCalculation.errors.selectBorderRequired', 'error');
       return;
     }
     const opsErrorKey = this.getOperationsErrorKey();
     if (opsErrorKey) {
-      this.showToast(opsErrorKey);
+      this.showSnack(opsErrorKey, 'error');
       return;
     }
     this.isSavingRoute.set(true);
@@ -373,7 +374,7 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
       const snapshot = selectedRouteId && this.isEditMode()
         ? await this.routesApi.updateMyRoute(selectedRouteId, snapshotPayload)
         : await firstValueFrom(this.http.post<RouteSnapshotContractDto>(this.backendApi.routes, snapshotPayload));
-      this.showToast('pages.freightCalculation.routeSaved');
+      this.showSnack('pages.freightCalculation.routeSaved');
       await this.loadMyRoutes();
       this.lastSavedAt.set(snapshot.updatedAt || snapshot.createdAt || null);
       this.routeTimestamps.set({
@@ -390,14 +391,17 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
     } catch (error) {
       const lockedCode = this.extractApiErrorCode(error);
       if (lockedCode === 'ROUTE_LOCKED_BY_REQUEST') {
-        this.showToast('pages.freightCalculation.errors.routeLockedByRequest');
+        this.showSnack('pages.freightCalculation.errors.routeLockedByRequest', 'error');
         return;
       }
       const routeOpsError = this.extractRouteOperationsErrorFromApi(error);
       if (routeOpsError) {
-        this.showToast(routeOpsError.key, routeOpsError.params);
+        this.showSnack(routeOpsError.key, 'error', routeOpsError.params);
       } else {
-        this.showToast(this.extractApiErrorMessage(error) ?? 'pages.freightCalculation.errors.routeSaveFailed');
+        this.showSnack(
+          this.extractApiErrorMessage(error) ?? 'pages.freightCalculation.errors.routeSaveFailed',
+          'error'
+        );
       }
     } finally {
       this.isSavingRoute.set(false);
@@ -412,12 +416,12 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
     this.isDuplicatingRoute.set(true);
     try {
       const snapshot = await this.routesApi.duplicateMyRoute(routeId);
-      this.showToast('pages.routeBuilder.duplicateRouteSuccess');
+      this.showSnack('pages.routeBuilder.duplicateRouteSuccess');
       await this.router.navigate(['/route-builder'], {
         queryParams: { routeId: snapshot.id, mode: 'edit' }
       });
     } catch {
-      this.showToast('pages.routeBuilder.duplicateRouteFailed');
+      this.showSnack('pages.routeBuilder.duplicateRouteFailed', 'error');
     } finally {
       this.isDuplicatingRoute.set(false);
     }
@@ -482,25 +486,25 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
 
   async openFreightRequestDialog(): Promise<void> {
     if (!this.isViewMode()) {
-      this.showToast('pages.freightCalculation.errors.requestOnlyInViewMode');
+      this.showSnack('pages.freightCalculation.errors.requestOnlyInViewMode', 'error');
       return;
     }
     if (!this.hasRoute()) {
-      this.showToast('pages.freightCalculation.errors.routeRequired');
+      this.showSnack('pages.freightCalculation.errors.routeRequired', 'error');
       return;
     }
     if (this.hasPendingBorder()) {
-      this.showToast('pages.freightCalculation.errors.selectBorderRequired');
+      this.showSnack('pages.freightCalculation.errors.selectBorderRequired', 'error');
       return;
     }
     const opsErrorKey = this.getOperationsErrorKey();
     if (opsErrorKey) {
-      this.showToast(opsErrorKey);
+      this.showSnack(opsErrorKey, 'error');
       return;
     }
     const routeId = this.getSelectedRouteId();
     if (!routeId) {
-      this.showToast('pages.freightCalculation.errors.routeMustBeSaved');
+      this.showSnack('pages.freightCalculation.errors.routeMustBeSaved', 'error');
       return;
     }
     const dialogRef = this.dialog.open(
@@ -515,7 +519,7 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
     );
     const submitted = await firstValueFrom(dialogRef.afterClosed());
     if (submitted) {
-      this.showToast('pages.freightCalculation.success');
+      this.showSnack('pages.freightCalculation.success');
     }
   }
 
@@ -558,7 +562,7 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
     if (isClipboardAvailable) {
       try {
         await navigator.clipboard.writeText(value);
-        this.showToast('pages.routeBuilder.coordinatesCopied');
+        this.showSnack('pages.routeBuilder.coordinatesCopied');
         return;
       } catch {
         // Fall back to legacy clipboard API below.
@@ -566,7 +570,10 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
     }
 
     const copied = this.copyTextWithFallback(value);
-    this.showToast(copied ? 'pages.routeBuilder.coordinatesCopied' : 'pages.routeBuilder.coordinatesCopyFailed');
+    this.showSnack(
+      copied ? 'pages.routeBuilder.coordinatesCopied' : 'pages.routeBuilder.coordinatesCopyFailed',
+      copied ? 'success' : 'error'
+    );
   }
 
   getModeTitleKey(): string {
@@ -726,7 +733,7 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
     }
     const problem = checkSetOperationsForPoint(point.isBorder, next);
     if (problem) {
-      this.showToast('pages.routeBuilder.errors.operationsComboWithPoint', { point: index + 1 });
+      this.showSnack('pages.routeBuilder.errors.operationsComboWithPoint', 'error', { point: index + 1 });
       // Не зберігаємо некоректний набір — змусимо UI відобразити поточне (валідне) значення.
       this.waypoints.update((items) =>
         items.map((item, idx) => (idx === index ? { ...item, operations: [...item.operations] } : item))
@@ -1092,9 +1099,9 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
         this.editBaselineSignature.set(null);
       }
       await this.syncRouteTimestampsFromSummary(routeId);
-      this.showToast('pages.freightCalculation.routeLoaded');
+      this.showSnack('pages.freightCalculation.routeLoaded');
     } catch {
-      this.showToast('pages.freightCalculation.errors.routeLoadFailed');
+      this.showSnack('pages.freightCalculation.errors.routeLoadFailed', 'error');
     } finally {
       this.isLoadingSavedRoute.set(false);
     }
@@ -1185,13 +1192,12 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
     });
   }
 
-  private showToast(key: string, params: Record<string, unknown> = {}): void {
-    this.toastMessage.set(key);
-    this.toastMessageParams.set(params);
-    setTimeout(() => {
-      this.toastMessage.set('');
-      this.toastMessageParams.set({});
-    }, 5000);
+  private showSnack(
+    key: string,
+    kind: 'success' | 'error' = 'success',
+    params?: Record<string, unknown>
+  ): void {
+    showAppSnack(this.snackBar, this.translate, key, kind, params);
   }
 
   private extractApiErrorCode(error: unknown): string | null {
@@ -1261,7 +1267,7 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
   }
 
   private mapBackendOperationsErrorCodeToTranslationKey(code: string): string | null {
-    // Тримаймо мапінг кодів бекенда в одному місці, щоб уникнути розсинхрону з toast-повідомленнями.
+    // Тримаймо мапінг кодів бекенда в одному місці, щоб уникнути розсинхрону з повідомленнями.
     switch (code) {
       case 'OPERATION_SET_INVALID':
         return 'operationsCombo';
@@ -1319,7 +1325,7 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
 
   async switchToEditMode(): Promise<void> {
     if (this.routeLockedByRequest()) {
-      this.showToast('pages.routeBuilder.routeLockedByRequest');
+      this.showSnack('pages.routeBuilder.routeLockedByRequest', 'error');
       return;
     }
     if (!this.getSelectedRouteId()) {
@@ -1372,10 +1378,10 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
     this.isSavingRoute.set(true);
     try {
       await this.routesApi.deleteMyRoute(routeId);
-      this.showToast('pages.routeBuilder.routeDeleted');
+      this.showSnack('pages.routeBuilder.routeDeleted');
       await this.switchToCreateMode();
     } catch {
-      this.showToast('pages.routesHistory.deleteFailed');
+      this.showSnack('pages.routesHistory.deleteFailed', 'error');
     } finally {
       this.isSavingRoute.set(false);
     }

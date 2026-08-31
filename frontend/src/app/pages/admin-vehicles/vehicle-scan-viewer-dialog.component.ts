@@ -27,7 +27,7 @@ import {
   VehiclesApiService
 } from '../../core/api';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
-import { showVehicleSnack } from './vehicle-snackbar';
+import { showAppSnack } from '../../shared/utils/app-snackbar';
 
 export interface VehicleScanViewerDialogData {
   vehicleId: string;
@@ -305,6 +305,6 @@ export class VehicleScanViewerDialogComponent implements OnDestroy {
   }
 
   private notify(messageKey: string, kind: 'success' | 'error' = 'success'): void {
-    showVehicleSnack(this.snackBar, this.translate, messageKey, kind);
+    showAppSnack(this.snackBar, this.translate, messageKey, kind);
   }
 }

@@ -16,6 +16,9 @@
       "cancel": "Cancel",
       "confirm": "Confirm"
     },
+    "snackbar": {
+      "close": "Close message"
+    },
     "paginator": {
       "itemsPerPage": "Items per page:",
       "nextPage": "Next page",

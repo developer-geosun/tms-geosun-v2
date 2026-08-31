@@ -38,7 +38,7 @@ import {
   VehicleScanViewerDialogComponent,
   VehicleScanViewerDialogResult
 } from './vehicle-scan-viewer-dialog.component';
-import { showVehicleSnack } from './vehicle-snackbar';
+import { showAppSnack } from '../../shared/utils/app-snackbar';
 
 type VehiclesDisplayMode = 'table' | 'cards';
 
@@ -636,7 +636,7 @@ export class AdminVehiclesComponent implements OnDestroy {
   }
 
   private notify(messageKey: string, kind: 'success' | 'error' = 'success'): void {
-    showVehicleSnack(this.snackBar, this.translate, messageKey, kind);
+    showAppSnack(this.snackBar, this.translate, messageKey, kind);
   }
 
   private mapError(err: unknown, fallback: string): string {
