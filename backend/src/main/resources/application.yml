@@ -68,6 +68,7 @@ app:
       audience: ${JWT_AUDIENCE:}
       expires-seconds: ${JWT_EXPIRES_SECONDS:900}
       refresh-expires-seconds: ${JWT_REFRESH_EXPIRES_SECONDS:604800}
+      refresh-reuse-grace-seconds: ${JWT_REFRESH_REUSE_GRACE_SECONDS:15}
     # Пароль суперадміна для чутливих admin-операцій (не обліковий запис користувача).
     super-admin:
       password: ${SUPER_ADMIN_PASSWORD:}

@@ -10,9 +10,11 @@ import { authInterceptor } from './auth.interceptor';
 describe('authInterceptor', () => {
   let http: HttpClient;
   let httpMock: HttpTestingController;
-  const routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
+  const routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate'], { url: '/main' });
 
   beforeEach(() => {
+    routerSpy.navigate.calls.reset();
+
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([authInterceptor])),
@@ -22,7 +24,8 @@ describe('authInterceptor', () => {
           useValue: {
             accessToken: () => 'access-token',
             refreshAccessToken: () => of('new-access-token'),
-            clearSession: jasmine.createSpy('clearSession')
+            clearSession: jasmine.createSpy('clearSession'),
+            sessionRestored: () => true
           }
         },
         { provide: Router, useValue: routerSpy }
@@ -44,7 +47,7 @@ describe('authInterceptor', () => {
     request.flush({ ok: true });
   });
 
-  it('clears session and redirects when refresh fails', () => {
+  it('clears session and redirects when refresh fails with 401', () => {
     const authService = TestBed.inject(AuthService) as unknown as {
       refreshAccessToken: () => ReturnType<typeof throwError>;
       clearSession: jasmine.Spy;
@@ -59,6 +62,26 @@ describe('authInterceptor', () => {
     request.flush({}, { status: 401, statusText: 'Unauthorized' });
 
     expect(authService.clearSession).toHaveBeenCalled();
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/login'], {
+      queryParams: { returnUrl: '/main' }
+    });
+  });
+
+  it('does not clear session when refresh fails with 429', () => {
+    const authService = TestBed.inject(AuthService) as unknown as {
+      refreshAccessToken: () => ReturnType<typeof throwError>;
+      clearSession: jasmine.Spy;
+    };
+    authService.refreshAccessToken = () =>
+      throwError(() => new HttpErrorResponse({ status: 429, statusText: 'Too Many Requests' }));
+
+    http.get('/secure').subscribe({
+      error: () => undefined
+    });
+    const request = httpMock.expectOne('/secure');
+    request.flush({}, { status: 401, statusText: 'Unauthorized' });
+
+    expect(authService.clearSession).not.toHaveBeenCalled();
+    expect(routerSpy.navigate).not.toHaveBeenCalled();
   });
 });

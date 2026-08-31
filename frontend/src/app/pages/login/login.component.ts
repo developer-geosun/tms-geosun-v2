@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -34,6 +34,7 @@ export class LoginComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly isLoading = signal(false);
   readonly hasSuccess = signal(false);
@@ -61,9 +62,11 @@ export class LoginComponent {
       next: () => {
         this.isLoading.set(false);
         this.hasSuccess.set(true);
-        // Після входу: клієнти з роллю user — на список маршрутів; інші — на головну.
-        const target = this.authService.hasAnyRole(['user']) ? '/routes' : '/main';
-        void this.router.navigate([target]);
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+        const fallback = this.authService.hasAnyRole(['user']) ? '/routes' : '/main';
+        const target =
+          returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : fallback;
+        void this.router.navigateByUrl(target);
       },
       error: (error: { status?: number; error?: { code?: string } }) => {
         this.isLoading.set(false);

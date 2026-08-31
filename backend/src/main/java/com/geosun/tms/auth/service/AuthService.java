@@ -36,6 +36,7 @@ import com.geosun.tms.auth.security.crypto.OpaqueTokenGenerator;
 import com.geosun.tms.auth.security.crypto.TokenHasher;
 import com.geosun.tms.auth.security.jwt.JwtService;
 import java.time.Instant;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.MailException;
@@ -315,6 +316,10 @@ public class AuthService {
     User user = current.getUser();
 
     if (current.getRevokedAt() != null) {
+      RefreshToken successor = current.getReplacedBy();
+      if (isWithinReuseGrace_(current) && isValidGraceSuccessor_(successor, user)) {
+        return rotate(Objects.requireNonNull(successor), user);
+      }
       log.warn("Possible refresh token reuse for user {}", user.getId());
       refreshTokenRepository.revokeAllActiveByUserId(user.getId(), Instant.now());
       throw ApiException.unauthorized("INVALID_SESSION", "Invalid refresh token");
@@ -331,6 +336,10 @@ public class AuthService {
       throw ApiException.forbidden("ACCOUNT_DISABLED", "Account is disabled");
     }
 
+    return rotate(current, user);
+  }
+
+  private AuthTokensResponse rotate(RefreshToken current, User user) {
     String newRaw = OpaqueTokenGenerator.generate();
     RefreshToken next = new RefreshToken();
     next.setUser(user);
@@ -350,6 +359,31 @@ public class AuthService {
         "Bearer",
         jwtProperties.getExpiresSeconds(),
         UserDtoMapper.toPublicDto(user));
+  }
+
+  private boolean isWithinReuseGrace_(RefreshToken token) {
+    long graceSeconds = jwtProperties.getRefreshReuseGraceSeconds();
+    if (graceSeconds <= 0) {
+      return false;
+    }
+    Instant revokedAt = token.getRevokedAt();
+    if (revokedAt == null) {
+      return false;
+    }
+    return revokedAt.plusSeconds(graceSeconds).isAfter(Instant.now());
+  }
+
+  private boolean isValidGraceSuccessor_(RefreshToken successor, User user) {
+    if (successor == null) {
+      return false;
+    }
+    if (successor.getRevokedAt() != null) {
+      return false;
+    }
+    if (!successor.getExpiresAt().isAfter(Instant.now())) {
+      return false;
+    }
+    return successor.getUser().getId().equals(user.getId());
   }
 
   @Transactional

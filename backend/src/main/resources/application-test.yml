@@ -17,6 +17,7 @@ app:
   security:
     jwt:
       secret: test-jwt-secret-must-be-at-least-32-bytes-long!!
+      refresh-reuse-grace-seconds: 0
     super-admin:
       password: test-super-admin-password
   storage:

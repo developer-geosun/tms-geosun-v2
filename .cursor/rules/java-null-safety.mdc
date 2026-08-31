@@ -15,7 +15,7 @@ alwaysApply: false
 ## Обязательно перед завершением Java-задачи
 
 1. Вызови **ReadLints** по всем изменённым `backend/**/*.java`.
-2. В **Problems** по этим файлам — **0** предупреждений 16778128.
+2. В **Problems** по этим файлам — **0** предупреждений 16778128 и **0** info **1102** (висячий `@SuppressWarnings("null")`).
 3. Если предупреждения остались — исправь **до** ответа пользователю, не оставляй «на потом».
 
 ## 1. Контроллер → сервис
@@ -100,7 +100,24 @@ return new SomeDto(
 
 `MediaType.APPLICATION_JSON` — `Objects.requireNonNull(MediaType.APPLICATION_JSON)`.
 
-## 7. Чего не делать
+## 7. Mockito в тестах
+
+`ArgumentMatchers.any()` / `ArgumentCaptor.forClass()` не анотовані `@NonNull` — обгортай у приватний helper **разом**:
+
+```java
+/** Mockito any() не анотований @NonNull — обгортаємо для null-analysis. */
+@SuppressWarnings("null")
+@NonNull
+private static MimeMessage anyMailMessage() {
+  return any(MimeMessage.class);
+}
+```
+
+- **`@SuppressWarnings("null")` без `@NonNull` на return** — JDT показує info **1102** (*compiler option being ignored*); suppress «висячий».
+- **`@SuppressWarnings("null")` на звичайних методах** (stub, setup) — не ставити; лише на helpers Mockito.
+- Орієнтир: `ApiIntegrationTest.anyMailMessage()`, `mimeMessageCaptor()`, `verifyMailSentAndCapture()`.
+
+## 8. Чего не делать
 
 - Не снимать `@NonNull` с сервиса «ради тишины» — усиливай контракт на границе.
 - Не ставить `@NonNull`, где null допустим — `@Nullable` или явная валидация.
@@ -115,4 +132,5 @@ return new SomeDto(
 | `findById` / `save` / `existsById` | `Objects.requireNonNull(...)` |
 | `stream().map(this::toDto)` | lambda + `requireNonNull` |
 | MockMvc `.content(toJson(...))` | `Objects.requireNonNull(toJson(...))` |
+| Mockito `any()` / `forClass()` | helper з `@SuppressWarnings("null")` **і** `@NonNull` return |
 | Приватный helper с id | `@NonNull` на параметре |

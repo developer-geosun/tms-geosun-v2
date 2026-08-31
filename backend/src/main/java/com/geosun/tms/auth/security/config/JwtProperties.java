@@ -27,6 +27,12 @@ public class JwtProperties {
    */
   private long refreshExpiresSeconds = 604800;
 
+  /**
+   * Вікно (секунди), коли повторне використання відкликаного refresh-токена
+   * трактується як конкурентний refresh, а не атака reuse.
+   */
+  private long refreshReuseGraceSeconds = 15;
+
   public String getSecret() {
     return secret;
   }
@@ -65,5 +71,13 @@ public class JwtProperties {
 
   public void setRefreshExpiresSeconds(long refreshExpiresSeconds) {
     this.refreshExpiresSeconds = refreshExpiresSeconds;
+  }
+
+  public long getRefreshReuseGraceSeconds() {
+    return refreshReuseGraceSeconds;
+  }
+
+  public void setRefreshReuseGraceSeconds(long refreshReuseGraceSeconds) {
+    this.refreshReuseGraceSeconds = refreshReuseGraceSeconds;
   }
 }

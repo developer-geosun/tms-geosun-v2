@@ -1,4 +1,4 @@
-import { APP_INITIALIZER, ApplicationConfig, LOCALE_ID, importProvidersFrom, inject } from '@angular/core';
+import { ApplicationConfig, LOCALE_ID, importProvidersFrom, inject, provideAppInitializer } from '@angular/core';
 import { MatIconRegistry } from '@angular/material/icon';
 import { MatPaginatorIntl } from '@angular/material/paginator';
 import { provideRouter } from '@angular/router';
@@ -16,19 +16,10 @@ export function HttpLoaderFactory(http: HttpClient): TranslateHttpLoader {
   return new TranslateHttpLoader(http, './assets/i18n/', '.json');
 }
 
-function sessionVerifyInitializerFactory(): () => Promise<void> {
-  return async () => {
-    const authService = inject(AuthService);
-    await firstValueFrom(authService.verifySessionOnStartup());
-  };
-}
-
 /** Material Symbols Outlined + mat-ligature-font (щоб fontIcon малювався через ::before). */
-function configureMaterialSymbolsFactory(): () => void {
+function configureMaterialSymbols(): void {
   const iconRegistry = inject(MatIconRegistry);
-  return () => {
-    iconRegistry.setDefaultFontSetClass('material-symbols-outlined', 'mat-ligature-font');
-  };
+  iconRegistry.setDefaultFontSetClass('material-symbols-outlined', 'mat-ligature-font');
 }
 
 export const appConfig: ApplicationConfig = {
@@ -38,16 +29,11 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withInterceptors([ngrokSkipInterceptor, authInterceptor])),
     provideAnimations(),
-    {
-      provide: APP_INITIALIZER,
-      useFactory: configureMaterialSymbolsFactory,
-      multi: true
-    },
-    {
-      provide: APP_INITIALIZER,
-      useFactory: sessionVerifyInitializerFactory,
-      multi: true
-    },
+    provideAppInitializer(configureMaterialSymbols),
+    provideAppInitializer(() => {
+      const authService = inject(AuthService);
+      return firstValueFrom(authService.verifySessionOnStartup());
+    }),
     importProvidersFrom(
       TranslateModule.forRoot({
         loader: {

@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpInterceptorFn, HttpRequest } from '@angular/comm
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
-import { AuthService } from '../services/auth.service';
+import { AuthService, isSessionRejected } from '../services/auth.service';
 
 /**
  * Interceptor додає access token та виконує одноразовий refresh при 401.
@@ -22,8 +22,14 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
       return authService.refreshAccessToken().pipe(
         switchMap((newAccessToken) => next(attachAccessToken_(request, newAccessToken))),
         catchError((refreshError) => {
-          authService.clearSession();
-          router.navigate(['/login']);
+          if (isSessionRejected(refreshError)) {
+            authService.clearSession();
+            if (authService.sessionRestored()) {
+              void router.navigate(['/login'], {
+                queryParams: { returnUrl: router.url }
+              });
+            }
+          }
           return throwError(() => refreshError);
         })
       );
