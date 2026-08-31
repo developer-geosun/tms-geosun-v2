@@ -15,6 +15,7 @@
 - [`vehicles-reference.md`](vehicles-reference.md) — поля `registration_series` / `registration_number`, сканы свидетельства.
 - [`drivers-and-vehicle-combinations.md`](drivers-and-vehicle-combinations.md) — паспорт, права, сканы FRONT/BACK.
 - [`file-storage.md`](file-storage.md) — хранение бинарников.
+- [`document-ocr.md`](document-ocr.md) — распознавание сканов и предзаполнение `field_definitions` (спека).
 
 ## Вне области (текущий этап)
 - Замена enum-типов на ссылки из справочника в API ТС/водителей.
