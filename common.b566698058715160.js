@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunktms_geosun=self.webpackChunktms_geosun||[]).push([[76],{130(t,c,s){function u(e,n){switch(n){case"en":return e.nameEn;case"ru":return e.nameRu;default:return e.nameUk}}function a(e,n){return`${e.codeAlpha2.toUpperCase()} ${u(e,n)}`}s.d(c,{e:()=>a,s:()=>u})}}]);
