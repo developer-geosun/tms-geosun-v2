@@ -12,5 +12,6 @@ window.__APP_CONFIG__ = {
   isServiceStopped: false,
   // Порожній = relative URL (локальний proxy / gateway). На GitHub Pages — URL backend (ngrok або статична IP).
   apiUrl: "https://knee-zippy-fiber.ngrok-free.dev",
-  hereApiKey: ""
+  hereApiKey: "",
+  cartoApiKey: "cb1_2n2v_1_d8323ej23911847b5415d3f8"
 };
