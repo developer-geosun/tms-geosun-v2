@@ -30,6 +30,19 @@ export class ConfigService {
   }
 
   /**
+   * Ключ CARTO Basemaps для raster-підкладки Leaflet.
+   * Runtime (__APP_CONFIG__.cartoApiKey) має пріоритет над environment.cartoApiKey.
+   */
+  get cartoApiKey(): string {
+    const fromRuntime =
+      typeof this.config.cartoApiKey === 'string' ? this.config.cartoApiKey.trim() : '';
+    if (fromRuntime.length > 0) {
+      return fromRuntime;
+    }
+    return (this.environment.cartoApiKey || '').trim();
+  }
+
+  /**
    * Отримує URL для Telegram (для toolbar)
    */
   get telegramUrl(): string {

@@ -12,5 +12,6 @@ window.__APP_CONFIG__ = {
   isServiceStopped: false,
   // Порожній = relative URL (локальний proxy / gateway). На GitHub Pages — URL backend (ngrok або статична IP).
   apiUrl: "",
-  hereApiKey: ""
+  hereApiKey: "",
+  cartoApiKey: ""
 };

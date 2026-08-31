@@ -11,7 +11,8 @@ export const APP_CONFIG = {
   isServiceStopped: false, // Настройка остановки сервиса: при true все страницы редиректят на /stop-service
   // Базовий URL backend (порожній = той самий origin / proxy). На GitHub Pages — URL ngrok API.
   apiUrl: '',
-  hereApiKey: '' // Ключ HERE API для карт/геокодування/маршрутів
+  hereApiKey: '', // Ключ HERE API для карт/геокодування/маршрутів
+  cartoApiKey: '' // Ключ CARTO Basemaps для raster-підкладки Leaflet
 };
 
 export type AppConfig = typeof APP_CONFIG;

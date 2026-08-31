@@ -55,6 +55,8 @@ import { firstValueFrom } from 'rxjs';
 import { Subscription } from 'rxjs';
 import { RouteDeleteConfirmDialogComponent, getRouteFreightRequestDialogConfig, RouteFreightRequestDialogComponent } from '../../shared/components';
 import { LayoutService } from '../../core/layout';
+import { ConfigService } from '../../core/services/config.service';
+import { addCartoVoyagerBasemap } from '../../shared/utils/carto-basemap';
 
 @Component({
   selector: 'app-route-builder',
@@ -92,6 +94,7 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly layout = inject(LayoutService);
+  private readonly configService = inject(ConfigService);
 
   readonly waypoints = signal<Waypoint[]>([]);
   readonly segmentDistances = signal<number[]>([]);
@@ -808,9 +811,7 @@ export class RouteBuilderComponent implements AfterViewInit, OnDestroy {
     container.style.removeProperty('min-height');
 
     const map = L.map(this.mapContainer.nativeElement, { zoomControl: true }).setView([50.4501, 30.5234], 6);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; GeoSan'
-    }).addTo(map);
+    addCartoVoyagerBasemap(map, this.configService.cartoApiKey);
     map.on('click', (event: L.LeafletMouseEvent) => void this.onMapClick(event));
     this.map = map;
     this.rebuildMarkers();

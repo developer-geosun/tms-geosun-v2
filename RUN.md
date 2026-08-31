@@ -92,6 +92,7 @@ docker compose up --build mysql mailhog minio minio-init backend
 | --- | --- |
 | `API_URL` | Публичный URL backend: `https://<NGROK_DOMAIN>` **или** `http://178.136.237.7:8080` |
 | `HERE_API_KEY` | (опционально) ключ HERE для карт на Pages |
+| `CARTO_API_KEY` | ключ CARTO Basemaps — убирает водяной знак «API KEY REQUIRED» на подложке |
 
 > **HTTPS / mixed content:** GitHub Pages отдаёт UI по HTTPS. Браузер может блокировать запросы к `http://…` API. Для стабильной работы со статическим IP лучше HTTPS (домен + nginx/Caddy) или режим ngrok (HTTPS из коробки).
 
@@ -190,7 +191,10 @@ npm install
 npm start
 ```
 
-Перед `npm start` в корневом `.env` задайте `HERE_API_KEY=<ваш_ключ_here>` — ключ будет автоматически подставлен в локальный `frontend/src/assets/app-config.local.js` (файл игнорируется git).
+Перед `npm start` в корневом `.env` задайте ключи карт — они автоматически попадут в локальный `frontend/src/assets/app-config.local.js` (файл игнорируется git):
+
+- `HERE_API_KEY=<ваш_ключ_here>` — маршруты / геокодинг HERE
+- `CARTO_API_KEY=<ваш_ключ_carto>` — подложка Leaflet без водяного знака CARTO
 
 Frontend: `http://localhost:4200`.
 
@@ -205,6 +209,7 @@ cp .env.example .env
 - Для production-сборки frontend оставьте `FRONTEND_BUILD_CONFIGURATION=production`.
 - Для dev-сборки frontend в Docker укажите `FRONTEND_BUILD_CONFIGURATION=development` (в этом режиме будут видны dev-значения из `environment.ts`).
 - Для страницы расчета через HERE укажите `HERE_API_KEY=<ваш_ключ_here>`.
+- Для подложки карты без водяного знака CARTO укажите `CARTO_API_KEY=<ваш_ключ_carto>`.
 - Для выбора источника расчёта пробега по странам укажите `COUNTRY_BREAKDOWN_PROVIDER=here|geojson` (для режима без HERE — `geojson`).
 - Для хранилища файлов:
   - **local (по умолчанию):** `APP_STORAGE_TYPE=local` — volume `backend_uploads`

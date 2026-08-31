@@ -78,6 +78,7 @@ Required repository secrets:
 
 - `API_URL` — public backend base URL (ngrok), written into `assets/app-config.js` at deploy time
 - `HERE_API_KEY` — optional HERE key for maps on Pages
+- `CARTO_API_KEY` — CARTO Basemaps key (removes the «API KEY REQUIRED» watermark)
 
 GitHub Pages source: branch `gh-pages` / root.
 

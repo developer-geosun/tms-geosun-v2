@@ -32,7 +32,7 @@ npm install
 
 | Локальная разработка | Local development |
 | :-- | :-- |
-| Запуск dev-сервера Angular с прокси (`proxy.conf.json`). Перед `start` срабатывает `prestart`: скрипт подставляет HERE API key из `HERE_API_KEY` или из `.env` в корне репозитория в `src/assets/app-config.local.js`. | Angular dev server with `proxy.conf.json`. `prestart` runs first: syncs the HERE API key from `HERE_API_KEY` or repo-root `.env` into `src/assets/app-config.local.js`. |
+| Запуск dev-сервера Angular с прокси (`proxy.conf.json`). Перед `start` срабатывает `prestart`: скрипт подставляет HERE/CARTO API keys из `HERE_API_KEY` / `CARTO_API_KEY` или из `.env` в корне репозитория в `src/assets/app-config.local.js`. | Angular dev server with `proxy.conf.json`. `prestart` runs first: syncs HERE/CARTO API keys from `HERE_API_KEY` / `CARTO_API_KEY` or repo-root `.env` into `src/assets/app-config.local.js`. |
 
 ```powershell
 npm start

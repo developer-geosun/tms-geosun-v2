@@ -50,6 +50,8 @@ import {
   NbuCostPreviewSource
 } from '../../core/utils/freight-cost-preview-display.util';
 import { LayoutService } from '../../core/layout';
+import { ConfigService } from '../../core/services/config.service';
+import { addCartoVoyagerBasemap } from '../../shared/utils/carto-basemap';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { getHandsetFriendlyDialogConfig } from '../../shared/utils/handset-friendly-dialog-config';
 import { showAppSnack } from '../../shared/utils/app-snackbar';
@@ -100,6 +102,7 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
   private readonly routeRequestsApi = inject(RouteRequestsApiService);
   private readonly numericScenariosApi = inject(FreightNumericScenariosApiService);
   private readonly layout = inject(LayoutService);
+  private readonly configService = inject(ConfigService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly translate = inject(TranslateService);
 
@@ -855,9 +858,7 @@ export class AdminRouteRequestsComponent implements AfterViewInit, OnDestroy {
     }
 
     this.map = L.map(el, { zoomControl: true }).setView([50.4501, 30.5234], 5);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; GeoSun'
-    }).addTo(this.map);
+    addCartoVoyagerBasemap(this.map, this.configService.cartoApiKey);
     this.map.on('click', async (event: L.LeafletMouseEvent) => {
       if (!this.nbuForm.controls.useStartPoint.value) {
         return;

@@ -4,6 +4,7 @@ import { ConfigService } from './config.service';
 describe('ConfigService runtime config', () => {
   afterEach(() => {
     delete (window as Window & { __APP_CONFIG__?: unknown }).__APP_CONFIG__;
+    TestBed.resetTestingModule();
   });
 
   it('uses fallback values when runtime config is not provided', () => {
@@ -25,5 +26,15 @@ describe('ConfigService runtime config', () => {
     expect(service.logoUrl).toBe('https://example.com');
     expect(service.isServiceStopped).toBeTrue();
     expect(service.apiUrl).toBe('https://api.example.com');
+  });
+
+  it('reads cartoApiKey from window.__APP_CONFIG__', () => {
+    (window as Window & { __APP_CONFIG__?: unknown }).__APP_CONFIG__ = {
+      cartoApiKey: ' cb1_test_key '
+    };
+
+    const service = TestBed.inject(ConfigService);
+
+    expect(service.cartoApiKey).toBe('cb1_test_key');
   });
 });

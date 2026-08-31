@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      # Ім'я необов'язкового секрета (динамічний доступ: секрет може бути не створений)
+      CARTO_API_KEY_SECRET_NAME: CARTO_API_KEY
     permissions:
       contents: write
 
@@ -52,6 +54,7 @@ jobs:
       - name: Inject runtime API config for GitHub Pages
         env:
           API_URL: ${{ secrets.API_URL }}
+          CARTO_API_KEY: ${{ secrets[env.CARTO_API_KEY_SECRET_NAME] }}
         run: |
           set -e
           DIST="frontend/dist/tms-geosun"
@@ -61,10 +64,12 @@ jobs:
             exit 1
           fi
           # API_URL — публічний URL backend (https://xxx.ngrok-free.app або http://STATIC_IP:8080)
+          # CARTO_API_KEY — ключ підкладки CARTO (прибирає водяний знак «API KEY REQUIRED»)
           node <<'NODE'
           const fs = require('fs');
           const configPath = 'frontend/dist/tms-geosun/assets/app-config.js';
           const apiUrl = (process.env.API_URL || '').trim().replace(/\/+$/, '');
+          const cartoApiKey = (process.env.CARTO_API_KEY || '').trim();
           let content = fs.readFileSync(configPath, 'utf8');
           if (apiUrl) {
             if (/apiUrl\s*:/.test(content)) {
@@ -77,6 +82,18 @@ jobs:
             }
           } else {
             console.warn('Warning: secrets.API_URL is empty — frontend will use relative API URLs');
+          }
+          if (cartoApiKey) {
+            if (/cartoApiKey\s*:/.test(content)) {
+              content = content.replace(/cartoApiKey\s*:\s*[^,\n]+/, `cartoApiKey: ${JSON.stringify(cartoApiKey)}`);
+            } else {
+              content = content.replace(
+                /window\.__APP_CONFIG__\s*=\s*\{/,
+                `window.__APP_CONFIG__ = {\n  cartoApiKey: ${JSON.stringify(cartoApiKey)},`
+              );
+            }
+          } else {
+            console.warn('Warning: secrets.CARTO_API_KEY is empty — CARTO tiles will show API KEY REQUIRED watermark');
           }
           fs.writeFileSync(configPath, content, 'utf8');
           console.log('Runtime config updated for GitHub Pages deploy');
