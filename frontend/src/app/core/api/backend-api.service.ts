@@ -44,6 +44,10 @@ export class BackendApiService {
     return this.build('/admin/country-reference');
   }
 
+  get adminDocumentTypes(): string {
+    return this.build('/admin/document-types');
+  }
+
   get adminFreightNumericScenarios(): string {
     return this.build('/admin/freight-numeric-scenarios');
   }

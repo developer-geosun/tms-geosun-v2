@@ -30,7 +30,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
- * Stateless JWT, публічні auth-маршрути; /admin/users/**, /admin/stored-files/** та /admin/super-admin/** лише для ADMIN.
+ * Stateless JWT, публічні auth-маршрути; /admin/users/**, /admin/stored-files/**, /admin/super-admin/** та /admin/document-types/** лише для ADMIN.
  */
 @Configuration
 @EnableWebSecurity
@@ -81,6 +81,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/admin/stored-files", "/api/v1/admin/stored-files/**")
                 .hasRole("ADMIN")
                 .requestMatchers("/api/v1/admin/super-admin", "/api/v1/admin/super-admin/**")
+                .hasRole("ADMIN")
+                .requestMatchers("/api/v1/admin/document-types", "/api/v1/admin/document-types/**")
                 .hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/users/**")
                 .hasRole("ADMIN")

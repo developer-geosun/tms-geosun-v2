@@ -153,6 +153,11 @@ export class ToolbarComponent {
       roles: ['admin'] as const
     },
     {
+      route: '/admin/document-types',
+      labelKey: 'navigation.adminDocumentTypes',
+      roles: ['admin'] as const
+    },
+    {
       route: '/admin/file-storage-test',
       labelKey: 'navigation.adminFileStorageTest',
       roles: ['admin'] as const

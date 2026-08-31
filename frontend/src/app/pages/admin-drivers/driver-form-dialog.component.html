@@ -22,17 +22,32 @@
       >
         <mat-form-field appearance="outline">
           <mat-label>{{ 'pages.adminDrivers.lastName' | translate }}</mat-label>
-          <input matInput formControlName="lastName" autocomplete="family-name" />
+          <input
+            matInput
+            formControlName="lastName"
+            autocomplete="family-name"
+            (input)="onPersonNameInput('lastName', $event)"
+          />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>{{ 'pages.adminDrivers.firstName' | translate }}</mat-label>
-          <input matInput formControlName="firstName" autocomplete="given-name" />
+          <input
+            matInput
+            formControlName="firstName"
+            autocomplete="given-name"
+            (input)="onPersonNameInput('firstName', $event)"
+          />
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>{{ 'pages.adminDrivers.patronymic' | translate }}</mat-label>
-          <input matInput formControlName="patronymic" autocomplete="additional-name" />
+          <input
+            matInput
+            formControlName="patronymic"
+            autocomplete="additional-name"
+            (input)="onPersonNameInput('patronymic', $event)"
+          />
         </mat-form-field>
 
         <mat-form-field appearance="outline">

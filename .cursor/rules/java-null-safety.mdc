@@ -1,5 +1,5 @@
 ---
-description: Java/Spring null-safety — без Eclipse warnings «Null type safety» (16778128)
+description: Java null-safety (JDT 16778128) — обязательные @NonNull и Objects.requireNonNull; проверка Problems перед сдачей
 globs:
   - backend/src/main/java/**/*.java
   - backend/src/test/java/**/*.java
@@ -8,97 +8,111 @@ alwaysApply: false
 
 # Java null-safety (Eclipse JDT + Spring `@NonNull`)
 
-В проекте включён **`java.compile.nullAnalysis.mode": "automatic"`** — JDT считает предупреждения обязательными. Код **16778128**: *Null type safety: expression of type 'T' needs unchecked conversion to conform to '@NonNull T'*.
+В проекте **`java.compile.nullAnalysis.mode": "automatic"`**. Предупреждение **16778128** (*Null type safety: expression of type 'T' needs unchecked conversion to conform to '@NonNull T'*) — **ошибка сдачи**, не «можно потом».
 
 Используй **`org.springframework.lang.NonNull`** / **`Nullable`**, не `jakarta.annotation.Nonnull`.
 
-## 1. Граница MVC → сервис
+## Обязательно перед завершением Java-задачи
 
-Параметр контроллера, который сразу уходит в `@NonNull`-метод сервиса, помечай `@NonNull`:
+1. Вызови **ReadLints** по всем изменённым `backend/**/*.java`.
+2. В **Problems** по этим файлам — **0** предупреждений 16778128.
+3. Если предупреждения остались — исправь **до** ответа пользователю, не оставляй «на потом».
 
-```java
-// ❌ BAD
-public Dto get(@PathVariable String id) { return service.getById(id); }
+## 1. Контроллер → сервис
 
-// ✅ GOOD
-public Dto get(@PathVariable("id") @NonNull String id) { return service.getById(id); }
-```
-
-То же: `@RequestBody`, `@RequestPart`, `@AuthenticationPrincipal`, `@RequestParam` (если required).
-
-## 2. Runtime-значения без контракта JDT
-
-JPA-геттеры, `principal.getUserId()`, `save()`, `orElseThrow()`, `opened.resource()`, поля record после валидации:
-
-```java
-String userId = Objects.requireNonNull(principal.getUserId());
-Driver saved = Objects.requireNonNull(driverRepository.save(driver));
-return toDto(Objects.requireNonNull(saved));
-return ResponseEntity.ok().body(Objects.requireNonNull(opened.resource()));
-```
-
-После `if (x == null) throw …` всё равно: `repository.findById(Objects.requireNonNull(id))`.
-
-## 3. Stream / method reference
-
-JDT **не** выводит non-null через `this::toDto` и method reference:
+Всё, что уходит в `@NonNull` API сервиса, помечай `@NonNull` на границе MVC:
 
 ```java
 // ❌ BAD
-items.stream().map(this::toDto).toList();
+public Dto create(@Valid @RequestBody CreateRequest request) { … }
 
 // ✅ GOOD
-items.stream().map(x -> toDto(Objects.requireNonNull(x))).toList();
+public Dto create(@Valid @RequestBody @NonNull CreateRequest request) { … }
+public Dto update(@PathVariable("id") @NonNull String id,
+                  @Valid @RequestBody @NonNull UpdateRequest request) { … }
 ```
 
-Comparator: `Comparator.comparing(p -> Objects.requireNonNull(p.getOrder()))`, не method reference в `@NonNull`-хелпер.
+То же: `@PathVariable`, `@RequestPart`, `@AuthenticationPrincipal`, required `@RequestParam`.
 
-## 4. Цепочки и локальные переменные
-
-`trim()`, `toUpperCase()`, присваивание после `requireNonNull` — для Eclipse локальная `String` всё ещё nullable, если передана в `@NonNull`-параметр:
+## 2. Repository / JPA
 
 ```java
-// ❌ BAD — currency уже «nullable» для JDT
-String currency = Objects.requireNonNull(input.currencyCode()).trim().toUpperCase(Locale.ROOT);
-currencyRepository.existsById(currency);
+// ❌ BAD
+repository.findById(id);
+repository.save(entity);
+repository.existsById(countryCode);
 
-// ✅ GOOD — весь результат цепочки в одном requireNonNull
-String currency = Objects.requireNonNull(
-    Objects.requireNonNull(input.currencyCode()).trim().toUpperCase(Locale.ROOT));
-currencyRepository.existsById(currency);
+// ✅ GOOD
+repository.findById(Objects.requireNonNull(id));
+repository.save(Objects.requireNonNull(entity));
+repository.existsById(Objects.requireNonNull(countryCode));
 ```
 
-`StringUtils.hasText(x)` **не** сужает тип для JDT — для optional-полей явная проверка `x != null && !x.isBlank()` или `requireNonNull` после guard.
+Приватные `require*(String id)` — параметр `@NonNull`; внутри снова `Objects.requireNonNull(id)`, если JDT не сужает тип между методами.
 
-## 5. Mapper `toDto` / record-конструкторы
+Результат `save()` / `orElseThrow()` / JPA-геттеры — оборачивай в `Objects.requireNonNull`, если значение идёт в `@NonNull` DTO или return.
 
-Обязательные поля сущности — через `Objects.requireNonNull` при сборке DTO:
+## 3. Stream — без method reference
 
 ```java
-return new VehicleCombinationDto(
-    Objects.requireNonNull(combination.getId()),
-    combination.getName(),
-    Objects.requireNonNull(tractor.getId()),
-    Objects.requireNonNull(tractor.getPlateNumber()),
+// ❌ BAD
+rows.stream().map(this::toDto).toList();
+
+// ✅ GOOD
+rows.stream().map(row -> toDto(Objects.requireNonNull(row))).toList();
+```
+
+## 4. Строки после trim / toUpperCase
+
+Локальная `String` после цепочки для JDT всё ещё nullable:
+
+```java
+// ❌ BAD
+String code = normalizeCountryCode(input.countryCode());
+repository.existsById(code);
+
+// ✅ GOOD
+repository.existsById(Objects.requireNonNull(normalizeCountryCode(input.countryCode())));
+```
+
+## 5. toDto / record-конструкторы
+
+Обязательные поля сущности — `Objects.requireNonNull` при сборке DTO:
+
+```java
+return new SomeDto(
+    Objects.requireNonNull(row.getId()),
+    Objects.requireNonNull(row.getCountryCode()),
     …);
 ```
 
-Связи JPA: `Vehicle tractor = Objects.requireNonNull(combination.getTractor());` до обращения к полям.
+## 6. Интеграционные тесты (MockMvc)
 
-## 6. Сервисы и тесты
+```java
+// ❌ BAD
+.content(toJson(request))
+.content(toJson(new LoginRequest(email, password)))
 
-- Публичные `require*` / guard-интерфейсы (`ActiveTripGuard`): параметры `@NonNull`.
-- Интеграционные тесты — те же правила: `login(Objects.requireNonNull(user.getEmail()))`, `Objects.requireNonNull(MediaType.APPLICATION_JSON)`.
+// ✅ GOOD
+.content(Objects.requireNonNull(toJson(request)))
+.content(Objects.requireNonNull(toJson(new LoginRequest(email, password))))
+```
+
+`MediaType.APPLICATION_JSON` — `Objects.requireNonNull(MediaType.APPLICATION_JSON)`.
 
 ## 7. Чего не делать
 
 - Не снимать `@NonNull` с сервиса «ради тишины» — усиливай контракт на границе.
-- Не ставь `@NonNull` на параметр, где null допустим — `@Nullable` или явная валидация.
+- Не ставить `@NonNull`, где null допустим — `@Nullable` или явная валидация.
+- Не игнорировать Problems: «компилируется» ≠ «готово».
 
-## Чеклист перед сдачей Java-изменения
+## Быстрый чеклист (новый Java-код)
 
-1. Панель **Problems** в затронутых `*.java`: **0** предупреждений 16778128.
-2. Контроллеры: path/body/part/principal → `@NonNull`, если дальше `@NonNull` API.
-3. `save` / геттеры / `Optional` unwrap / stream → `Objects.requireNonNull` там, где тип уходит в `@NonNull`.
-4. Нет `this::method` в stream к `@NonNull`-хелперам.
-5. `mvn -q compile` без ошибок.
+| Место | Действие |
+|-------|----------|
+| `@RequestBody` → `@NonNull` сервис | `@NonNull` на body |
+| `@PathVariable` id | `@NonNull String id` |
+| `findById` / `save` / `existsById` | `Objects.requireNonNull(...)` |
+| `stream().map(this::toDto)` | lambda + `requireNonNull` |
+| MockMvc `.content(toJson(...))` | `Objects.requireNonNull(toJson(...))` |
+| Приватный helper с id | `@NonNull` на параметре |

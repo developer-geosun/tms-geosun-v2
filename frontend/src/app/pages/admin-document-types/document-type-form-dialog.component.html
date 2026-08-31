@@ -1,0 +1,134 @@
+<h2 mat-dialog-title>{{ dialogTitle() }}</h2>
+
+<form mat-dialog-content [formGroup]="form" class="document-type-form" (ngSubmit)="submit()">
+  <mat-form-field appearance="outline" class="document-type-form__field">
+    <mat-label>{{ 'pages.adminDocumentTypes.nameUk' | translate }}</mat-label>
+    <input matInput formControlName="nameUk" autocomplete="off" />
+    @if (fieldError(form.controls.nameUk, 'nameUk')) {
+      <mat-error>{{ fieldError(form.controls.nameUk, 'nameUk') }}</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="document-type-form__field">
+    <mat-label>{{ 'pages.adminDocumentTypes.nameEn' | translate }}</mat-label>
+    <input matInput formControlName="nameEn" autocomplete="off" />
+    @if (fieldError(form.controls.nameEn, 'nameEn')) {
+      <mat-error>{{ fieldError(form.controls.nameEn, 'nameEn') }}</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="document-type-form__field">
+    <mat-label>{{ 'pages.adminDocumentTypes.nameRu' | translate }}</mat-label>
+    <input matInput formControlName="nameRu" autocomplete="off" />
+    @if (fieldError(form.controls.nameRu, 'nameRu')) {
+      <mat-error>{{ fieldError(form.controls.nameRu, 'nameRu') }}</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="document-type-form__field">
+    <mat-label>{{ 'pages.adminDocumentTypes.country' | translate }}</mat-label>
+    <input
+      matInput
+      [value]="countrySearchQuery()"
+      [matAutocomplete]="countryAutocomplete"
+      [placeholder]="'pages.adminDocumentTypes.countrySearch' | translate"
+      (input)="onCountrySearchInput($any($event.target).value)"
+    />
+    <mat-autocomplete
+      #countryAutocomplete="matAutocomplete"
+      (optionSelected)="onCountrySelected($event)"
+    >
+      @for (option of filteredCountryOptions(); track option.code) {
+        <mat-option [value]="option.code">{{ option.label }}</mat-option>
+      }
+    </mat-autocomplete>
+    @if (fieldError(form.controls.countryCode, 'country')) {
+      <mat-error>{{ fieldError(form.controls.countryCode, 'country') }}</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="document-type-form__field">
+    <mat-label>{{ 'pages.adminDocumentTypes.plannedScanPages' | translate }}</mat-label>
+    <input matInput type="number" min="0" formControlName="plannedScanPages" />
+    <mat-hint>{{ 'pages.adminDocumentTypes.plannedScanPagesHint' | translate }}</mat-hint>
+    @if (fieldError(form.controls.plannedScanPages, 'plannedScanPages')) {
+      <mat-error>{{ fieldError(form.controls.plannedScanPages, 'plannedScanPages') }}</mat-error>
+    }
+  </mat-form-field>
+
+  <section class="document-type-form__fields">
+    <div class="document-type-form__fields-header">
+      <h3>{{ 'pages.adminDocumentTypes.fieldDefinitions' | translate }}</h3>
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="isDeleted()"
+        (click)="addFieldRow()"
+      >
+        <mat-icon aria-hidden="true">add</mat-icon>
+        {{ 'pages.adminDocumentTypes.addField' | translate }}
+      </button>
+    </div>
+
+    @if (fieldDefinitions.length === 0) {
+      <p class="document-type-form__fields-empty">
+        {{ 'pages.adminDocumentTypes.noFields' | translate }}
+      </p>
+    }
+
+    <div formArrayName="fieldDefinitions" class="document-type-form__fields-list">
+      @for (fieldGroup of fieldDefinitions.controls; track $index; let i = $index) {
+        <div [formGroupName]="i" class="document-type-form__field-row">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'pages.adminDocumentTypes.fieldKey' | translate }}</mat-label>
+            <input matInput formControlName="key" autocomplete="off" />
+            @if (fieldError(fieldGroupAt(i).controls['key'], 'fieldKey')) {
+              <mat-error>{{ fieldError(fieldGroupAt(i).controls['key'], 'fieldKey') }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'pages.adminDocumentTypes.nameUk' | translate }}</mat-label>
+            <input matInput formControlName="nameUk" autocomplete="off" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'pages.adminDocumentTypes.nameEn' | translate }}</mat-label>
+            <input matInput formControlName="nameEn" autocomplete="off" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'pages.adminDocumentTypes.nameRu' | translate }}</mat-label>
+            <input matInput formControlName="nameRu" autocomplete="off" />
+          </mat-form-field>
+
+          <button
+            mat-icon-button
+            type="button"
+            color="warn"
+            [disabled]="isDeleted()"
+            [attr.aria-label]="'pages.adminDocumentTypes.removeField' | translate"
+            (click)="removeFieldRow(i)"
+          >
+            <mat-icon aria-hidden="true">delete</mat-icon>
+          </button>
+        </div>
+      }
+    </div>
+  </section>
+</form>
+
+<div mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cancel()">
+    {{ 'pages.adminDocumentTypes.cancel' | translate }}
+  </button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    [disabled]="saving() || isDeleted()"
+    (click)="submit()"
+  >
+    {{ 'pages.adminDocumentTypes.save' | translate }}
+  </button>
+</div>

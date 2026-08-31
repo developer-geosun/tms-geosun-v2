@@ -1,0 +1,283 @@
+<section class="admin-document-types">
+  <header class="admin-document-types__header">
+    <h1>{{ 'pages.adminDocumentTypes.title' | translate }}</h1>
+    <div class="admin-document-types__actions">
+      <mat-button-toggle-group
+        [value]="listView()"
+        hideSingleSelectionIndicator
+        (change)="onViewChange($event.value)"
+      >
+        <mat-button-toggle value="all">
+          {{ 'pages.adminDocumentTypes.viewAll' | translate }} {{ countAll() }}
+        </mat-button-toggle>
+        <mat-button-toggle value="active">
+          {{ 'pages.adminDocumentTypes.viewActive' | translate }} {{ countActive() }}
+        </mat-button-toggle>
+        <mat-button-toggle value="deleted">
+          {{ 'pages.adminDocumentTypes.viewDeleted' | translate }} {{ countDeleted() }}
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+
+      <button
+        mat-stroked-button
+        type="button"
+        class="admin-list-toolbar__icon-action"
+        [matTooltip]="'pages.adminDocumentTypes.refresh' | translate"
+        [attr.aria-label]="'pages.adminDocumentTypes.refresh' | translate"
+        (click)="reload()"
+      >
+        <mat-icon aria-hidden="true">refresh</mat-icon>
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        class="admin-list-toolbar__icon-action"
+        [matTooltip]="'pages.adminDocumentTypes.createTitle' | translate"
+        [attr.aria-label]="'pages.adminDocumentTypes.createTitle' | translate"
+        (click)="openCreate()"
+      >
+        <mat-icon aria-hidden="true">add</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <mat-progress-bar class="admin-document-types__progress" mode="indeterminate" />
+  }
+
+  <form [formGroup]="searchForm" class="admin-document-types__search">
+    <mat-form-field appearance="outline" class="admin-document-types__search-field">
+      <mat-label>{{ 'pages.adminDocumentTypes.search' | translate }}</mat-label>
+      <input matInput formControlName="search" autocomplete="off" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="admin-document-types__search-field">
+      <mat-label>{{ 'pages.adminDocumentTypes.countryFilter' | translate }}</mat-label>
+      <input matInput formControlName="country" autocomplete="off" maxlength="2" />
+    </mat-form-field>
+  </form>
+
+  @if (loadError()) {
+    <div class="admin-document-types__messages">
+      <p class="admin-document-types__error">{{ loadError() | translate }}</p>
+    </div>
+  }
+
+  @if (isHandset()) {
+    <div class="admin-document-types__cards">
+      @if (!isLoading() && documentTypes().length === 0 && !loadError()) {
+        <p class="admin-document-types__empty">{{ 'pages.adminDocumentTypes.empty' | translate }}</p>
+      } @else {
+        @for (row of pagedDocumentTypes(); track row.id) {
+          <mat-card
+            class="document-type-card"
+            appearance="outlined"
+            [class.document-type-card--deleted]="row.deleted"
+          >
+            <div class="document-type-card__header">
+              <div class="document-type-card__title-block">
+                <div class="document-type-card__name">{{ localizedName(row) }}</div>
+                <div class="document-type-card__country">
+                  {{ countryName(row.countryCode) }} ({{ row.countryCode }})
+                </div>
+              </div>
+              <span
+                class="document-type-card__badge"
+                [class.document-type-card__badge--deleted]="row.deleted"
+                [class.document-type-card__badge--active]="!row.deleted"
+              >
+                {{
+                  (row.deleted
+                    ? 'pages.adminDocumentTypes.statusDeleted'
+                    : 'pages.adminDocumentTypes.statusActive'
+                  ) | translate
+                }}
+              </span>
+            </div>
+
+            <mat-card-content class="document-type-card__content">
+              <div class="document-type-card__field">
+                <span class="document-type-card__label">
+                  {{ 'pages.adminDocumentTypes.plannedScanPages' | translate }}
+                </span>
+                <span class="document-type-card__value">{{ plannedPagesLabel(row.plannedScanPages) }}</span>
+              </div>
+              <div class="document-type-card__field">
+                <span class="document-type-card__label">
+                  {{ 'pages.adminDocumentTypes.fieldCount' | translate }}
+                </span>
+                <span class="document-type-card__value">{{ row.fieldDefinitions.length }}</span>
+              </div>
+            </mat-card-content>
+
+            <mat-card-actions class="document-type-card__actions" align="end">
+              <button
+                mat-icon-button
+                type="button"
+                class="document-type-action--edit"
+                [matTooltip]="'pages.adminDocumentTypes.edit' | translate"
+                [attr.aria-label]="'pages.adminDocumentTypes.edit' | translate"
+                (click)="openEdit(row)"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+              @if (!row.deleted) {
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="document-type-action--danger"
+                  [matTooltip]="'pages.adminDocumentTypes.delete' | translate"
+                  [attr.aria-label]="'pages.adminDocumentTypes.delete' | translate"
+                  (click)="softDelete(row)"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              } @else {
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="document-type-action--restore"
+                  [matTooltip]="'pages.adminDocumentTypes.restore' | translate"
+                  [attr.aria-label]="'pages.adminDocumentTypes.restore' | translate"
+                  (click)="restore(row)"
+                >
+                  <mat-icon>restore</mat-icon>
+                </button>
+              }
+            </mat-card-actions>
+          </mat-card>
+        }
+      }
+    </div>
+
+    <mat-paginator
+      class="admin-document-types__cards-paginator"
+      [length]="documentTypes().length"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="pageSizeOptions"
+      (page)="onPage($event)"
+    />
+  } @else {
+    <div class="admin-document-types__table-panel table-shell">
+      <div class="admin-document-types__table-scroll">
+        <table mat-table [dataSource]="pagedDocumentTypes()" class="admin-document-types__table">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminDocumentTypes.name' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <span class="admin-document-types__name">{{ localizedName(row) }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="country">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminDocumentTypes.country' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">
+              {{ countryName(row.countryCode) }} ({{ row.countryCode }})
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="plannedScanPages">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminDocumentTypes.plannedScanPages' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">
+              {{ plannedPagesLabel(row.plannedScanPages) }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="fieldCount">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminDocumentTypes.fieldCount' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">{{ row.fieldDefinitions.length }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminDocumentTypes.status' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row">
+              <span
+                class="admin-document-types__status"
+                [class.admin-document-types__status--active]="!row.deleted"
+                [class.admin-document-types__status--deleted]="row.deleted"
+              >
+                {{
+                  (row.deleted
+                    ? 'pages.adminDocumentTypes.statusDeleted'
+                    : 'pages.adminDocumentTypes.statusActive'
+                  ) | translate
+                }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>
+              {{ 'pages.adminDocumentTypes.actions' | translate }}
+            </th>
+            <td mat-cell *matCellDef="let row" class="admin-document-types__actions-cell">
+              <button
+                mat-icon-button
+                type="button"
+                class="document-type-action--edit"
+                [matTooltip]="'pages.adminDocumentTypes.edit' | translate"
+                [attr.aria-label]="'pages.adminDocumentTypes.edit' | translate"
+                (click)="openEdit(row)"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+              @if (!row.deleted) {
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="document-type-action--danger"
+                  [matTooltip]="'pages.adminDocumentTypes.delete' | translate"
+                  [attr.aria-label]="'pages.adminDocumentTypes.delete' | translate"
+                  (click)="softDelete(row)"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              } @else {
+                <button
+                  mat-icon-button
+                  type="button"
+                  class="document-type-action--restore"
+                  [matTooltip]="'pages.adminDocumentTypes.restore' | translate"
+                  [attr.aria-label]="'pages.adminDocumentTypes.restore' | translate"
+                  (click)="restore(row)"
+                >
+                  <mat-icon>restore</mat-icon>
+                </button>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: displayedColumns"
+            [class.admin-document-types__row--deleted]="row.deleted"
+          ></tr>
+        </table>
+
+        @if (!isLoading() && documentTypes().length === 0 && !loadError()) {
+          <p class="admin-document-types__empty">{{ 'pages.adminDocumentTypes.empty' | translate }}</p>
+        }
+      </div>
+
+      <mat-paginator
+        class="admin-document-types__paginator"
+        [length]="documentTypes().length"
+        [pageIndex]="pageIndex()"
+        [pageSize]="pageSize()"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPage($event)"
+      />
+    </div>
+  }
+</section>

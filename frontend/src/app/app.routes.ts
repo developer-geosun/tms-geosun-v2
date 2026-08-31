@@ -114,6 +114,15 @@ export const routes: Routes = [
       import('./pages/admin-users/admin-users.component').then((m) => m.AdminUsersComponent)
   },
   {
+    path: 'admin/document-types',
+    canActivate: [authAvailabilityGuard, serviceStopGuard, authGuard],
+    data: { roles: ['admin'] },
+    loadComponent: () =>
+      import('./pages/admin-document-types/admin-document-types.component').then(
+        (m) => m.AdminDocumentTypesComponent
+      )
+  },
+  {
     path: 'admin/file-storage-test',
     canActivate: [authAvailabilityGuard, serviceStopGuard, authGuard],
     data: { roles: ['admin'] },

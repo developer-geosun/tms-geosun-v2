@@ -6,6 +6,7 @@ public final class ReferenceApiPaths {
   public static final String ADMIN_VEHICLES_BASE = "/api/v1/admin/vehicles";
   public static final String ADMIN_DRIVERS_BASE = "/api/v1/admin/drivers";
   public static final String ADMIN_VEHICLE_COMBINATIONS_BASE = "/api/v1/admin/vehicle-combinations";
+  public static final String ADMIN_DOCUMENT_TYPES_BASE = "/api/v1/admin/document-types";
 
   private ReferenceApiPaths() {}
 }

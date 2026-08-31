@@ -34,6 +34,10 @@ import {
 } from '../../core/api';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { showAppSnack } from '../../shared/utils/app-snackbar';
+import {
+  filterDriverPersonNameChars,
+  sanitizeDriverPersonNameInput
+} from './driver-person-name.util';
 
 export interface DriverFormDialogData {
   driver: DriverContractDto | null;
@@ -155,6 +159,23 @@ export class DriverFormDialogComponent {
     this.onStepChange(Math.max(0, this.stepIndex() - 1));
   }
 
+  /** Нормалізує прізвище, ім’я або по батькові під час вводу. */
+  onPersonNameInput(
+    controlName: 'lastName' | 'firstName' | 'patronymic',
+    event: Event
+  ): void {
+    const input = event.target as HTMLInputElement;
+    const cursor = input.selectionStart ?? input.value.length;
+    const nextCursor = filterDriverPersonNameChars(input.value.slice(0, cursor)).length;
+    const sanitized = sanitizeDriverPersonNameInput(input.value);
+    if (input.value !== sanitized) {
+      input.value = sanitized;
+    }
+    this.form.controls[controlName].setValue(sanitized, { emitEvent: false });
+    this.form.controls[controlName].markAsDirty();
+    input.setSelectionRange(nextCursor, nextCursor);
+  }
+
   async save(): Promise<void> {
     if (this.form.invalid || this.isDeleted() || this.saving()) {
       this.form.markAllAsTouched();
@@ -166,9 +187,9 @@ export class DriverFormDialogComponent {
       return;
     }
     const payload = {
-      lastName: raw.lastName.trim(),
-      firstName: raw.firstName.trim(),
-      patronymic: raw.patronymic.trim() || null,
+      lastName: sanitizeDriverPersonNameInput(raw.lastName),
+      firstName: sanitizeDriverPersonNameInput(raw.firstName),
+      patronymic: sanitizeDriverPersonNameInput(raw.patronymic) || null,
       phone: raw.phone.trim(),
       licenseNumber: raw.licenseNumber.trim(),
       licenseCategories: raw.licenseCategories.trim(),
@@ -405,9 +426,9 @@ export class DriverFormDialogComponent {
 
   private patchForm(row: DriverContractDto): void {
     this.form.patchValue({
-      lastName: row.lastName,
-      firstName: row.firstName,
-      patronymic: row.patronymic ?? '',
+      lastName: sanitizeDriverPersonNameInput(row.lastName),
+      firstName: sanitizeDriverPersonNameInput(row.firstName),
+      patronymic: sanitizeDriverPersonNameInput(row.patronymic ?? ''),
       phone: row.phone,
       licenseNumber: row.licenseNumber,
       licenseCategories: row.licenseCategories,
