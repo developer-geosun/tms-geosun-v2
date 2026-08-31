@@ -1,5 +1,6 @@
 package com.geosun.tms.reference.integration;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -78,6 +79,25 @@ class CurrencyApiIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.code").value("PLN"))
         .andExpect(jsonPath("$.isActive").value(true));
+  }
+
+  @Test
+  void deactivationResetsDisplayOrder() throws Exception {
+    User admin = createUser("curr-order@example.com", Role.ADMIN);
+    String access = login(admin.getEmail());
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/currencies/USD")
+                .header("Authorization", bearer(access))
+                .contentType(jsonContentType())
+                .content(toJson(Map.of("isActive", false, "displayOrder", 10))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.isActive").value(false))
+        .andExpect(jsonPath("$.displayOrder").isEmpty());
+
+    Currency stored = Objects.requireNonNull(currencyRepository.findById("USD").orElseThrow());
+    assertThat(stored.getDisplayOrder()).isNull();
   }
 
   @Test

@@ -37,8 +37,12 @@ public class CurrencyService {
   @Transactional
   public CurrencyDto update(String code, UpdateCurrencyRequest request) {
     Currency currency = loadCurrency(code);
-    currency.setActive(request.isActive());
-    if (request.displayOrder() != null) {
+    boolean active = Boolean.TRUE.equals(request.isActive());
+    currency.setActive(active);
+    if (!active) {
+      // Неактивна валюта не бере участі в сортуванні довідника
+      currency.setDisplayOrder(null);
+    } else if (request.displayOrder() != null) {
       currency.setDisplayOrder(request.displayOrder());
     }
     Map<String, LatestRateView> latestByCode = loadLatestRatesByCode();

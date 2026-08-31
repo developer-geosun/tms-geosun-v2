@@ -98,6 +98,11 @@
     table-layout: fixed;
   }
 
+  /* Липка шапка: фон обов'язковий, інакше рядки просвічують під нею. */
+  &__table .mat-mdc-header-cell {
+    background: var(--mat-sys-surface-container-low, #fafafa);
+  }
+
   &__table .mat-column-nameUk .mat-mdc-cell,
   &__table .mat-column-nameUk.mat-mdc-header-cell {
     overflow: hidden;
