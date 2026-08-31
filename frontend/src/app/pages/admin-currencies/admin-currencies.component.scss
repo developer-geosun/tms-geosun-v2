@@ -67,6 +67,8 @@
   /* Обмежуємо висоту знімка курсів, щоб панель не витісняла основну таблицю. */
   &__snapshot &__table-scroll {
     max-height: 16rem;
+    overflow-x: auto;
+    overflow-y: auto;
   }
 
   &__messages {
@@ -94,7 +96,25 @@
     overflow: hidden;
   }
 
-  &__table-scroll {
+  /* Шапка поза вертикальним скролом; горизонталь синхронізується з тілом таблиці. */
+  &__table-header {
+    flex-shrink: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    border-bottom: 1px solid var(--mat-sys-outline-variant, rgba(0, 0, 0, 0.12));
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    .mat-mdc-header-cell {
+      background: var(--mat-sys-surface-container-highest, #e6e0e9);
+      font-weight: 600;
+    }
+  }
+
+  &__table-body-scroll {
     flex: 1 1 auto;
     max-height: 100%;
     min-height: 0;
@@ -107,16 +127,8 @@
     table-layout: fixed;
   }
 
-  /* Липка шапка: фон обов'язковий, інакше рядки просвічують під нею.
-     Тон беремо найконтрастніший у сходинці surface-container, бо сусідні
-     градації майже не відрізняються від смуг зебри. */
-  &__table .mat-mdc-header-cell {
-    background: var(--mat-sys-surface-container-highest, #e6e0e9);
-    font-weight: 600;
-  }
-
   /* Чергування фону рядків для зручності читання. */
-  &__table .mat-mdc-row:nth-child(even) {
+  &__table-body-scroll &__table .mat-mdc-row:nth-child(even) {
     background: var(--mat-sys-surface-container-low, #fafafa);
   }
 
@@ -171,7 +183,7 @@
       font-size: 0.75rem;
     }
 
-    &__table-scroll {
+    &__table-body-scroll {
       -webkit-overflow-scrolling: touch;
     }
 

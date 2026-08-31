@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   effect,
+  ElementRef,
   inject,
   signal,
   ViewChild
@@ -97,6 +98,7 @@ export class AdminCurrenciesComponent implements AfterViewInit {
 
   @ViewChild(MatPaginator) private paginator?: MatPaginator;
   @ViewChild(MatSort) private sort?: MatSort;
+  @ViewChild('tableHeaderScroll') private tableHeaderScroll?: ElementRef<HTMLElement>;
 
   constructor() {
     this.dataSource.sortData = this.sortCurrencies.bind(this);
@@ -215,6 +217,14 @@ export class AdminCurrenciesComponent implements AfterViewInit {
       return iso;
     }
     return new Date(parsed).toLocaleString();
+  }
+
+  /** Горизонтальний скрол тіла синхронізуємо з шапкою без власного скролбара. */
+  protected syncHorizontalScroll(event: Event): void {
+    const bodyScrollLeft = (event.target as HTMLElement).scrollLeft;
+    if (this.tableHeaderScroll) {
+      this.tableHeaderScroll.nativeElement.scrollLeft = bodyScrollLeft;
+    }
   }
 
   private notify(messageKey: string, kind: 'success' | 'error' = 'success'): void {

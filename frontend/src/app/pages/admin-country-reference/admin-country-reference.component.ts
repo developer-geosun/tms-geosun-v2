@@ -3,13 +3,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   effect,
+  ElementRef,
   inject,
   signal,
   ViewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -61,6 +62,7 @@ export class AdminCountryReferenceComponent implements AfterViewInit {
   readonly isLoading = signal(false);
   readonly loadError = signal('');
   readonly countries = signal<CountryReferenceContractDto[]>([]);
+  readonly searchQuery = signal('');
 
   readonly searchForm = this.formBuilder.nonNullable.group({
     search: ['']
@@ -68,6 +70,7 @@ export class AdminCountryReferenceComponent implements AfterViewInit {
 
   @ViewChild(MatPaginator) private paginator?: MatPaginator;
   @ViewChild(MatSort) private sort?: MatSort;
+  @ViewChild('tableHeaderScroll') private tableHeaderScroll?: ElementRef<HTMLElement>;
 
   constructor() {
     this.dataSource.sortData = this.sortCountries.bind(this);
@@ -76,7 +79,12 @@ export class AdminCountryReferenceComponent implements AfterViewInit {
       this.applyDefaultPageSizeForViewport();
     });
     this.searchForm.controls.search.valueChanges
-      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+      .pipe(
+        tap((value) => this.searchQuery.set(value)),
+        debounceTime(300),
+        distinctUntilChanged(),
+        takeUntilDestroyed()
+      )
       .subscribe(() => void this.reload());
     void this.reload();
   }
@@ -111,6 +119,14 @@ export class AdminCountryReferenceComponent implements AfterViewInit {
 
   clearSearch(): void {
     this.searchForm.patchValue({ search: '' });
+  }
+
+  /** Горизонтальний скрол тіла синхронізуємо з шапкою без власного скролбара. */
+  protected syncHorizontalScroll(event: Event): void {
+    const bodyScrollLeft = (event.target as HTMLElement).scrollLeft;
+    if (this.tableHeaderScroll) {
+      this.tableHeaderScroll.nativeElement.scrollLeft = bodyScrollLeft;
+    }
   }
 
   private applyDefaultPageSizeForViewport(): void {
