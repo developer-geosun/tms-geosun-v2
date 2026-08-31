@@ -16,6 +16,9 @@
       "cancel": "Отмена",
       "confirm": "Подтвердить"
     },
+    "snackbar": {
+      "close": "Закрыть сообщение"
+    },
     "paginator": {
       "itemsPerPage": "Записей на странице:",
       "nextPage": "Следующая страница",
