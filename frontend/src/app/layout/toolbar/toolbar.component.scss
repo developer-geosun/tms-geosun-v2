@@ -102,7 +102,13 @@ app-social-icon {
   align-items: center;
   gap: 6px;
   margin-right: 8px;
-  overflow: hidden;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
 // РљРЅРѕРїРєР° В«РіР°РјР±СѓСЂРіРµСЂВ»: Р·Р° Р·Р°РјРѕРІС‡СѓРІР°РЅРЅСЏРј РїСЂРёС…РѕРІР°РЅР°; mat-mini-fab Р·Р°РґР°С” display вЂ” С‚РѕРјСѓ !important

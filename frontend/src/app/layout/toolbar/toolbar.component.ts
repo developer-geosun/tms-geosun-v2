@@ -113,6 +113,12 @@ export class ToolbarComponent {
       roles: ['admin', 'manager'] as const
     },
     {
+      route: '/admin/document-types',
+      labelKey: 'navigation.adminDocumentTypes',
+      icon: 'description',
+      roles: ['admin'] as const
+    },
+    {
       route: '/admin/freight-numeric-scenarios',
       labelKey: 'navigation.adminFreightNumericScenarios',
       roles: ['admin', 'manager'] as const
@@ -150,11 +156,6 @@ export class ToolbarComponent {
     {
       route: '/admin/users',
       labelKey: 'navigation.adminUsers',
-      roles: ['admin'] as const
-    },
-    {
-      route: '/admin/document-types',
-      labelKey: 'navigation.adminDocumentTypes',
       roles: ['admin'] as const
     },
     {

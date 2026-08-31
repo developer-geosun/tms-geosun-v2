@@ -20,11 +20,12 @@ import {
   MatDialogModule,
   MatDialogRef
 } from '@angular/material/dialog';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatStepperModule } from '@angular/material/stepper';
 import {
   CountryReferenceApiService,
   CountryReferenceContractDto,
@@ -50,11 +51,12 @@ export interface DocumentTypeFormDialogData {
     TranslateModule,
     MatButtonModule,
     MatDialogModule,
-    MatAutocompleteModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatSnackBarModule
+    MatSelectModule,
+    MatSnackBarModule,
+    MatStepperModule
   ],
   templateUrl: './document-type-form-dialog.component.html',
   styleUrl: './document-type-form-dialog.component.scss',
@@ -73,10 +75,12 @@ export class DocumentTypeFormDialogComponent {
   readonly documentType = signal<DocumentTypeReferenceContractDto | null>(this.data.documentType);
   readonly saving = signal(false);
   readonly countries = signal<CountryReferenceContractDto[]>([]);
-  readonly countrySearchQuery = signal('');
+  readonly stepIndex = signal(0);
 
   readonly isCreate = computed(() => this.documentType() == null);
   readonly isDeleted = computed(() => this.documentType()?.deleted === true);
+  readonly onDescriptionStep = computed(() => this.stepIndex() === 0);
+  readonly onFieldsStep = computed(() => this.stepIndex() === 1);
 
   readonly countrySelectOptions = computed(() => {
     const language = this.languageService.language();
@@ -87,19 +91,6 @@ export class DocumentTypeFormDialogComponent {
         label: countryReferenceSelectLabel(country, language)
       }))
       .sort((a, b) => a.label.localeCompare(b.label, locale));
-  });
-
-  readonly filteredCountryOptions = computed(() => {
-    const query = this.countrySearchQuery().trim().toLowerCase();
-    const options = this.countrySelectOptions();
-    if (!query) {
-      return options;
-    }
-    return options.filter(
-      (option) =>
-        option.label.toLowerCase().includes(query) ||
-        option.code.toLowerCase().includes(query)
-    );
   });
 
   readonly dialogTitle = computed(() => {
@@ -121,12 +112,15 @@ export class DocumentTypeFormDialogComponent {
     return name ? `${base} · ${name}` : base;
   });
 
-  readonly form = this.formBuilder.nonNullable.group({
+  readonly descriptionForm = this.formBuilder.nonNullable.group({
     nameUk: ['', [Validators.required, Validators.maxLength(128)]],
     nameEn: ['', [Validators.required, Validators.maxLength(128)]],
     nameRu: ['', [Validators.required, Validators.maxLength(128)]],
-    countryCode: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(2)]],
-    plannedScanPages: [0, [Validators.required, Validators.min(0)]],
+    countryCode: ['UA', [Validators.required, Validators.minLength(2), Validators.maxLength(2)]],
+    plannedScanPages: [0, [Validators.required, Validators.min(0)]]
+  });
+
+  readonly fieldsStepForm = this.formBuilder.group({
     fieldDefinitions: this.formBuilder.array<ReturnType<typeof this.createFieldGroup>>([])
   });
 
@@ -134,40 +128,41 @@ export class DocumentTypeFormDialogComponent {
     void this.loadCountries();
     const row = this.documentType();
     if (row) {
-      this.form.patchValue({
+      this.descriptionForm.patchValue({
         nameUk: row.nameUk,
         nameEn: row.nameEn,
         nameRu: row.nameRu,
         countryCode: row.countryCode.toUpperCase(),
         plannedScanPages: row.plannedScanPages
       });
-      this.syncCountrySearchFromCode(row.countryCode);
       for (const field of row.fieldDefinitions) {
         this.fieldDefinitions.push(this.createFieldGroup(field));
       }
       if (row.deleted) {
-        this.form.disable();
+        this.descriptionForm.disable();
+        this.fieldsStepForm.disable();
       }
     }
   }
 
   get fieldDefinitions(): FormArray {
-    return this.form.controls.fieldDefinitions;
+    return this.fieldsStepForm.controls.fieldDefinitions;
   }
 
-  onCountrySearchInput(value: string): void {
-    this.countrySearchQuery.set(value);
-    const normalized = value.trim().toUpperCase();
-    if (/^[A-Z]{2}$/.test(normalized)) {
-      this.form.controls.countryCode.setValue(normalized);
+  onStepChange(index: number): void {
+    this.stepIndex.set(index);
+  }
+
+  goNext(): void {
+    this.descriptionForm.markAllAsTouched();
+    if (this.descriptionForm.invalid) {
+      return;
     }
+    this.onStepChange(1);
   }
 
-  onCountrySelected(event: MatAutocompleteSelectedEvent): void {
-    const code = String(event.option.value ?? '').toUpperCase();
-    this.form.controls.countryCode.setValue(code);
-    const option = this.countrySelectOptions().find((item) => item.code === code);
-    this.countrySearchQuery.set(option?.label ?? code);
+  goPrev(): void {
+    this.onStepChange(0);
   }
 
   addFieldRow(): void {
@@ -183,8 +178,15 @@ export class DocumentTypeFormDialogComponent {
   }
 
   async submit(): Promise<void> {
-    if (this.form.invalid || this.saving() || this.isDeleted()) {
-      this.form.markAllAsTouched();
+    if (this.saving() || this.isDeleted()) {
+      return;
+    }
+    this.descriptionForm.markAllAsTouched();
+    this.fieldsStepForm.markAllAsTouched();
+    if (this.descriptionForm.invalid || this.fieldsStepForm.invalid) {
+      if (this.descriptionForm.invalid) {
+        this.onStepChange(0);
+      }
       return;
     }
     this.saving.set(true);
@@ -258,14 +260,15 @@ export class DocumentTypeFormDialogComponent {
   }
 
   private buildPayload(): CreateDocumentTypeContractRequest {
-    const raw = this.form.getRawValue();
+    const description = this.descriptionForm.getRawValue();
+    const fields = this.fieldsStepForm.getRawValue();
     return {
-      nameUk: raw.nameUk.trim(),
-      nameEn: raw.nameEn.trim(),
-      nameRu: raw.nameRu.trim(),
-      countryCode: raw.countryCode.trim().toUpperCase(),
-      plannedScanPages: raw.plannedScanPages,
-      fieldDefinitions: raw.fieldDefinitions.map((field) => ({
+      nameUk: description.nameUk.trim(),
+      nameEn: description.nameEn.trim(),
+      nameRu: description.nameRu.trim(),
+      countryCode: description.countryCode.trim().toUpperCase(),
+      plannedScanPages: description.plannedScanPages,
+      fieldDefinitions: fields.fieldDefinitions.map((field) => ({
         key: field.key.trim(),
         nameUk: field.nameUk.trim(),
         nameEn: field.nameEn.trim(),
@@ -278,10 +281,6 @@ export class DocumentTypeFormDialogComponent {
     try {
       const list = await this.countryReferenceApi.list();
       this.countries.set(list);
-      const code = this.form.controls.countryCode.value;
-      if (code) {
-        this.syncCountrySearchFromCode(code);
-      }
     } catch {
       showAppSnack(
         this.snackBar,
@@ -290,12 +289,6 @@ export class DocumentTypeFormDialogComponent {
         'error'
       );
     }
-  }
-
-  private syncCountrySearchFromCode(code: string): void {
-    const normalized = code.trim().toUpperCase();
-    const option = this.countrySelectOptions().find((item) => item.code === normalized);
-    this.countrySearchQuery.set(option?.label ?? normalized);
   }
 
   private mapError(err: unknown, fallback: string): string {
